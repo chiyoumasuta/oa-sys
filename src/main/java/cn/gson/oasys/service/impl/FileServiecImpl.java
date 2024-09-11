@@ -14,6 +14,7 @@ import cn.gson.oasys.vo.FileListVo;
 import org.apache.commons.io.FilenameUtils;
 import org.hibernate.service.spi.ServiceException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import tk.mybatis.mapper.entity.Example;
 
@@ -22,6 +23,7 @@ import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Service
 public class FileServiecImpl implements FileService {
 
     @Value("${file.path}")

@@ -6,10 +6,12 @@ import cn.gson.oasys.service.UserService;
 import cn.gson.oasys.support.UserTokenHolder;
 import cn.gson.oasys.support.UtilResultSet;
 import cn.gson.oasys.support.kaptcha.CaptchaUtil;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
@@ -35,7 +37,8 @@ public class LoginController {
 
     private Pattern pattern = Pattern.compile("^(?![A-Z]*$)(?![a-z]*$)(?![0-9]*$)(?![^a-zA-Z0-9]*$)\\S{12,20}$");
 
-    @RequestMapping("/web/check")
+    @RequestMapping(value = "/web/check" ,method = RequestMethod.POST)
+    @ApiOperation(value="测试用户", notes="查询数据库user")
     public Object check(HttpServletRequest req) {
         Object user = req.getSession().getAttribute("user");
         if (user == null) {

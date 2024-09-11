@@ -2,6 +2,8 @@ package cn.gson.oasys.controller;
 
 import cn.gson.oasys.entity.File;
 import cn.gson.oasys.support.UtilResultSet;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.hibernate.service.spi.ServiceException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -94,8 +96,8 @@ public class FileController {
 
     // 分享文件
     @PostMapping("/share")
-    public UtilResultSet shareFile(String fileId) {
-        if (fileService.shareFile(fileId)) {
+    public UtilResultSet shareFile(String fileId,String sharePerson) {
+        if (fileService.shareFile(fileId,sharePerson)) {
             return UtilResultSet.success("文件分享成功");
         } else {
             return UtilResultSet.bad_request("文件分享失败");

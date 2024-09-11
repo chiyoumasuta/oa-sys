@@ -12,7 +12,6 @@ import tk.mybatis.spring.annotation.MapperScan;
 @EnableScheduling
 @MapperScan("cn.gson.oasys**.dao")
 public class OasysApplication {
-
 	public static void main(String[] args) {
 		SpringApplication.run(OasysApplication.class, args);
 	}

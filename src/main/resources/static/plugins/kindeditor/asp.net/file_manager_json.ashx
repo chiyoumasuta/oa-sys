@@ -91,22 +91,22 @@ public class FileManager : IHttpHandler
 
 		//遍历目录取得文件信息
 		string[] dirList = Directory.GetDirectories(currentPath);
-		string[] fileList = Directory.GetFiles(currentPath);
+		string[] file = Directory.GetFiles(currentPath);
 
 		switch (order)
 		{
 			case "size":
 				Array.Sort(dirList, new NameSorter());
-				Array.Sort(fileList, new SizeSorter());
+				Array.Sort(file, new SizeSorter());
 				break;
 			case "type":
 				Array.Sort(dirList, new NameSorter());
-				Array.Sort(fileList, new TypeSorter());
+				Array.Sort(file, new TypeSorter());
 				break;
 			case "name":
 			default:
 				Array.Sort(dirList, new NameSorter());
-				Array.Sort(fileList, new NameSorter());
+				Array.Sort(file, new NameSorter());
 				break;
 		}
 
@@ -114,7 +114,7 @@ public class FileManager : IHttpHandler
 		result["moveup_dir_path"] = moveupDirPath;
 		result["current_dir_path"] = currentDirPath;
 		result["current_url"] = currentUrl;
-		result["total_count"] = dirList.Length + fileList.Length;
+		result["total_count"] = dirList.Length + file.Length;
 		List<Hashtable> dirFileList = new List<Hashtable>();
 		result["file_list"] = dirFileList;
 		for (int i = 0; i < dirList.Length; i++)
@@ -130,9 +130,9 @@ public class FileManager : IHttpHandler
 			hash["datetime"] = dir.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss");
 			dirFileList.Add(hash);
 		}
-		for (int i = 0; i < fileList.Length; i++)
+		for (int i = 0; i < file.Length; i++)
 		{
-			FileInfo file = new FileInfo(fileList[i]);
+			FileInfo file = new FileInfo(file[i]);
 			Hashtable hash = new Hashtable();
 			hash["is_dir"] = false;
 			hash["has_file"] = false;

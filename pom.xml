@@ -15,7 +15,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>1.5.6.RELEASE</version>
+		<version>2.0.3.RELEASE</version>
 		<relativePath />
 	</parent>
 
@@ -25,6 +25,22 @@
 		<java.version>1.8</java.version>
 		<skipTests>true</skipTests>
 	</properties>
+
+
+	<repositories>
+		<repository>
+			<id>central</id>
+			<url>http://host:port/content/groups/public</url>
+		</repository>
+	</repositories>
+
+	<pluginRepositories>
+		<pluginRepository>
+			<id>central</id>
+			<url>http://host:port/content/groups/public</url>
+		</pluginRepository>
+	</pluginRepositories>
+
 
 	<dependencies>
 		<dependency>
@@ -142,36 +158,10 @@
 			<artifactId>mapper-spring-boot-starter</artifactId>
 			<version>2.0.0</version>
 		</dependency>
-
-<!--		jwt-->
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
-			<optional>true</optional>
-		</dependency>
-		<!--swagger3 生成接口注释-->
-		<dependency>
-			<groupId>io.springfox</groupId>
-			<artifactId>springfox-boot-starter</artifactId>
-			<version>3.0.0</version>
-		</dependency>
-		<!-- 解决jdk11缺失jar包引起的报错-->
-		<dependency>
-			<groupId>javax.xml.bind</groupId>
-			<artifactId>jaxb-api</artifactId>
-			<version>2.3.1</version>
-		</dependency>
-		<!-- jwt token核心依赖-->
-		<dependency>
-			<groupId>io.jsonwebtoken</groupId>
-			<artifactId>jjwt</artifactId>
-			<version>0.9.1</version>
-		</dependency>
-		<!-- jwt token核心依赖-->
-		<dependency>
-			<groupId>com.auth0</groupId>
-			<artifactId>java-jwt</artifactId>
-			<version>3.18.3</version>
+			<scope>provided</scope>
 		</dependency>
 
 	</dependencies>

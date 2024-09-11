@@ -1,0 +1,240 @@
+package cn.gson.oasys.service.impl;
+
+import cn.gson.oasys.dao.UserDao;
+import cn.gson.oasys.entity.User;
+import cn.gson.oasys.permission.RsaHelp;
+import cn.gson.oasys.service.UserService;
+import cn.gson.oasys.support.Page;
+import cn.gson.oasys.support.UserTokenHolder;
+import com.github.pagehelper.PageHelper;
+import org.apache.commons.lang.StringUtils;
+import org.hibernate.service.spi.ServiceException;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import tk.mybatis.mapper.entity.Example;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpSession;
+import java.io.*;
+import java.util.*;
+import java.util.stream.Collectors;
+
+@Service
+public class UserServiceImpl implements UserService {
+    @Resource
+    private UserDao userDao;
+    @Value("${user.password}")
+    private String defaultUserPwd;
+
+    @Override
+    public Page<User> page(String name, String phone, Integer type, List<String> areas, String roleName, int pageNo, int pageSize) {
+        PageHelper.startPage(pageNo, pageSize);
+        com.github.pagehelper.Page<User> pageInfo = (com.github.pagehelper.Page) userDao.list(name, phone, type, null, areas, null, null, roleName);
+        List<User> lists = pageInfo.getResult();
+        if (lists.size() == 0) {
+            return new Page<>();
+        }
+        List<Long> deptIds = lists.stream().map(User::getDeptId).distinct().collect(Collectors.toList());
+        return new Page<>(pageNo, pageSize, pageInfo.getTotal(), lists);
+    }
+
+    @Override
+    public List<User> findDetailByIds(List<Long> userIds) {
+        Example example = new Example(User.class);
+        example.createCriteria().andIn("id", userIds);
+        return userDao.selectByExample(example);
+    }
+
+    @Override
+    public void saveOrUpdate(Long id, String userName, String phone, String password, String roleIds, String fiberArea, Integer type, Long deptId, boolean inRole) {
+        if (id != null && id == 1l) {
+            throw new ServiceException("超级管理员拥有所有权限，不允许操作");
+        }
+
+        User user = new User();
+        user.setUserName(userName);
+        user.setPhone(phone);
+        user.setDeptId(deptId);
+        User oldPhone = findByPhone(phone);
+        if (id == null) {
+            //添加
+           /* User oldLogin = findByLoginName(loginName);
+            if (oldLogin != null) {
+                throw new ServiceException("用户名已存在[" + loginName + "]");
+            }*/
+            if (oldPhone != null) {
+                throw new ServiceException("手机号已经存在[" + phone + "]");
+            }
+            user.setPassword(defaultUserPwd);
+            userDao.insert(user);
+        } else {
+            if (oldPhone != null && !oldPhone.getId().equals(id)) {
+                throw new ServiceException("手机号已经存在[" + phone + "]");
+            }
+            user.setId(id);
+            userDao.updateByPrimaryKeySelective(user);
+        }
+    }
+
+    @Override
+    public void del(Long id) {
+        if (id == 1l) {
+            throw new ServiceException("超级管理员拥有所有权限，不允许操作");
+        }
+        User oldUser = userDao.selectByPrimaryKey(id);
+        if (oldUser == null) {
+            throw new ServiceException("当前操作用户不存在");
+        }
+        User currentUser = UserTokenHolder.getUser();
+        if (oldUser.getId().equals(currentUser.getId())) {
+            throw new ServiceException("不允许操作自己");
+        }
+        oldUser.setDel(true);
+        oldUser.setPhone(oldUser.getPhone() + "[delete]");
+        userDao.updateByPrimaryKeySelective(oldUser);
+    }
+
+
+    @Override
+    public User verifyByPhone(String phone, String password) {
+        User user = findByPhone(phone);
+        if (user == null || !password.equals(user.getPassword())) {
+            return null;
+        }
+        String token = Base64.getEncoder().encodeToString(user.getPhone().getBytes());
+        user.setToken(RsaHelp.encryptByPrivateKey2(token));
+        user.setLoginAt(new Date());
+        userDao.updateByPrimaryKeySelective(user);
+        return user;
+    }
+
+    @Override
+    public User verifyAndGetUser(String phone, String passWord) {
+        Example example = new Example(User.class);
+        example.createCriteria().andEqualTo("phone", phone.trim()).andEqualTo("del", false);
+        User user = userDao.selectOneByExample(example);
+        if (user == null || !user.getPassword().equals(passWord.trim())) return null;
+        user.setLoginAt(new Date());
+        userDao.updateByPrimaryKeySelective(user);
+        return user;
+    }
+
+    @Override
+    public boolean resetPwd(Long id) {
+        if (id == 1l) {
+            throw new ServiceException("超级管理员拥有所有权限，不允许操作");
+        }
+        User oldUser = userDao.selectByPrimaryKey(id);
+        if (oldUser == null) {
+            throw new ServiceException("当前操作用户不存在");
+        }
+        oldUser.setPassword(defaultUserPwd);
+        return userDao.updateByPrimaryKeySelective(oldUser) > 0;
+    }
+
+    @Override
+    public boolean changePwd(String phone, String oldpwd, String newpwd) {
+        User oldUser = findByPhone(phone);
+        if (oldUser == null) {
+            throw new ServiceException("当前操作用户不存在");
+        }
+        if (oldUser.getId() == 1l) {
+            throw new ServiceException("超级管理员拥有所有权限，不允许操作");
+        }
+        if (!oldUser.getPassword().equals(oldpwd)) {
+            return false;
+        }
+        if (oldUser.getPassword().equals(newpwd)) {
+            throw new ServiceException("新密码不能和旧密码一样");
+        }
+        oldUser.setPassword(newpwd);
+        userDao.updateByPrimaryKeySelective(oldUser);
+        return true;
+    }
+
+    @Override
+    public boolean changePwd(String phone, String newPwd) {
+        User oldUser = findByPhone(phone);
+        if (oldUser == null) {
+            throw new ServiceException("当前操作用户不存在");
+        }
+        if (oldUser.getId() == 1l) {
+            throw new ServiceException("超级管理员拥有所有权限，不允许操作");
+        }
+        if (oldUser.getPassword().equals(newPwd)) {
+            throw new ServiceException("旧密码和新密码不能相同");
+        }
+        oldUser.setPassword(newPwd);
+        userDao.updateByPrimaryKeySelective(oldUser);
+        return true;
+    }
+
+    @Override
+    public User findByLoginName(String loginName) {
+        Example example = new Example(User.class);
+        example.createCriteria().andEqualTo("loginName", loginName);
+        return userDao.selectOneByExample(example);
+    }
+
+    @Override
+    public User getPermsByUser(User user, Integer clientType) {
+//        List<SysRole> sysRoles = sysUserRoleService.getRoles(user);
+//        if (null != sysRoles) {
+//            user.setRoles(sysRoles.stream().map(it -> {
+//                SysRole sysRole = new SysRole();
+//                sysRole.setId(it.getId());
+//                sysRole.setRoleName(it.getRoleName());
+//                sysRole.setRoleKey(it.getRoleKey());
+//                return sysRole;
+//            }).collect(Collectors.toList()));
+//        }
+//        List<SysMenu> menus = sysMenuService.getMenuTreeByUser(user, clientType);
+//        user.setMenus(sysMenuService.buildMenus(menus));
+//        user.setPermissions(sysRoleMenuService.getMenuPermsByUser(user, null));
+//        user.setPassword(null);
+//        return user;
+        return null;
+    }
+
+    @Override
+    public User findByToken(String token) {
+        Example example = new Example(User.class);
+        example.createCriteria().andEqualTo("token", token);
+        User user = userDao.selectOneByExample(example);
+        if (user != null) {
+//            user.setRoles(sysUserRoleService.getRoles(user));
+            return user;
+        }
+        return null;
+    }
+
+    @Override
+    public User findByPhone(String phone) {
+        if (StringUtils.isEmpty(phone)) {
+            return null;
+        }
+        Example example = new Example(User.class);
+        example.createCriteria().andEqualTo("phone", phone);
+        return userDao.selectOneByExample(example);
+    }
+
+    @Override
+    public Map<Long, User> getAppUserMapUserNameAndPhone() {
+        Example example = new Example(User.class);
+        example.selectProperties("id", "userName", "phone");
+        return userDao.selectByExample(example).stream().collect(Collectors.toMap(User::getId, it -> it));
+    }
+
+    @Override
+    public User findById(Long userId) {
+        return userDao.selectByPrimaryKey(userId);
+    }
+
+    @Override
+    public List<User> findAllByDeptId(Long deptId) {
+        Example example = new Example(User.class);
+        example.createCriteria().andEqualTo("deptId", deptId);
+        return userDao.selectByExample(example);
+    }
+}

@@ -15,7 +15,7 @@ Dim aspUrl, rootPath, rootUrl, fileTypes
 Dim currentPath, currentUrl, currentDirPath, moveupDirPath
 Dim path, order, dirName, fso, folder, dir, file, result
 Dim fileExt, dirCount, fileCount, orderIndex, i, j
-Dim dirList(), fileList(), isDir, hasFile, filesize, isPhoto, filetype, filename, datetime
+Dim dirList(), file(), isDir, hasFile, filesize, isPhoto, filetype, filename, datetime
 
 aspUrl = Request.ServerVariables("SCRIPT_NAME")
 aspUrl = left(aspUrl, InStrRev(aspUrl, "/"))
@@ -114,7 +114,7 @@ For Each dir in folder.SubFolders
 	dirList(i) = Array(isDir, hasFile, filesize, isPhoto, filetype, filename, datetime)
 	i = i + 1
 Next
-ReDim fileList(fileCount)
+ReDim file(fileCount)
 i = 0
 For Each file in folder.Files
 	fileExt = lcase(mid(file.name, InStrRev(file.name, ".") + 1))
@@ -125,7 +125,7 @@ For Each file in folder.Files
 	filetype = fileExt
 	filename = file.name
 	datetime = FormatDate(file.DateLastModified)
-	fileList(i) = Array(isDir, hasFile, filesize, isPhoto, filetype, filename, datetime)
+	file(i) = Array(isDir, hasFile, filesize, isPhoto, filetype, filename, datetime)
 	i = i + 1
 Next
 
@@ -147,14 +147,14 @@ Next
 For i = 0 To fileCount - 2
 	minidx = i
 	For j = i + 1 To fileCount - 1
-		If (fileList(minidx)(orderIndex) > fileList(j)(orderIndex)) Then
+		If (file(minidx)(orderIndex) > file(j)(orderIndex)) Then
 			minidx = j
 		End If
 	Next
 	If minidx <> i Then
-		temp = fileList(minidx)
-		fileList(minidx) = fileList(i)
-		fileList(i) = temp
+		temp = file(minidx)
+		file(minidx) = file(i)
+		file(i) = temp
 	End If
 Next
 
@@ -171,13 +171,13 @@ For i = 0 To dirCount - 1
 Next
 For i = 0 To fileCount - 1
 	Set result("file_list")(Null) = jsObject()
-	result("file_list")(Null)("is_dir") = fileList(i)(0)
-	result("file_list")(Null)("has_file") = fileList(i)(1)
-	result("file_list")(Null)("filesize") = fileList(i)(2)
-	result("file_list")(Null)("is_photo") = fileList(i)(3)
-	result("file_list")(Null)("filetype") = fileList(i)(4)
-	result("file_list")(Null)("filename") = fileList(i)(5)
-	result("file_list")(Null)("datetime") = fileList(i)(6)
+	result("file_list")(Null)("is_dir") = file(i)(0)
+	result("file_list")(Null)("has_file") = file(i)(1)
+	result("file_list")(Null)("filesize") = file(i)(2)
+	result("file_list")(Null)("is_photo") = file(i)(3)
+	result("file_list")(Null)("filetype") = file(i)(4)
+	result("file_list")(Null)("filename") = file(i)(5)
+	result("file_list")(Null)("datetime") = file(i)(6)
 Next
 
 '输出JSON字符串

@@ -1,0 +1,56 @@
+package cn.gson.oasys.controller;
+
+import cn.gson.oasys.entity.FileAuditRecord;
+import cn.gson.oasys.service.FileAuditRecordService;
+import cn.gson.oasys.support.Page;
+import cn.gson.oasys.support.UtilResultSet;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/fileAudit")
+@Api(tags = "上传文件审核")
+public class FileAuditRecordController {
+
+    @Autowired
+    private FileAuditRecordService fileAuditRecordService;
+
+    @RequestMapping(value = "/delete/{id}",method = RequestMethod.POST)
+    @ApiOperation("取消审核")
+    public UtilResultSet deleteFileAuditRecord(@PathVariable Long id) {
+        boolean deleted = fileAuditRecordService.deleteFileAuditRecord(id);
+        if (deleted) {
+            return UtilResultSet.success("文件审核记录已删除");
+        } else {
+            return UtilResultSet.bad_request("删除文件审核记录失败");
+        }
+    }
+
+    @RequestMapping(value = "/list",method = RequestMethod.POST)
+    @ApiOperation("获取审核列表")
+    public UtilResultSet findAllFileAuditRecords(int pageNo,int pageSize,int searchType) {
+        Page<FileAuditRecord> page = fileAuditRecordService.findAllFileAuditRecords(pageNo, pageSize, searchType);
+        return UtilResultSet.success(page);
+    }
+
+    @RequestMapping(value = "/audit",method = RequestMethod.POST)
+    @ApiOperation("审核文件分享")
+    public UtilResultSet auditFile(
+        @RequestParam Long id, 
+        @RequestParam boolean result,
+        @RequestParam String sharePeople) {
+        try {
+            boolean auditResult = fileAuditRecordService.audit(id, result, sharePeople);
+            if (auditResult) {
+                return UtilResultSet.success("文件审核成功");
+            } else {
+                return UtilResultSet.bad_request("文件审核失败");
+            }
+        } catch (Exception e) {
+            return UtilResultSet.bad_request("审核出错: " + e.getMessage());
+        }
+    }
+}

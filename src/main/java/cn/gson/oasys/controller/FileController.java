@@ -11,16 +11,20 @@ import org.springframework.web.multipart.MultipartFile;
 import cn.gson.oasys.service.FileService;
 import cn.gson.oasys.vo.FileListVo;
 
+import javax.servlet.http.HttpServletRequest;
+
 @RestController
 @RequestMapping("/file")
+@Api(tags = "文件管理")
 public class FileController {
 
     @Autowired
     private FileService fileService;
 
     // 保存文件
-    @PostMapping("/save")
-    public UtilResultSet saveFile(MultipartFile file, Long nowPath, File.model model) {
+    @RequestMapping(value = "/save",method = RequestMethod.POST)
+    @ApiOperation(value = "上传文件")
+    public UtilResultSet saveFile(MultipartFile file, Long nowPath, File.model model, HttpServletRequest request) throws ServiceException {
         try {
             File result = fileService.saveFile(file, nowPath, model);
             return UtilResultSet.success(result);
@@ -29,11 +33,11 @@ public class FileController {
         }
     }
 
-    // 文件列表查看
-    @GetMapping("/list")
-    public UtilResultSet fileList(Long nowPath,String type,boolean inTrash) {
+    @RequestMapping(value = "/list",method = RequestMethod.POST)
+    @ApiOperation(value = "文件列表")
+    public UtilResultSet fileList(Long nowPath,String type) {
         try {
-            FileListVo result = fileService.fileList(nowPath, type, inTrash);
+            FileListVo result = fileService.fileList(nowPath, type);
             return UtilResultSet.success(result);
         } catch (Exception e) {
             return UtilResultSet.bad_request("文件列表加载失败: " + e.getMessage());
@@ -41,7 +45,8 @@ public class FileController {
     }
 
     // 删除文件到回收站
-    @PostMapping("/drop")
+    @RequestMapping(value = "/drop",method = RequestMethod.POST)
+    @ApiOperation(value = "移动文件到回收站")
     public UtilResultSet drop(Long fileId) {
         if (fileService.drop(fileId)) {
             return UtilResultSet.success("文件已移至回收站");
@@ -51,7 +56,8 @@ public class FileController {
     }
 
     // 彻底删除文件
-    @DeleteMapping("/delete")
+    @RequestMapping(value = "/delete",method = RequestMethod.POST)
+    @ApiOperation(value = "彻底删除文件")
     public UtilResultSet delete(Long fileId) {
         if (fileService.delete(fileId)) {
             return UtilResultSet.success("文件彻底删除");
@@ -61,7 +67,8 @@ public class FileController {
     }
 
     // 重命名文件
-    @PostMapping("/rename")
+    @RequestMapping(value = "/rename",method = RequestMethod.POST)
+    @ApiOperation(value = "重命名文件")
     public UtilResultSet rename(String fileId,String newName) {
         if (fileService.rename(fileId, newName)) {
             return UtilResultSet.success("文件重命名成功");
@@ -71,7 +78,8 @@ public class FileController {
     }
 
     // 移动文件
-    @PostMapping("/move")
+    @RequestMapping(value = "/move",method = RequestMethod.POST)
+    @ApiOperation(value = "移动文件")
     public UtilResultSet moveFile(String fileId,Long newFatherId) {
         if (fileService.moveFile(fileId, newFatherId)) {
             return UtilResultSet.success("文件移动成功");
@@ -80,22 +88,9 @@ public class FileController {
         }
     }
 
-//    // 审核文件
-//    @PostMapping("/audit")
-//    public UtilResultSet audit(Long fileId,String result,String sharePeople) {
-//        try {
-//            if (fileService.audit(fileId, result, sharePeople)) {
-//                return UtilResultSet.success("审核成功");
-//            } else {
-//                return UtilResultSet.bad_request("审核失败");
-//            }
-//        } catch (ServiceException e) {
-//            return UtilResultSet.bad_request("审核错误: " + e.getMessage());
-//        }
-//    }
-
     // 分享文件
-    @PostMapping("/share")
+    @RequestMapping(value = "/share",method = RequestMethod.POST)
+    @ApiOperation(value = "分享文件")
     public UtilResultSet shareFile(String fileId,String sharePerson) {
         if (fileService.shareFile(fileId,sharePerson)) {
             return UtilResultSet.success("文件分享成功");

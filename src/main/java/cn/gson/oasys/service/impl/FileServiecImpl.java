@@ -20,6 +20,7 @@ import tk.mybatis.mapper.entity.Example;
 
 import javax.annotation.Resource;
 import java.io.*;
+import java.rmi.ServerException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -40,6 +41,9 @@ public class FileServiecImpl implements FileService {
     @Override
     public File saveFile(MultipartFile file, Long nowPath, File.model model) throws IllegalStateException, IOException {
         User user = UserTokenHolder.getUser();
+        if (user==null){
+            throw new ServerException("用户信息获取失败");
+        }
         java.io.File savepath = new java.io.File(this.rootPath,user.getUserName());
         if (!savepath.exists()) {
             savepath.mkdirs();
@@ -55,8 +59,8 @@ public class FileServiecImpl implements FileService {
         filelist.setFileName(filename);
         filelist.setFilePath(targetFile.getAbsolutePath().replace("\\", "/").replace(this.rootPath, ""));
         filelist.setType(type);
-        filelist.setModel(model);
-        filelist.setFather(nowPath);
+        filelist.setModel(model==null?File.model.CLOUD:model);
+        filelist.setFather(nowPath==null?0:nowPath);
         filelist.setSize(file.getSize());
         filelist.setUploadTime(new Date());
         filelist.setContentType(file.getContentType());
@@ -66,13 +70,14 @@ public class FileServiecImpl implements FileService {
     }
 
     @Override
-    public FileListVo fileList(Long nowPath, String type, boolean inTrash) {
+    public FileListVo fileList(Long nowPath, String type) {
         Long userId = UserTokenHolder.getUser().getId();
         Long father = nowPath==null?0:nowPath;
         Example example = new Example(File.class);
         example.createCriteria().andLike("sharePeople","%"+userId+"%").orEqualTo("userId",userId).andEqualTo("father",father);
         List<File> byUserIdAndFather = flDao.selectByExample(example);
         FileListVo result = new FileListVo();
+        type = type==null?"所有文件":type;
         switch (type){
             case "所有文件":
                 result.setFile(byUserIdAndFather.stream()
@@ -175,29 +180,33 @@ public class FileServiecImpl implements FileService {
     }
 
     @Override
-    public boolean shareFile(String fileId,String sharePerson){
+    public boolean shareFile(String fileId,String sharePerson){//zb TODO 审核人
         User user = UserTokenHolder.getUser();
         Example example = new Example(File.class);
         example.createCriteria().andIn("fileId",Arrays.asList(fileId.split(",")));
-        Department departmentById = departmentService.findDepartmentById(user.getDeptId());
-        User manager = userService.findById(departmentById.getManagerId());
+//        Department departmentById = departmentService.findDepartmentById(user.getDeptId());
+//        User manager = userService.findById(departmentById.getManagerId());
 
         flDao.selectByExample(example).forEach(it->{
             File file = flDao.selectByPrimaryKey(fileId);
-            file.setStatus(manager==null?0:1);
-            if (manager==null){
-
-            }else {
-                flDao.updateByPrimaryKeySelective(file);
+//            file.setStatus(manager==null?0:1);
+//            if (manager==null){
+//                if (sharePerson==null){
+//                    throw new ServiceException("请选择申请人");
+//                }
+//                file.setSharePeople(sharePerson);
+//            }else {
                 FileAuditRecord fileAuditRecord = new FileAuditRecord();
                 fileAuditRecord.setFileId(file.getFileId());
                 fileAuditRecord.setSubmitTime(new Date());
                 fileAuditRecord.setFileName(file.getFileName());
                 fileAuditRecord.setSubmitUserName(user.getUserName());
                 fileAuditRecord.setSubmitUserId(user.getId());
-                fileAuditRecord.setPersonInCharge(manager.getId());
-                fileAuditRecord.setPersonInChargeName(manager.getUserName());
-            }
+                fileAuditRecord.setPersonInCharge(1L);
+                fileAuditRecord.setPersonInChargeName("admin");
+                fileAuditRecordService.saveFileAuditRecord(fileAuditRecord);
+//            }
+            flDao.updateByPrimaryKeySelective(file);
         });
         return true;
     }

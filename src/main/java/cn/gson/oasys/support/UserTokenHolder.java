@@ -2,9 +2,7 @@ package cn.gson.oasys.support;
 
 import cn.gson.oasys.entity.SysRole;
 import cn.gson.oasys.entity.User;
-import cn.gson.oasys.permission.AppUserToken;
-import cn.gson.oasys.permission.exception.UnknownAccountException;
-import org.apache.commons.lang.StringUtils;
+import cn.gson.oasys.exception.UnknownAccountException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestAttributes;
@@ -123,29 +121,25 @@ public class UserTokenHolder {
     }
 
     public static User getUser() {
-        User user;
+        User user = null;
         String token = getRequest().getHeader("token");
         if (token != null) {
-            AppUserToken t = getToken();
-            user = t != null ? t.getUser() : null;
-        } else {
-            user = (User) getSession().getAttribute("user");
+            user = JwtUtil.verifyToken(token);
         }
         if (user == null) {
-            if (!"dev".equals(active)) {
-                throw new UnknownAccountException();
+            if ("dev".equals(active)) {
+                //非正式环境
+                user = new User();
+                user.setId(1L);
+                user.setUserName("admin");
+                user.setPhone("123456");
+                SysRole role = new SysRole();
+                role.setRoleName("超级管理员");
+                role.setRoleKey("admin");
+                user.setRoles(new ArrayList<SysRole>() {{
+                    add(role);
+                }});
             }
-            //非正式环境
-            user = new User();
-            user.setId(1L);
-            user.setUserName("admin");
-            user.setPhone("123456");
-            SysRole role = new SysRole();
-            role.setRoleName("超级管理员");
-            role.setRoleKey("admin");
-            user.setRoles(new ArrayList<SysRole>() {{
-                add(role);
-            }});
         }
         return user;
     }

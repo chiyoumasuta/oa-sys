@@ -38,6 +38,10 @@ public class UtilResultSet extends JSONObject {
         return new UtilResultSet(ResultStatus.BAD_REQUEST,list);
     }
 
+    public static UtilResultSet not_login(Object list) {
+        return new UtilResultSet(ResultStatus.NOT_LOGIN,list);
+    }
+
     public static UtilResultSet internal_server_error() {
         return new UtilResultSet(ResultStatus.INTERNAL_SERVER_ERROR);
     }

@@ -15,7 +15,7 @@ public interface FileService {
     /**
      * 获取当前文件夹文件列表
      */
-    FileListVo fileList(Long nowPath, String type, boolean inTrash);
+    FileListVo fileList(Long nowPath, String type);
 
     /**
      * 将文件放入回收站

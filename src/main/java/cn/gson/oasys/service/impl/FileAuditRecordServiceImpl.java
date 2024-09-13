@@ -32,6 +32,10 @@ public class FileAuditRecordServiceImpl implements FileAuditRecordService {
 
     @Override
     public boolean deleteFileAuditRecord(Long id) {
+        FileAuditRecord fileAuditRecord = fileAuditRecordDao.selectByPrimaryKey(id);
+        File file = flDao.selectByPrimaryKey(fileAuditRecord.getFileId());
+        file.setStatus(0);
+        flDao.updateByPrimaryKey(file);
         return fileAuditRecordDao.deleteByPrimaryKey(id)>0;
     }
 

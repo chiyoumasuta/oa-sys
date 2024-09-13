@@ -18,7 +18,7 @@ import java.util.Set;
 public class User {
     @Id
     @GeneratedValue(generator = "JDBC")
-    @Column(name = "user_id")
+    @Column(name = "id")
     private Long id;
     @Column
     private String loginName;
@@ -36,7 +36,7 @@ public class User {
     @Column
     private Date loginAt;//最后登录时间
     @Column
-    private Long deptId;//部门id
+    private String deptId;//部门id
     @Column
     private String posts;//职位
     @Column

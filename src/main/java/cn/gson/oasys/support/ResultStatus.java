@@ -5,6 +5,7 @@ public enum ResultStatus {
     BAD_REQUEST(555,"no such data"),
     INTERNAL_SERVER_ERROR(500,"param fault"),
     REGISTER_FAIL(201,"exists"),
+    NOT_LOGIN(401,"not login"),
     NO_PERMISSION(403,"No permission");
     private Integer code;
     private String msg;

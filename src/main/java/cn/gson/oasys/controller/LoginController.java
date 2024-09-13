@@ -1,45 +1,42 @@
 package cn.gson.oasys.controller;
 
 import cn.gson.oasys.entity.User;
-import cn.gson.oasys.permission.RSASupport;
+import cn.gson.oasys.exception.UnknownAccountException;
 import cn.gson.oasys.service.UserService;
+import cn.gson.oasys.support.JwtUtil;
 import cn.gson.oasys.support.UserTokenHolder;
 import cn.gson.oasys.support.UtilResultSet;
-import cn.gson.oasys.support.kaptcha.CaptchaUtil;
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Controller;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
 
-import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import java.io.File;
-import java.security.KeyPair;
 import java.util.regex.Pattern;
 
-@Controller
+@RestController
+@Api(tags = "用户接口")
 public class LoginController {
 
     @Autowired
     private UserService userService;
 
-    @Autowired
-    private RSASupport rsaSupport;
-
-    @Autowired
-    private CaptchaUtil captchaUtil;
-
     @Value("${keys.path}")
     private String outPath;
+    @Value("${user.password}")
+    private String resetPassword;
 
     private Pattern pattern = Pattern.compile("^(?![A-Z]*$)(?![a-z]*$)(?![0-9]*$)(?![^a-zA-Z0-9]*$)\\S{12,20}$");
 
-    @RequestMapping(value = "/web/check" ,method = RequestMethod.POST)
-    @ApiOperation(value="测试用户", notes="查询数据库user")
-    public Object check(HttpServletRequest req) {
+    @RequestMapping(value = "/check" )
+    @ApiOperation(value="检查用户是否登录")
+    public UtilResultSet check(HttpServletRequest req) {
         Object user = req.getSession().getAttribute("user");
         if (user == null) {
             return UtilResultSet.bad_request("");
@@ -47,42 +44,34 @@ public class LoginController {
         return UtilResultSet.success(user);
     }
 
-    @RequestMapping("/web/login")
-    public Object login(String phone, String password, String code, String uuid, HttpServletRequest req) {
+    @RequestMapping(value = "/login")
+    @ApiOperation(value = "登录接口")
+    public UtilResultSet login(String phone, String password, HttpServletRequest req) {
         try {
-            if (!captchaUtil.validateCaptcha(code, uuid)) {
-                return UtilResultSet.bad_request("验证码校验出错");
-            }
-            String realPhone = rsaSupport.decrypt(phone);
-            String realPassword = rsaSupport.decrypt(password);
-//            int failureTimes;
-//            try {
-//                failureTimes = userLoginLogService.getLoginCapability(realPhone);
-//            } catch (AccountLockedException e) {
-//                return UtilResultSet.bad_request(e.getLocalizedMessage());
-//            }
-            User currentUser = userService.verifyAndGetUser(realPhone, realPassword);
+            User currentUser = userService.verifyAndGetUser(phone, password);
             if (currentUser != null) {
                 currentUser = userService.getPermsByUser(currentUser, -1);
                 UserTokenHolder.setUser(currentUser);
-                return UtilResultSet.success(currentUser.getId());
+                return UtilResultSet.success(JwtUtil.createToken(currentUser));
             }
             return UtilResultSet.bad_request("账号或密码不正确");
         } catch (Exception e) {
             e.printStackTrace();
-            return UtilResultSet.bad_request("加密码过期，请刷新后在登陆");
+            return UtilResultSet.bad_request("登录错误");
         }
     }
 
-    @RequestMapping("/web/logout")
-    public Object logout(HttpServletRequest req, HttpSession session) {
+    @RequestMapping(value = "/logout")
+    @ApiOperation(value = "推出登录")
+    public UtilResultSet logout(HttpServletRequest req) {
         User currentUser = UserTokenHolder.getUser();
         UserTokenHolder.invalidate(currentUser.getPhone());
         return UtilResultSet.success("登出成功");
     }
 
-    @RequestMapping("/web/changepwd")
-    public Object changepwd(String oldpwd, String newpwd, HttpSession session) {
+    @RequestMapping(value = "/changepwd")
+    @ApiOperation(value = "修改密码")
+    public UtilResultSet changePwd(String oldpwd, String newpwd, HttpServletRequest req) {
         try {
             User user = UserTokenHolder.getUser();
             if (newpwd.length() < 12) {
@@ -103,52 +92,27 @@ public class LoginController {
         }
     }
 
-    @RequestMapping("/web/resetInitPwd")
-    public Object resetInitPwd(String newpwd, HttpSession session) {
+    @RequestMapping(value = "/resetInitPwd")
+    @ApiOperation(value = "重置密码")
+    public UtilResultSet resetInitPwd(HttpServletRequest req) {
         try {
             String phone = UserTokenHolder.getCurrentUser();
-            if (newpwd.length() < 12) {
-                return UtilResultSet.bad_request("密码长度最少12位");
-            }
-            if (!pattern.matcher(newpwd).matches()) {
-                return UtilResultSet.bad_request("密码长度12-20位必须包含英文大写、小写、数字、特殊字符");
-            }
-            if (userService.changePwd(phone, newpwd)) {
+            if (userService.changePwd(phone, resetPassword)) {
                 return UtilResultSet.success("密码设置成功");
             }
-            return UtilResultSet.bad_request("密码不正确");
+            return UtilResultSet.bad_request("重设密码失败");
         } catch (Exception e) {
             return UtilResultSet.bad_request(e.getLocalizedMessage());
         }
     }
 
-    @RequestMapping("/web/userInfo")
+    @RequestMapping(value = "/userInfo")
+    @ApiOperation(value = "获取登录用户信息")
     public Object userInfo(HttpServletRequest req) {
-        Object user = req.getSession().getAttribute("user");
+        User user = UserTokenHolder.getUser();
         if (user == null) {
-            return UtilResultSet.bad_request("登录超时");
+            return new ResponseEntity<>("登录失效", HttpStatus.UNAUTHORIZED);
         }
         return UtilResultSet.success(user);
-    }
-
-    @RequestMapping("/web/loadPK")
-    public Object loadPK() throws Exception {
-        return UtilResultSet.success(rsaSupport.loadPublicKey());
-    }
-
-    @RequestMapping("/web/captchaImage")
-    public Object captchaImage(HttpServletRequest req) {
-        return UtilResultSet.success(captchaUtil.getCode(false));
-    }
-
-    @PostConstruct
-    public void rsaKeysGen() throws Exception {
-        File dir = new File(outPath);
-        if (!dir.exists()) {
-            System.out.println("--------创建密钥储存--------");
-            dir.mkdir();
-        }
-        KeyPair keyPair = rsaSupport.genKeyPair();
-        rsaSupport.saveKey(keyPair);
     }
 }

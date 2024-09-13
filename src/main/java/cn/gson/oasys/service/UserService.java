@@ -20,7 +20,7 @@ public interface UserService {
      * @author 不愿透露
      * @date 2022/10/9 17:33
      */
-    Page<User> page(String name, String phone, Integer type, List<String> areas, String roleName, int pageNo, int pageSize);
+    Page<User> page(String name, String phone, Integer type, String roleName, int pageNo, int pageSize);
 
     /**
      * 通过id查询用户详情

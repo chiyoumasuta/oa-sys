@@ -51,33 +51,16 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-freemarker</artifactId>
 		</dependency>
-		<!-- https://mvnrepository.com/artifact/eu.bitwalker/UserAgentUtils -->
 		<dependency>
 			<groupId>eu.bitwalker</groupId>
 			<artifactId>UserAgentUtils</artifactId>
 			<version>1.20</version>
 		</dependency>
-
-		<!-- https://mvnrepository.com/artifact/com.github.stuxuhai/jpinyin -->
-		<!-- 导入Jpinyin；汉字转拼音的包 -->
-		<dependency>
-			<groupId>com.github.stuxuhai</groupId>
-			<artifactId>jpinyin</artifactId>
-			<version>1.1.8</version>
-		</dependency>
-		<!-- 验证码 -->
-		<dependency>
-			<groupId>com.github.penggle</groupId>
-			<artifactId>kaptcha</artifactId>
-			<version>2.3.2</version>
-		</dependency>
-
 		<dependency>
 			<groupId>commons-lang</groupId>
 			<artifactId>commons-lang</artifactId>
 			<version>2.6</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.mybatis.spring.boot</groupId>
 			<artifactId>mybatis-spring-boot-starter</artifactId>
@@ -86,22 +69,7 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
-			<!-- 移除嵌入式tomcat插件 -->
-<!--			<exclusions>-->
-<!--				<exclusion>-->
-<!--					<groupId>org.springframework.boot</groupId>-->
-<!--					<artifactId>spring-boot-starter-tomcat</artifactId>-->
-<!--				</exclusion>-->
-<!--			</exclusions>-->
 		</dependency>
-
-		<!--  移除嵌入式tomcat插件 ，加入tocat-serlet 依赖		-->
-<!--		<dependency>-->
-<!--			<groupId>org.apache.tomcat</groupId>-->
-<!--			<artifactId>tomcat-servlet-api</artifactId>-->
-<!--			<version>8.0.36</version>-->
-<!--			<scope>provided</scope>-->
-<!--		</dependency>-->
 
 		<dependency>
 			<groupId>mysql</groupId>
@@ -112,6 +80,13 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
+		</dependency>
+
+		<!-- 引入jwt-->
+		<dependency>
+			<groupId>com.auth0</groupId>
+			<artifactId>java-jwt</artifactId>
+			<version>3.8.2</version>
 		</dependency>
 		<!--分页插件 -->
 		<dependency>
@@ -149,11 +124,6 @@
 			<version>2.5</version>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-devtools</artifactId>
-			<optional>true</optional>
-		</dependency>
-		<dependency>
 			<groupId>tk.mybatis</groupId>
 			<artifactId>mapper-spring-boot-starter</artifactId>
 			<version>2.0.0</version>
@@ -184,18 +154,18 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <!-- 如果不设置fork,那么不会restart,devtools热部署不会起作用-->
-                    <fork>true</fork>
-                </configuration>
+<!--                <configuration>-->
+<!--                    &lt;!&ndash; 如果不设置fork,那么不会restart,devtools热部署不会起作用&ndash;&gt;-->
+<!--                    <fork>true</fork>-->
+<!--                </configuration>-->
 				<!--热加载 -->
-				<dependencies>
-					<dependency>
-						<groupId>org.springframework</groupId>
-						<artifactId>springloaded</artifactId>
-						<version>1.2.7.RELEASE</version>
-					</dependency>
-				</dependencies>
+<!--				<dependencies>-->
+<!--					<dependency>-->
+<!--						<groupId>org.springframework</groupId>-->
+<!--						<artifactId>springloaded</artifactId>-->
+<!--						<version>1.2.7.RELEASE</version>-->
+<!--					</dependency>-->
+<!--				</dependencies>-->
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>

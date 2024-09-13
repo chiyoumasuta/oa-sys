@@ -7,6 +7,7 @@ import cn.gson.oasys.entity.User;
 import cn.gson.oasys.service.DepartmentService;
 import cn.gson.oasys.service.UserService;
 import cn.gson.oasys.support.Page;
+import cn.gson.oasys.support.UtilResultSet;
 import cn.gson.oasys.vo.DepartmentVo;
 import org.hibernate.service.spi.ServiceException;
 import org.springframework.beans.BeanUtils;
@@ -17,9 +18,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import javax.sql.rowset.serial.SerialException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -59,11 +58,13 @@ public class DepartmentServiceImpl implements DepartmentService {
             BeanUtils.copyProperties(department, departmentVo);
             List<User> allByDeptId = userService.findAllByDeptId(department.getId());
             departmentVo.setUsers(allByDeptId);
+            departmentVo.setManager(userService.findById(department.getManagerId()));
             departmentVos.add(departmentVo);
         });
         return departmentVos;
     }
 
+    @Override
     public boolean setDept(Long deptId,String users) {
         Department department = departmentDao.selectByPrimaryKey(deptId);
         if (department == null) {
@@ -73,11 +74,28 @@ public class DepartmentServiceImpl implements DepartmentService {
             throw new ServiceException("请选择用户");
         }
         for (User user : userService.findDetailByIds(Arrays.asList(users.split(",")).stream().map(Long::valueOf).collect(Collectors.toList()))) {
-            user.setDeptId(deptId);
+            Set<String> userDept = new HashSet<>(Arrays.asList(user.getDeptId().split(",")));
+            userDept.add(String.valueOf(department.getId()));
+            user.setDeptId(String.join(",", userDept));
             if (userDao.updateByPrimaryKeySelective(user) <= 0) {
                 throw new ServiceException("用户部门设置失败");
             }
         }
         return true;
+    }
+
+    @Override
+    public boolean deleteUserFormDept(Long deptId, Long userId) {
+        User user = userDao.selectByPrimaryKey(userId);
+        Department department = departmentDao.selectByPrimaryKey(deptId);
+        if (user == null) {
+            throw new ServiceException("为找到用户");
+        }
+        if (department == null) {
+            throw new ServiceException("未找到部门");
+        }
+        String dept = Arrays.stream(user.getDeptId().split(",")).filter(it->it.equals(String.valueOf(deptId))).collect(Collectors.joining(","));
+        user.setDeptId(dept);
+        return userDao.updateByPrimaryKeySelective(user) > 0;
     }
 }

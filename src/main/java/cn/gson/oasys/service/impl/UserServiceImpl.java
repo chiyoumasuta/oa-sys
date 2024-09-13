@@ -2,7 +2,7 @@ package cn.gson.oasys.service.impl;
 
 import cn.gson.oasys.dao.UserDao;
 import cn.gson.oasys.entity.User;
-import cn.gson.oasys.permission.RsaHelp;
+import cn.gson.oasys.service.DepartmentService;
 import cn.gson.oasys.service.UserService;
 import cn.gson.oasys.support.Page;
 import cn.gson.oasys.support.UserTokenHolder;
@@ -26,16 +26,33 @@ public class UserServiceImpl implements UserService {
     private UserDao userDao;
     @Value("${user.password}")
     private String defaultUserPwd;
+    @Resource
+    private DepartmentService departmentService;
 
     @Override
-    public Page<User> page(String name, String phone, Integer type, List<String> areas, String roleName, int pageNo, int pageSize) {
+    public Page<User> page(String name, String phone, Integer type, String roleName, int pageNo, int pageSize) {
         PageHelper.startPage(pageNo, pageSize);
-        com.github.pagehelper.Page<User> pageInfo = (com.github.pagehelper.Page) userDao.list(name, phone, type, null, areas, null, null, roleName);
-        List<User> lists = pageInfo.getResult();
+        Example example = new Example(User.class);
+        Example.Criteria criteria = example.createCriteria();
+        criteria.andEqualTo("del", false);
+        if (StringUtils.isNotBlank(name)) {
+            criteria.andLike("name", "%" + name + "%");
+        }
+        if (StringUtils.isNotBlank(phone)) {
+            criteria.andLike("phone", "%" + phone + "%");
+        }
+        com.github.pagehelper.Page<User> pageInfo = (com.github.pagehelper.Page) userDao.selectByExample(example);
+        List<User> lists = pageInfo.getResult().stream().map(it->{
+            String deptName = "";
+            if (it.getDeptId()!=null){
+                deptName = Arrays.stream(it.getDeptId().split(",")).filter(v->v!=null).map(d->departmentService.findDepartmentById(Long.valueOf(d)).getName()).collect(Collectors.joining(","));
+            }
+            it.setDeptName(deptName);
+            return it;
+        }).collect(Collectors.toList());
         if (lists.size() == 0) {
             return new Page<>();
         }
-        List<Long> deptIds = lists.stream().map(User::getDeptId).distinct().collect(Collectors.toList());
         return new Page<>(pageNo, pageSize, pageInfo.getTotal(), lists);
     }
 
@@ -55,14 +72,10 @@ public class UserServiceImpl implements UserService {
         User user = new User();
         user.setUserName(userName);
         user.setPhone(phone);
-        user.setDeptId(deptId);
+//        user.setDeptId(String.valueOf(deptId));
+        user.setPassword("Xiongbo99");
         User oldPhone = findByPhone(phone);
         if (id == null) {
-            //添加
-           /* User oldLogin = findByLoginName(loginName);
-            if (oldLogin != null) {
-                throw new ServiceException("用户名已存在[" + loginName + "]");
-            }*/
             if (oldPhone != null) {
                 throw new ServiceException("手机号已经存在[" + phone + "]");
             }
@@ -86,10 +99,10 @@ public class UserServiceImpl implements UserService {
         if (oldUser == null) {
             throw new ServiceException("当前操作用户不存在");
         }
-        User currentUser = UserTokenHolder.getUser();
-        if (oldUser.getId().equals(currentUser.getId())) {
-            throw new ServiceException("不允许操作自己");
-        }
+//        User currentUser = UserTokenHolder.getUser();
+//        if (oldUser.getId().equals(currentUser.getId())) {
+//            throw new ServiceException("不允许操作自己");
+//        }
         oldUser.setDel(true);
         oldUser.setPhone(oldUser.getPhone() + "[delete]");
         userDao.updateByPrimaryKeySelective(oldUser);
@@ -103,7 +116,7 @@ public class UserServiceImpl implements UserService {
             return null;
         }
         String token = Base64.getEncoder().encodeToString(user.getPhone().getBytes());
-        user.setToken(RsaHelp.encryptByPrivateKey2(token));
+        user.setToken(token);
         user.setLoginAt(new Date());
         userDao.updateByPrimaryKeySelective(user);
         return user;
@@ -112,9 +125,9 @@ public class UserServiceImpl implements UserService {
     @Override
     public User verifyAndGetUser(String phone, String passWord) {
         Example example = new Example(User.class);
-        example.createCriteria().andEqualTo("phone", phone.trim()).andEqualTo("del", false);
+        example.createCriteria().andEqualTo("phone", phone).andEqualTo("del", false);
         User user = userDao.selectOneByExample(example);
-        if (user == null || !user.getPassword().equals(passWord.trim())) return null;
+        if (user == null || !user.getPassword().equals(passWord)) return null;
         user.setLoginAt(new Date());
         userDao.updateByPrimaryKeySelective(user);
         return user;
@@ -193,8 +206,8 @@ public class UserServiceImpl implements UserService {
 //        user.setMenus(sysMenuService.buildMenus(menus));
 //        user.setPermissions(sysRoleMenuService.getMenuPermsByUser(user, null));
 //        user.setPassword(null);
-//        return user;
-        return null;
+        return user;
+//        return null;
     }
 
     @Override
@@ -234,7 +247,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<User> findAllByDeptId(Long deptId) {
         Example example = new Example(User.class);
-        example.createCriteria().andEqualTo("deptId", deptId);
+        example.createCriteria().andLike("deptId", "%"+deptId+"%");
         return userDao.selectByExample(example);
     }
 }

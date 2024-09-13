@@ -25,7 +25,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-public class FileServiecImpl implements FileService {
+public class FileServiceImpl implements FileService {
 
     @Value("${file.path}")
     private String rootPath;
@@ -125,6 +125,8 @@ public class FileServiecImpl implements FileService {
         }
         return true;
     }
+
+    //zb TODO 回收站还原接口
 
     @Override
     public boolean delete(Long fileId) {

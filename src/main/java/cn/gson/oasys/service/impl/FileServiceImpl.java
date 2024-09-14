@@ -70,6 +70,28 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
+    public boolean makeFolder(Long nowPath,String name){
+        User user = UserTokenHolder.getUser();
+        java.io.File savepath = new java.io.File(this.rootPath,user.getUserName());
+        java.io.File folder = new java.io.File(savepath,name);
+        if (!folder.exists()){
+            if (!folder.mkdirs()){
+                return false;
+            }
+        }
+        File filelist = new File();
+        String filename = name;
+        filelist.setFileName(filename);
+        filelist.setFilePath(folder.getAbsolutePath().replace("\\", "/").replace(this.rootPath, ""));
+        filelist.setType("folder");
+        filelist.setFather(nowPath==null?0:nowPath);
+        filelist.setUploadTime(new Date());
+        filelist.setUserId(user.getId());
+        flDao.insert(filelist);
+        return true;
+    }
+
+    @Override
     public FileListVo fileList(Long nowPath, String type) {
         Long userId = UserTokenHolder.getUser().getId();
         Long father = nowPath==null?0:nowPath;
@@ -105,47 +127,64 @@ public class FileServiceImpl implements FileService {
         if (nowPath!=null){
             result.setNowFile(flDao.selectByPrimaryKey(nowPath));
         }
+        List<File> sortedFiles = result.getFile().stream()
+                .sorted(Comparator.comparing(file -> file.getType().equals("folder") ? 0 : 1))
+                .collect(Collectors.toList());
+
+        result.setFile(sortedFiles);
         return result;
     }
 
     @Override
-    public boolean drop(Long fileId) {
-        File file = flDao.selectByPrimaryKey(fileId);
-        file.setFileInTrash(true);
-        file.setShare(false);
-        flDao.updateByPrimaryKeySelective(file);
-        if ("folder".equals(file.getType())){
-            Example example = new Example(File.class);
-            example.createCriteria().andEqualTo("father", file.getFileId());
-            List<File> byFather = flDao.selectByExample(example);
-            example.clear();
-            if (!byFather.isEmpty()){
-                byFather.forEach(it->drop(it.getFileId()));
+    public boolean drop(String fileIds) {
+        for (Long fileId : Arrays.stream(fileIds.split(",")).filter(it->it!=null).map(Long::valueOf).collect(Collectors.toList())) {
+            File file = flDao.selectByPrimaryKey(fileId);
+            file.setFileInTrash(true);
+            file.setShare(false);
+            flDao.updateByPrimaryKeySelective(file);
+            if ("folder".equals(file.getType())){
+                Example example = new Example(File.class);
+                example.createCriteria().andEqualTo("father", file.getFileId());
+                List<File> byFather = flDao.selectByExample(example);
+                example.clear();
+                if (!byFather.isEmpty()){
+                    byFather.forEach(it->drop(String.valueOf(it.getFileId())));
+                }
             }
         }
         return true;
     }
 
-    //zb TODO 回收站还原接口
+    @Override
+    public boolean reDrop(String fileIds) {
+        Arrays.stream(fileIds.split(",")).filter(it->it!=null).map(Long::valueOf).forEach(it->{
+            File file = flDao.selectByPrimaryKey(it);
+            file.setFileInTrash(false);
+            flDao.updateByPrimaryKeySelective(file);
+        });
+        return true;
+    }
 
     @Override
-    public boolean delete(Long fileId) {
-        File fileList = flDao.selectByPrimaryKey(fileId);
-        java.io.File file = new java.io.File(this.rootPath,fileList.getFilePath());
-        if(file.exists()&&file.isFile()){
-            System.out.println("现在删除"+fileList.getFileName()+"数据库存档>>>>>>>>>");
+    public boolean delete(String fileIds) {
+        for (Long fileId : Arrays.stream(fileIds.split(",")).filter(it->it!=null).map(Long::valueOf).collect(Collectors.toList())) {
+            File fileList = flDao.selectByPrimaryKey(fileId);
+            java.io.File file = new java.io.File(this.rootPath,fileList.getFilePath());
+            if(file.exists()&&file.isFile()){
+                System.out.println("现在删除"+fileList.getFileName()+"数据库存档>>>>>>>>>");
+                flDao.delete(fileList);
+                System.out.println("现在删除"+fileList.getFileName()+"本地文件>>>>>>>>>");
+                file.delete();
+            }
             flDao.delete(fileList);
-            System.out.println("现在删除"+fileList.getFileName()+"本地文件>>>>>>>>>");
-            file.delete();
-        }
-        flDao.delete(fileList);
-        if ("folder".equals(fileList.getType())){
-            Example example = new Example(File.class);
-            example.createCriteria().andEqualTo("father", fileList.getFileId());
-            List<File> byFather = flDao.selectByExample(example);
-            example.clear();
-            if (!byFather.isEmpty()){
-                byFather.forEach(it->delete(it.getFileId()));
+            if ("folder".equals(fileList.getType())){
+                Example example = new Example(File.class);
+                example.createCriteria().andEqualTo("father", fileList.getFileId());
+                List<File> byFather = flDao.selectByExample(example);
+                example.clear();
+                if (!byFather.isEmpty()){
+                    byFather.forEach(it->delete(String.valueOf(it.getFileId())));
+                }
             }
         }
         return true;
@@ -182,22 +221,22 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public boolean shareFile(String fileId,String sharePerson){//zb TODO 审核人
+    public boolean shareFile(String fileId,String sharePerson){
         User user = UserTokenHolder.getUser();
         Example example = new Example(File.class);
         example.createCriteria().andIn("fileId",Arrays.asList(fileId.split(",")));
-//        Department departmentById = departmentService.findDepartmentById(user.getDeptId());
-//        User manager = userService.findById(departmentById.getManagerId());
+        Department departmentById = departmentService.findDepartmentById(Long.valueOf(user.getDeptId().split(",")[0]));
+        User manager = userService.findById(departmentById.getManagerId());
 
         flDao.selectByExample(example).forEach(it->{
             File file = flDao.selectByPrimaryKey(fileId);
-//            file.setStatus(manager==null?0:1);
-//            if (manager==null){
-//                if (sharePerson==null){
-//                    throw new ServiceException("请选择申请人");
-//                }
-//                file.setSharePeople(sharePerson);
-//            }else {
+            file.setStatus(manager==null?0:1);
+            if (manager==null){
+                if (sharePerson==null){
+                    throw new ServiceException("请选择分享人");
+                }
+                file.setSharePeople(sharePerson);
+            }else {
                 FileAuditRecord fileAuditRecord = new FileAuditRecord();
                 fileAuditRecord.setFileId(file.getFileId());
                 fileAuditRecord.setSubmitTime(new Date());
@@ -207,9 +246,18 @@ public class FileServiceImpl implements FileService {
                 fileAuditRecord.setPersonInCharge(1L);
                 fileAuditRecord.setPersonInChargeName("admin");
                 fileAuditRecordService.saveFileAuditRecord(fileAuditRecord);
-//            }
+            }
             flDao.updateByPrimaryKeySelective(file);
         });
         return true;
+    }
+
+    /**
+     * 得到文件
+     * @param filepath
+     * @return
+     */
+    public java.io.File getFile(String filepath){
+        return new java.io.File(this.rootPath,filepath);
     }
 }

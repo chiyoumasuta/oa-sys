@@ -1,5 +1,6 @@
 package cn.gson.oasys.controller;
 
+import cn.gson.oasys.entity.Department;
 import cn.gson.oasys.entity.User;
 import cn.gson.oasys.exception.UnknownAccountException;
 import cn.gson.oasys.service.UserService;
@@ -8,6 +9,7 @@ import cn.gson.oasys.support.UserTokenHolder;
 import cn.gson.oasys.support.UtilResultSet;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.Example;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -44,7 +46,7 @@ public class LoginController {
         return UtilResultSet.success(user);
     }
 
-    @RequestMapping(value = "/login")
+    @RequestMapping(value = "/web/login")
     @ApiOperation(value = "登录接口")
     public UtilResultSet login(String phone, String password, HttpServletRequest req) {
         try {

@@ -5,6 +5,8 @@ import cn.gson.oasys.service.FileAuditRecordService;
 import cn.gson.oasys.support.Page;
 import cn.gson.oasys.support.UtilResultSet;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -31,7 +33,12 @@ public class FileAuditRecordController {
 
     @RequestMapping(value = "/list",method = RequestMethod.POST)
     @ApiOperation("获取审核列表")
-    public UtilResultSet findAllFileAuditRecords(int pageNo,int pageSize,int searchType) {
+    @ApiImplicitParams({
+        @ApiImplicitParam(name="pageNo",value="页码",required=true),
+        @ApiImplicitParam(name="pageSize",value="页面大小",required=true),
+        @ApiImplicitParam(name="searchType",value="搜索类型 1:我提交的 其他：需要我处理的",required=true)
+    })
+    public UtilResultSet findAllFileAuditRecords(@RequestParam int pageNo,@RequestParam int pageSize,@RequestParam int searchType) {
         Page<FileAuditRecord> page = fileAuditRecordService.findAllFileAuditRecords(pageNo, pageSize, searchType);
         return UtilResultSet.success(page);
     }

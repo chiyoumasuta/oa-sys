@@ -14,6 +14,7 @@ import tk.mybatis.spring.annotation.MapperScan;
 public class OasysApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(OasysApplication.class, args);
+
 	}
 }
 

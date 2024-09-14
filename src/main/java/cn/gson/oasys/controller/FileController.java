@@ -1,9 +1,11 @@
 package cn.gson.oasys.controller;
 
+import cn.gson.oasys.dao.FileDao;
 import cn.gson.oasys.entity.File;
 import cn.gson.oasys.support.UtilResultSet;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.apache.commons.io.IOUtils;
 import org.hibernate.service.spi.ServiceException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -11,15 +13,23 @@ import org.springframework.web.multipart.MultipartFile;
 import cn.gson.oasys.service.FileService;
 import cn.gson.oasys.vo.FileListVo;
 
+import javax.annotation.Resource;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/file")
 @Api(tags = "文件管理")
 public class FileController {
 
-    @Autowired
+    @Resource
     private FileService fileService;
+    @Resource
+    private FileDao fileDao;
 
     // 保存文件
     @RequestMapping(value = "/save",method = RequestMethod.POST)
@@ -44,10 +54,68 @@ public class FileController {
         }
     }
 
+    @RequestMapping(value = "/reDrop",method = RequestMethod.POST)
+    @ApiOperation(value = "回收站文件还原")
+    public UtilResultSet reDrop(String fileIds) {
+        if (fileService.reDrop(fileIds)) {
+            return UtilResultSet.success("文件已移至回收站");
+        } else {
+            return UtilResultSet.bad_request("移动文件失败");
+        }
+    }
+
+    /**
+     * 下载文件
+     * @param response
+     */
+    @RequestMapping("download")
+    @ApiOperation(value = "下载文件")
+    public void downFile(HttpServletResponse response, Long fileId) {
+        try {
+            File filelist = fileDao.selectByPrimaryKey(fileId);
+            java.io.File file = fileService.getFile(filelist.getFilePath());
+            response.setContentLength(filelist.getSize().intValue());
+            response.setContentType(filelist.getContentType());
+            response.setHeader("Content-Disposition","attachment;filename=" + new String(filelist.getFileName().getBytes("UTF-8"), "ISO8859-1"));
+            writefile(response, file);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    /**
+     * 写文件 方法
+     *
+     * @param response
+     */
+    public void writefile(HttpServletResponse response, java.io.File file) {
+        ServletOutputStream sos = null;
+        FileInputStream aa = null;
+        try {
+            aa = new FileInputStream(file);
+            sos = response.getOutputStream();
+            // 读取文件问字节码
+            byte[] data = new byte[(int) file.length()];
+            IOUtils.readFully(aa, data);
+            // 将文件流输出到浏览器
+            IOUtils.write(data, sos);
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } finally{
+            try {
+                sos.close();
+                aa.close();
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
+    }
+
     // 删除文件到回收站
     @RequestMapping(value = "/drop",method = RequestMethod.POST)
     @ApiOperation(value = "移动文件到回收站")
-    public UtilResultSet drop(Long fileId) {
+    public UtilResultSet drop(String fileId) {
         if (fileService.drop(fileId)) {
             return UtilResultSet.success("文件已移至回收站");
         } else {
@@ -55,10 +123,21 @@ public class FileController {
         }
     }
 
+
+    @RequestMapping(value = "/makeFolder",method = RequestMethod.POST)
+    @ApiOperation(value = "创建文件夹")
+    public UtilResultSet makeFolder(Long nowPath,String name) {
+        if (fileService.makeFolder(nowPath,name)) {
+            return UtilResultSet.success("创建文件夹成功");
+        } else {
+            return UtilResultSet.bad_request("创建文件夹失败");
+        }
+    }
+
     // 彻底删除文件
     @RequestMapping(value = "/delete",method = RequestMethod.POST)
     @ApiOperation(value = "彻底删除文件")
-    public UtilResultSet delete(Long fileId) {
+    public UtilResultSet delete(String fileId) {
         if (fileService.delete(fileId)) {
             return UtilResultSet.success("文件彻底删除");
         } else {

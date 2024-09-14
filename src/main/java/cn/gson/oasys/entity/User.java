@@ -55,4 +55,6 @@ public class User {
     private List<SysMenuVo> menus;
     @Transient
     private Set<String> permissions;
+    @Transient
+    private boolean isManager;
 }

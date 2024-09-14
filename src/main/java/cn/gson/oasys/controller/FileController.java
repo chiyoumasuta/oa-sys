@@ -84,8 +84,6 @@ public class FileController {
     }
     /**
      * 写文件 方法
-     *
-     * @param response
      */
     public void writefile(HttpServletResponse response, java.io.File file) {
         ServletOutputStream sos = null;
@@ -99,14 +97,12 @@ public class FileController {
             // 将文件流输出到浏览器
             IOUtils.write(data, sos);
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } finally{
             try {
                 sos.close();
                 aa.close();
             } catch (IOException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }

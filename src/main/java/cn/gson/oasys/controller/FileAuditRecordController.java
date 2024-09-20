@@ -20,9 +20,9 @@ public class FileAuditRecordController {
     @Autowired
     private FileAuditRecordService fileAuditRecordService;
 
-    @RequestMapping(value = "/delete/{id}",method = RequestMethod.POST)
+    @RequestMapping(value = "/delete",method = RequestMethod.POST)
     @ApiOperation("取消审核")
-    public UtilResultSet deleteFileAuditRecord(@PathVariable Long id) {
+    public UtilResultSet deleteFileAuditRecord(Long id) {
         boolean deleted = fileAuditRecordService.deleteFileAuditRecord(id);
         if (deleted) {
             return UtilResultSet.success("文件审核记录已删除");
@@ -45,10 +45,7 @@ public class FileAuditRecordController {
 
     @RequestMapping(value = "/audit",method = RequestMethod.POST)
     @ApiOperation("审核文件分享")
-    public UtilResultSet auditFile(
-        @RequestParam Long id, 
-        @RequestParam boolean result,
-        @RequestParam String sharePeople) {
+    public UtilResultSet auditFile(Long id, boolean result, String sharePeople) {
         try {
             boolean auditResult = fileAuditRecordService.audit(id, result, sharePeople);
             if (auditResult) {

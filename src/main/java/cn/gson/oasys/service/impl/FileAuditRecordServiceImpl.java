@@ -56,7 +56,7 @@ public class FileAuditRecordServiceImpl implements FileAuditRecordService {
         if (searchType==1){//用户提交
             example.createCriteria().andEqualTo("submitUserId",userId);
         }else {//用户处理
-            example.createCriteria().andEqualTo("person_in_charge",userId);
+            example.createCriteria().andEqualTo("personInCharge",userId);
         }
         PageHelper.startPage(pageNo, pageSize);
         com.github.pagehelper.Page<FileAuditRecord> pageInfo = (com.github.pagehelper.Page) fileAuditRecordDao.selectByExample(example);
@@ -73,7 +73,7 @@ public class FileAuditRecordServiceImpl implements FileAuditRecordService {
         if (file.getStatus()!=1){
             throw new ServiceException("当前状态无需审核");
         }
-        if (sharePeople==null){
+        if (result &&sharePeople==null){
             throw new ServiceException("请填写分享用户");
         }
         file.setStatus(result?2:3);

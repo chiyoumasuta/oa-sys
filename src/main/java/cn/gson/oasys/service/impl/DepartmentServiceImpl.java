@@ -9,6 +9,10 @@ import cn.gson.oasys.service.UserService;
 import cn.gson.oasys.support.Page;
 import cn.gson.oasys.support.UtilResultSet;
 import cn.gson.oasys.vo.DepartmentVo;
+import org.flowable.engine.IdentityService;
+import org.flowable.engine.ProcessEngine;
+import org.flowable.engine.ProcessEngines;
+import org.flowable.idm.api.Group;
 import org.hibernate.service.spi.ServiceException;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -74,7 +78,10 @@ public class DepartmentServiceImpl implements DepartmentService {
             throw new ServiceException("请选择用户");
         }
         for (User user : userService.findDetailByIds(Arrays.asList(users.split(",")).stream().map(Long::valueOf).collect(Collectors.toList()))) {
-            Set<String> userDept = new HashSet<>(Arrays.asList(user.getDeptId().split(",")));
+            Set<String> userDept = new HashSet<>();
+            if (user.getDeptId()!=null) {
+                userDept.addAll(Arrays.asList(user.getDeptId().split(",")));
+            }
             userDept.add(String.valueOf(department.getId()));
             user.setDeptId(String.join(",", userDept));
             if (userDao.updateByPrimaryKeySelective(user) <= 0) {
@@ -98,4 +105,5 @@ public class DepartmentServiceImpl implements DepartmentService {
         user.setDeptId(dept);
         return userDao.updateByPrimaryKeySelective(user) > 0;
     }
+
 }

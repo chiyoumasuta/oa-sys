@@ -8,6 +8,12 @@ import io.swagger.annotations.ApiOperation;
 import org.apache.commons.io.IOUtils;
 import org.hibernate.service.spi.ServiceException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import cn.gson.oasys.service.FileService;
@@ -26,6 +32,8 @@ import java.io.IOException;
 @Api(tags = "文件管理")
 public class FileController {
 
+    @Value("${file.path}")
+    private String rootPath;
     @Resource
     private FileService fileService;
     @Resource
@@ -172,5 +180,25 @@ public class FileController {
         } else {
             return UtilResultSet.bad_request("文件分享失败");
         }
+    }
+
+    //文件预览
+    @GetMapping("/preview")
+    @ApiOperation(value = "文件预览")
+    public ResponseEntity<InputStreamResource> preview(Long fileId) throws IOException {
+        File filelist = fileDao.selectByPrimaryKey(fileId);
+        String path = this.rootPath + filelist.getFilePath();
+        FileSystemResource file = new FileSystemResource(path);
+
+        // 设置响应头
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Disposition", String.format("attachment; filename=\"%s\"", file.getFilename()));
+
+        return ResponseEntity
+                .ok()
+                .headers(headers)
+                .contentLength(file.contentLength())
+                .contentType(MediaType.parseMediaType("application/octet-stream"))
+                .body(new InputStreamResource(file.getInputStream()));
     }
 }

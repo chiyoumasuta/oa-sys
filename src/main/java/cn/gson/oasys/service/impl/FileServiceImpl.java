@@ -121,8 +121,13 @@ public class FileServiceImpl implements FileService {
                         .filter(it->(it.getStatus()==1||it.getStatus()==2||it.getStatus()==3)&&it.getUserId().equals(userId))
                         .collect(Collectors.toList())
                 );
+                break;
             case "共享文件夹":
                 result.setFile(byUserIdAndFather.stream().filter(it->it.isShare()).collect(Collectors.toList()));
+                break;
+            case "所有文件夹":
+                result.setFile(byUserIdAndFather.stream().filter(it->!it.isShare()&&"folder".equals(it.getType())).collect(Collectors.toList()));
+                break;
         }
         if (nowPath!=null){
             result.setNowFile(flDao.selectByPrimaryKey(nowPath));
@@ -231,12 +236,13 @@ public class FileServiceImpl implements FileService {
         flDao.selectByExample(example).forEach(it->{
             File file = flDao.selectByPrimaryKey(fileId);
             file.setStatus(manager==null?0:1);
+            if (it.isShare())throw new ServiceException(it.getFileName()+"已分享");
             if (manager==null){
                 if (sharePerson==null){
                     throw new ServiceException("请选择分享人");
                 }
                 file.setSharePeople(sharePerson);
-            }else {
+            } else {
                 FileAuditRecord fileAuditRecord = new FileAuditRecord();
                 fileAuditRecord.setFileId(file.getFileId());
                 fileAuditRecord.setSubmitTime(new Date());

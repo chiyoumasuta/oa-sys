@@ -35,7 +35,7 @@ public class FlowableStencilSetResource {
     @RequestMapping(value = "/rest/stencil-sets/cmmneditor", method = RequestMethod.GET, produces = "application/json")
     public JsonNode getCmmnStencilSetForEditor() {
         try {
-            JsonNode stencilNode = objectMapper.readTree(this.getClass().getClassLoader().getResourceAsStream("stencilset/stencilset_cmmn.json"));
+            JsonNode stencilNode = objectMapper.readTree(this.getClass().getClassLoader().getResourceAsStream("stencilset/zh-CN.json"));
             return stencilNode;
         } catch (Exception e) {
             LOGGER.error("Error reading bpmn stencil set json", e);

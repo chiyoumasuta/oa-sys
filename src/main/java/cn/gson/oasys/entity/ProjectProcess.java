@@ -1,4 +1,4 @@
-package cn.gson.oasys.entity.project;
+package cn.gson.oasys.entity;
 
 import lombok.Data;
 
@@ -23,12 +23,24 @@ public class ProjectProcess {
     private String createUserId;
     @Column(name = "Stats",columnDefinition = "状态")
     private Stats stats;
-    @Column(name = "need_business_travel",columnDefinition = "是否需要出差")
-    private String needBusinessTravel;
-    @Column(name = "business_travel",columnDefinition = "出差/外出拜访")
-    private Long businessTravel;
-    @Column(name = "output_and_follow_up",columnDefinition = "方案输出/跟进")
-    private Long outputAndFollowUp;
+
+    //外出拜访数据
+    @Column(name = "business_presentation",columnDefinition = "外出拜访详情")
+    private String businessPresentation;
+    @Column(name = "issue",columnDefinition = "客户痛点")
+    private String issue;
+    @Column(name = "budget",columnDefinition = "预算")
+    private String budget;
+    @Column(name = "business_travel_file",columnDefinition = "业务拓展附件")
+    private String businessTravelFile;
+
+    //方案跟进数据
+    @Column(name = "output_and_follow_up",columnDefinition = "方案输出/跟进是否通过")
+    private boolean pass;
+
+    @Column(name = "approved",columnDefinition = "是否立项")
+    private boolean approved;
+
     @Column(name = "bid_preparation_and-bidding",columnDefinition = "招投标/标书制作")
     private Long bidPreparationAndBidding;
     @Column(name = "won_bid",columnDefinition = "中标后")
@@ -59,8 +71,9 @@ public class ProjectProcess {
         WON_BID("已中标", 6),
         IMPLEMENTATION("实施", 7),
         SYSTEM_DEVELOPMENT("系统研发", 8),
-        PROJECT_ACCEPTANCE("项目验收", 9),
-        DONE("归档",10);
+        APPROVED("立项审核",9),
+        PROJECT_ACCEPTANCE("项目验收", 10),
+        DONE("归档",11);
 
         private String text;
         private int index;
@@ -68,6 +81,15 @@ public class ProjectProcess {
         Stats(String text,int index) {
             this.text = text;
             this.index = index;
+        }
+
+        public static ProjectProcess.Stats getNextStats(Stats stats) {
+            for (ProjectProcess.Stats value : ProjectProcess.Stats.values()) {
+                if (value.getIndex() == (stats.getIndex() + 1)) {
+                    return value;
+                }
+            }
+            return null;
         }
         public String getText() {
             return text;

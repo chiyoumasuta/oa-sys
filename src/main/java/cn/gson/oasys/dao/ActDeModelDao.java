@@ -1,9 +1,9 @@
 package cn.gson.oasys.dao;
 
-import cn.gson.oasys.entity.ProjectProcess;
+import cn.gson.oasys.entity.flowable.ActDeModel;
 import org.springframework.stereotype.Repository;
 import tk.mybatis.mapper.common.Mapper;
 
 @Repository
-public interface ProjectProcessDao extends Mapper<ProjectProcess> {
+public interface ActDeModelDao extends Mapper<ActDeModel> {
 }

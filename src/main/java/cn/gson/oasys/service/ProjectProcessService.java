@@ -1,13 +1,13 @@
 package cn.gson.oasys.service;
 
 import cn.gson.oasys.entity.config.ProjectProcessConfig;
-import cn.gson.oasys.entity.project.ProjectProcess;
+import cn.gson.oasys.entity.ProjectProcess;
 import cn.gson.oasys.support.Page;
 import cn.gson.oasys.vo.ProjectProcessVo;
 
 public interface ProjectProcessService {
     /**
-     * 新建项目
+     * 新建项目并实例化流程
      */
     boolean createProject(ProjectProcess projectProcess);
 
@@ -26,4 +26,9 @@ public interface ProjectProcessService {
      * 获取配置信息
      */
     ProjectProcessConfig getConfig();
+
+    /**
+     * 审核
+     */
+    Boolean taskByAssignee(String taskId,ProjectProcess projectProcess,String nextReviewer,Long fileId,String presentation);
 }

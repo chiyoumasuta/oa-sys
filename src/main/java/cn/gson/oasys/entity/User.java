@@ -56,5 +56,5 @@ public class User {
     @Transient
     private Set<String> permissions;
     @Transient
-    private boolean isManager;
+    private boolean isManager=true;
 }

@@ -1,7 +1,9 @@
-package cn.gson.oasys.dao;
+package cn.gson.oasys.controller;
 
-import cn.gson.oasys.entity.project.ProjectProcess;
+import cn.gson.oasys.entity.ProjectProcess;
+import cn.gson.oasys.flowable.utils.FlowableApiUtils;
 import cn.gson.oasys.service.ProjectProcessService;
+import cn.gson.oasys.support.UserTokenHolder;
 import cn.gson.oasys.support.UtilResultSet;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -16,6 +18,8 @@ import javax.annotation.Resource;
 public class ProjectProcessController {
     @Resource
     private ProjectProcessService projectProcessService;
+    @Resource
+    private FlowableApiUtils flowableApiUtils;
 
     @RequestMapping("/createProject")
     @ApiOperation(value = "创建")
@@ -26,9 +30,9 @@ public class ProjectProcessController {
     }
 
     @RequestMapping("/page")
-    @ApiOperation(value = "分页查询")
+    @ApiOperation(value = "获取需要审核的业务列表")
     public UtilResultSet page(int pageNo, int pageSize, String name){
-        return UtilResultSet.success(projectProcessService.page(pageNo,pageSize,name));
+        return UtilResultSet.success(flowableApiUtils.getRuntimeBusinessKeyByUser(String.valueOf(UserTokenHolder.getUser().getId()),"项目管理"));
     }
 
     @RequestMapping("/getInfo")

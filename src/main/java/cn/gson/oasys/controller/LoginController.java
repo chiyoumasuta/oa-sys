@@ -3,6 +3,7 @@ package cn.gson.oasys.controller;
 import cn.gson.oasys.entity.Department;
 import cn.gson.oasys.entity.User;
 import cn.gson.oasys.exception.UnknownAccountException;
+import cn.gson.oasys.service.DepartmentService;
 import cn.gson.oasys.service.UserService;
 import cn.gson.oasys.support.JwtUtil;
 import cn.gson.oasys.support.UserTokenHolder;
@@ -18,9 +19,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @RestController
 @Api(tags = "用户接口")
@@ -28,6 +33,8 @@ public class LoginController {
 
     @Autowired
     private UserService userService;
+    @Resource
+    private DepartmentService departmentService;
 
     @Value("${keys.path}")
     private String outPath;
@@ -115,6 +122,17 @@ public class LoginController {
         if (user == null) {
             return new ResponseEntity<>("登录失效", HttpStatus.UNAUTHORIZED);
         }
+        String deptName = "";
+        AtomicBoolean isMannger = new AtomicBoolean(false);
+        if (user.getDeptId()!=null){
+            deptName = Arrays.stream(user.getDeptId().split(",")).filter(v->v!=null).map(d->{
+                Department departmentById = departmentService.findDepartmentById(Long.valueOf(d));
+                if (departmentById!=null&&departmentById.getManagerId().equals(user.getId())) isMannger.set(true);
+                return departmentById.getName();
+            }).collect(Collectors.joining(","));
+        }
+        user.setDeptName(deptName);
+        user.setManager(isMannger.get());
         return UtilResultSet.success(user);
     }
 }

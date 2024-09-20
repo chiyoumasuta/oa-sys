@@ -20,7 +20,7 @@ public interface UserService {
      * @author 不愿透露
      * @date 2022/10/9 17:33
      */
-    Page<User> page(String name, String phone, Integer type, String roleName, int pageNo, int pageSize);
+    Page<User> page(String name, String phone, String roleName, int pageNo, int pageSize);
 
     /**
      * 通过id查询用户详情
@@ -34,18 +34,10 @@ public interface UserService {
 
     /**
      * 修改或添加用户
-     *
-     * @param id
-     * @param userName  用户名
-     * @param phone     电话
-     * @param password  密码 不传不修改
-     * @param roleIds   角色
-     * @param fiberArea 所属管辖
-     * @param type      1平台 2app 3全部
      * @author 不愿透露
      * @date 2022/10/9 17:33
      */
-    void saveOrUpdate(Long id, String userName, String phone, String password, String roleIds, String fiberArea, Integer type, Long deptId, boolean inRole);
+    void saveOrUpdate(User user);
 
     /**
      * 删除用户 软删

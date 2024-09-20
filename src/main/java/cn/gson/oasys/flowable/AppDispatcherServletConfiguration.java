@@ -15,13 +15,9 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 
 @Configuration
 @ComponentScan(value = { "org.flowable.ui.modeler.rest.app",
-        // 不加载 rest，因为 getAccount 接口需要我们自己实现
-//        "org.flowable.ui.common.rest"
     },excludeFilters = {
-        // 移除 EditorUsersResource 与 EditorGroupsResource，因为不使用 IDM 部分
         @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = EditorUsersResource.class),
         @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = EditorGroupsResource.class),
-        // 配置文件用自己的
         @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = StencilSetResource.class),
     }
 )

@@ -22,8 +22,8 @@ public class UserController {
 
     @RequestMapping(value = "/page")
     @ApiOperation(value = "分页获取用户列表")
-    public UtilResultSet getPage(String name, String phone, Integer type, String roleName, int pageNo, int pageSize) {
-        return UtilResultSet.success(userService.page(name, phone, type, roleName, pageNo, pageSize));
+    public UtilResultSet getPage(String name, String phone, String roleName, int pageNo, int pageSize) {
+        return UtilResultSet.success(userService.page(name, phone, roleName, pageNo, pageSize));
     }
 
     @RequestMapping(value = "/findDetailByIds")
@@ -34,17 +34,8 @@ public class UserController {
 
     @RequestMapping(value = "/saveOrUpdate")
     @ApiOperation(value = "添加或修改用户信息")
-    public UtilResultSet saveOrUpdate(
-            Long id,
-            String userName,
-            String phone,
-            String password,
-            String roleIds,
-            String fiberArea,
-            Integer type,
-            Long deptId,
-            boolean inRole) {
-        userService.saveOrUpdate(id, userName, phone, password, roleIds, fiberArea, type, deptId, inRole);
+    public UtilResultSet saveOrUpdate(User user) {
+        userService.saveOrUpdate(user);
         return UtilResultSet.success("User saved/updated successfully");
     }
 
@@ -67,7 +58,7 @@ public class UserController {
     }
 
     @RequestMapping(value = "/resetPwd")
-    @ApiOperation(value = "")
+    @ApiOperation(value = "重设用户密码")
     public UtilResultSet resetPwd(Long id) {
         boolean result = userService.resetPwd(id);
         if (result) {
@@ -78,7 +69,7 @@ public class UserController {
     }
 
     @RequestMapping(value = "/changePwd")
-    @ApiOperation(value = "")
+    @ApiOperation(value = "修改密码")
     public UtilResultSet changePwd(
             String phone,
             String oldpwd,
@@ -92,7 +83,7 @@ public class UserController {
     }
 
     @RequestMapping(value = "/changePwdSimple")
-    @ApiOperation(value = "")
+    @ApiOperation(value = "通过手机号和密码查找用户信息")
     public UtilResultSet changePwdSimple(
             String phone,
             String newPwd) {
@@ -105,7 +96,7 @@ public class UserController {
     }
 
     @RequestMapping(value = "/findByLoginName")
-    @ApiOperation(value = "")
+    @ApiOperation(value = "通过用户登录名获取用户登录信息")
     public UtilResultSet findByLoginName(String loginName) {
         User user = userService.findByLoginName(loginName);
         if (user != null) {
@@ -116,7 +107,7 @@ public class UserController {
     }
 
     @RequestMapping(value = "/findByToken")
-    @ApiOperation(value = "")
+    @ApiOperation(value = "通过token获取用户信息")
     public UtilResultSet findByToken(String token) {
         User user = userService.findByToken(token);
         if (user != null) {
@@ -127,7 +118,7 @@ public class UserController {
     }
 
     @RequestMapping(value = "/findByPhone")
-    @ApiOperation(value = "")
+    @ApiOperation(value = "通过手机号获取用户数据")
     public UtilResultSet findByPhone(String phone) {
         User user = userService.findByPhone(phone);
         if (user != null) {

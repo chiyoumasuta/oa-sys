@@ -1,23 +1,26 @@
 package cn.gson.oasys.service.impl;
 
 import cn.gson.oasys.dao.UserDao;
+import cn.gson.oasys.entity.Department;
 import cn.gson.oasys.entity.User;
 import cn.gson.oasys.service.DepartmentService;
+import cn.gson.oasys.service.FlowableUserService;
 import cn.gson.oasys.service.UserService;
 import cn.gson.oasys.support.Page;
-import cn.gson.oasys.support.UserTokenHolder;
 import com.github.pagehelper.PageHelper;
 import org.apache.commons.lang.StringUtils;
+import org.flowable.engine.IdentityService;
+import org.flowable.engine.ProcessEngine;
+import org.flowable.engine.ProcessEngines;
 import org.hibernate.service.spi.ServiceException;
-import org.springframework.beans.BeanUtils;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import tk.mybatis.mapper.entity.Example;
 
 import javax.annotation.Resource;
-import javax.servlet.http.HttpSession;
-import java.io.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,15 +31,17 @@ public class UserServiceImpl implements UserService {
     private String defaultUserPwd;
     @Resource
     private DepartmentService departmentService;
+    @Resource
+    private FlowableUserService flowableUserService;
 
     @Override
-    public Page<User> page(String name, String phone, Integer type, String roleName, int pageNo, int pageSize) {
+    public Page<User> page(String name, String phone, String roleName, int pageNo, int pageSize) {
         PageHelper.startPage(pageNo, pageSize);
         Example example = new Example(User.class);
         Example.Criteria criteria = example.createCriteria();
         criteria.andEqualTo("del", false);
         if (StringUtils.isNotBlank(name)) {
-            criteria.andLike("name", "%" + name + "%");
+            criteria.andLike("userName", "%" + name + "%");
         }
         if (StringUtils.isNotBlank(phone)) {
             criteria.andLike("phone", "%" + phone + "%");
@@ -44,10 +49,16 @@ public class UserServiceImpl implements UserService {
         com.github.pagehelper.Page<User> pageInfo = (com.github.pagehelper.Page) userDao.selectByExample(example);
         List<User> lists = pageInfo.getResult().stream().map(it->{
             String deptName = "";
+            AtomicBoolean isMannger = new AtomicBoolean(false);
             if (it.getDeptId()!=null){
-                deptName = Arrays.stream(it.getDeptId().split(",")).filter(v->v!=null).map(d->departmentService.findDepartmentById(Long.valueOf(d)).getName()).collect(Collectors.joining(","));
+                deptName = Arrays.stream(it.getDeptId().split(",")).filter(v->v!=null).map(d->{
+                    Department departmentById = departmentService.findDepartmentById(Long.valueOf(d));
+                    if (departmentById!=null&&departmentById.getManagerId().equals(it.getId())) isMannger.set(true);
+                    return departmentById.getName();
+                }).collect(Collectors.joining(","));
             }
             it.setDeptName(deptName);
+            it.setManager(isMannger.get());
             return it;
         }).collect(Collectors.toList());
         if (lists.size() == 0) {
@@ -64,31 +75,44 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void saveOrUpdate(Long id, String userName, String phone, String password, String roleIds, String fiberArea, Integer type, Long deptId, boolean inRole) {
-        if (id != null && id == 1l) {
+    public void saveOrUpdate(User user) {
+        if (user.getId() != null && user.getId() == 1l) {
             throw new ServiceException("超级管理员拥有所有权限，不允许操作");
         }
 
-        User user = new User();
-        user.setUserName(userName);
-        user.setPhone(phone);
 //        user.setDeptId(String.valueOf(deptId));
         user.setPassword("Xiongbo99");
-        User oldPhone = findByPhone(phone);
-        if (id == null) {
+        User oldPhone = findByPhone(user.getPhone());
+        if (user.getId() == null) {
             if (oldPhone != null) {
-                throw new ServiceException("手机号已经存在[" + phone + "]");
+                throw new ServiceException("手机号已经存在[" + user.getPhone() + "]");
             }
             user.setPassword(defaultUserPwd);
             userDao.insert(user);
+            //维护流程系统用户
+            flowableUserService.createUser(user.getUserName());
         } else {
-            if (oldPhone != null && !oldPhone.getId().equals(id)) {
-                throw new ServiceException("手机号已经存在[" + phone + "]");
-            }
-            user.setId(id);
             userDao.updateByPrimaryKeySelective(user);
         }
     }
+
+    /**
+     * 维护用户
+     */
+    @Test
+    public void createUser() {
+        ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
+        // 通过 IdentityService 完成相关的用户和组的管理
+        IdentityService identityService = processEngine.getIdentityService();
+        org.flowable.idm.api.User user = null;
+        for (User u : userDao.selectAll()) {
+            user = identityService.newUser(u.getUserName());
+            user.setFirstName(u.getUserName());
+            user.setEmail(u.getUserName());
+            identityService.saveUser(user);
+        }
+    }
+
 
     @Override
     public void del(Long id) {

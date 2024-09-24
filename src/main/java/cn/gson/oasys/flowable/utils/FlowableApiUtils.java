@@ -1,12 +1,13 @@
 package cn.gson.oasys.flowable.utils;
 
 
+import cn.gson.oasys.dao.ActRuTaskDao;
 import cn.gson.oasys.dao.ProjectProcessDao;
-import cn.gson.oasys.support.UtilResultSet;
+import cn.gson.oasys.entity.flowable.ActRuTask;
+import cn.gson.oasys.support.Page;
+import cn.gson.oasys.vo.ProcessesVo;
+import com.github.pagehelper.PageHelper;
 import org.apache.commons.io.IOUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.flowable.bpmn.converter.BpmnXMLConverter;
 import org.flowable.bpmn.model.BpmnModel;
 import org.flowable.engine.*;
 import org.flowable.engine.history.HistoricActivityInstance;
@@ -17,9 +18,9 @@ import org.flowable.identitylink.api.IdentityLink;
 import org.flowable.image.ProcessDiagramGenerator;
 import org.flowable.task.api.Task;
 import org.flowable.task.api.history.HistoricTaskInstance;
-import org.flowable.ui.modeler.domain.Model;
 import org.flowable.ui.modeler.serviceapi.ModelService;
 import org.springframework.stereotype.Service;
+import tk.mybatis.mapper.entity.Example;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
@@ -36,7 +37,6 @@ import java.util.*;
 @Service
 public class FlowableApiUtils {
 
-    public static final Logger logger = LogManager.getLogger(FlowableApiUtils.class);
     // 流程引擎
     @Resource
     private ProcessEngine processEngine;
@@ -58,54 +58,10 @@ public class FlowableApiUtils {
     // 历史数据服务
     @Resource
     private HistoryService historyService;
-
     @Resource
     private ProjectProcessDao projectProcessDao;
-
-    /**
-     * 流程部署
-     *
-     * @param modelId 流程ID，来自 ACT_DE_MODEL
-     */
-    public void deploy(String modelId) {
-        // 根据模型 ID 获取模型
-        Model modelData = modelService.getModel(modelId);
-
-        byte[] bytes = modelService.getBpmnXML(modelData);
-        if (bytes == null) {
-            logger.error("模型数据为空，请先设计流程并成功保存，再进行发布");
-        }
-
-        BpmnModel model = modelService.getBpmnModel(modelData);
-        if (model.getProcesses().size() == 0) {
-            logger.error("数据模型不符要求，请至少设计一条主线流程");
-        }
-        byte[] bpmnBytes = new BpmnXMLConverter().convertToXML(model);
-        String processName = modelData.getName() + ".bpmn20.xml";
-
-        // 部署流程
-        repositoryService.createDeployment()
-                .name(modelData.getName())
-                .addBytes(processName, bpmnBytes)
-                .deploy();
-
-        logger.info("流程部署成功：" + modelId + " " + new Date());
-    }
-
-    /**
-     * 启动流程
-     *
-     * @param deployId 部署的流程 Id，来自 ACT_RE_PROCDEF
-     * @param userId   用户 Id
-     * @param dataKey  数据 Key，业务键，一般为表单数据的 ID，仅作为表单数据与流程实例关联的依据
-     */
-    public void start(String deployId,String userId,String dataKey) {
-        // 设置发起人
-        identityService.setAuthenticatedUserId(userId);
-        // 根据流程 ID 启动流程
-        runtimeService.startProcessInstanceById(deployId, dataKey);
-        logger.info("流程启动成功：" + deployId + " " + new Date());
-    }
+    @Resource
+    private ActRuTaskDao actRuTaskDao;
 
     /**
      * 获取当前候选组
@@ -166,7 +122,6 @@ public class FlowableApiUtils {
     public void task(String taskId) {
         Boolean isSuspended = taskService.createTaskQuery().taskId(taskId).singleResult().isSuspended();
         if (isSuspended) {
-            logger.info("任务已挂起，无法完成");
             return;
         }
         // 设置任务参数，也可不设置：key value
@@ -174,7 +129,6 @@ public class FlowableApiUtils {
         taskService.setVariableLocal(taskId, "status", true);
         // 完成任务
         taskService.complete(taskId);
-        logger.info("任务完成：" + taskId + " " + new Date());
     }
 
     /**
@@ -478,4 +432,27 @@ public class FlowableApiUtils {
             IOUtils.closeQuietly(in);
         }
     }
+
+    //获取流程列表
+    Page<ProcessesVo> getProcessesPage(int pageNo,int pageSize,String modelName ,String searchType){
+        PageHelper.startPage(pageNo,pageSize);
+        Example example  = new Example(ActRuTask.class);
+        example.createCriteria().andEqualTo("");
+        actRuTaskDao.selectByExample(example);
+        return null;
+    }
+
+    // 查看历史
+    public List<HistoricActivityInstance> getHistoryList(String processInstanceId) {
+        List<HistoricActivityInstance> activities = historyService.createHistoricActivityInstanceQuery()
+                .processInstanceId(processInstanceId)
+                .finished()
+                .orderByHistoricActivityInstanceEndTime().asc()
+                .list();
+        for (HistoricActivityInstance activity : activities) {
+            System.out.println(activity.getActivityName());
+        }
+        return activities;
+    }
+
 }

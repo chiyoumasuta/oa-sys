@@ -143,7 +143,14 @@ angular.module('flowableModeler')
         $location.path("/editor/" + $scope.model.process.id);
       }
     };
-      
+
+    $scope.deploy = function() {
+      if ($scope.model.process) {
+          var modelId = $scope.model.process.id;
+          $http.post('/flowable/deploy?modelId=' + modelId)
+      }
+    };
+
     $scope.toggleHistory = function($event) {
         if(!$scope.historyState) {
           var state = {};

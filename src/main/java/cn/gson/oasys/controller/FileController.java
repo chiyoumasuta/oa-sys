@@ -44,8 +44,7 @@ public class FileController {
     @ApiOperation(value = "上传文件")
     public UtilResultSet saveFile(MultipartFile file, Long nowPath, File.model model, HttpServletRequest request) throws ServiceException {
         try {
-            File result = fileService.saveFile(file, nowPath, model);
-            return UtilResultSet.success(result);
+            return UtilResultSet.success(fileService.saveFile(file, nowPath, model));
         } catch (Exception e) {
             return UtilResultSet.bad_request("文件保存失败: " + e.getMessage());
         }
@@ -76,7 +75,7 @@ public class FileController {
      * 下载文件
      * @param response
      */
-    @RequestMapping("download")
+    @RequestMapping(value = "download",method = RequestMethod.GET)
     @ApiOperation(value = "下载文件")
     public void downFile(HttpServletResponse response, Long fileId) {
         try {
@@ -183,7 +182,7 @@ public class FileController {
     }
 
     //文件预览
-    @GetMapping("/preview")
+    @RequestMapping(value = "/preview",method = RequestMethod.GET)
     @ApiOperation(value = "文件预览")
     public ResponseEntity<InputStreamResource> preview(Long fileId) throws IOException {
         File filelist = fileDao.selectByPrimaryKey(fileId);

@@ -212,6 +212,7 @@
             "CREATE-CONFIRM": "创建新模型",
             "DUPLICATE-CONFIRM": "复制这个模型",
             "OPEN-IN-EDITOR": "可视化编辑器",
+            "DEPLOY": "部署流程",
             "EDIT-CONFIRM": "保存",
             "DELETE-CONFIRM": "删除流程模型",
             "USE-AS-NEW-VERSION": "作为新版本使用",

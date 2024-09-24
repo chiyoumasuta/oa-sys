@@ -9,7 +9,7 @@ public interface ProjectProcessService {
     /**
      * 新建项目并实例化流程
      */
-    boolean createProject(ProjectProcess projectProcess);
+    boolean createProject(ProjectProcess projectProcess,String deployId,String dataJson);
 
     /**
      * 获取项目列表

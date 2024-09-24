@@ -5,6 +5,9 @@
 			<button type="button" class="btn btn-default" ng-click="openEditor()" ng-if="model.process.latestVersion">
 				<i class="glyphicon glyphicon-edit icon-and-label"></i> {{'PROCESS.ACTION.OPEN-IN-EDITOR' | translate}}
 			</button>
+			<button type="button" class="btn btn-default" ng-click="deploy()" ng-if="model.process.latestVersion">
+				<i class="glyphicon glyphicon-edit icon-and-label"></i> {{'PROCESS.ACTION.DEPLOY' | translate}}
+			</button>
 			<button type="button" class="btn btn-default" ng-click="useAsNewVersion()" ng-if="!model.process.latestVersion">
 				{{'PROCESS.ACTION.USE-AS-NEW-VERSION' | translate}}
 			</button>

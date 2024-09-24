@@ -1,16 +1,24 @@
 package cn.gson.oasys.controller;
 
+import cn.gson.oasys.entity.User;
+import cn.gson.oasys.flowable.utils.FlowableApiUtils;
 import cn.gson.oasys.service.ActDeModelService;
+import cn.gson.oasys.service.ActReprocdefService;
+import cn.gson.oasys.support.FlowableType;
+import cn.gson.oasys.support.JacksonUtil;
+import cn.gson.oasys.support.UserTokenHolder;
 import cn.gson.oasys.support.UtilResultSet;
+import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.apache.commons.codec.binary.Base64;
 import org.flowable.bpmn.converter.BpmnXMLConverter;
 import org.flowable.bpmn.model.BpmnModel;
 import org.flowable.engine.*;
+import org.flowable.engine.history.HistoricActivityInstance;
 import org.flowable.engine.repository.Deployment;
 import org.flowable.image.ProcessDiagramGenerator;
-import org.flowable.spring.boot.app.App;
+import org.flowable.task.api.Task;
 import org.flowable.ui.common.model.UserRepresentation;
 import org.flowable.ui.common.security.DefaultPrivileges;
 import org.flowable.ui.modeler.domain.Model;
@@ -19,11 +27,11 @@ import org.hibernate.service.spi.ServiceException;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * Flowable 相关接口
@@ -31,6 +39,7 @@ import java.util.List;
  * @date 2019/10/31 10:55
 */
 @RestController
+@RequestMapping("/flowable")
 @Api(tags = "流程通用接口")
 public class FlowableController {
     @Resource
@@ -45,6 +54,14 @@ public class FlowableController {
     private RuntimeService runtimeService;
     @Resource
     private ActDeModelService actDeModelService;
+    @Resource
+    private ActReprocdefService actReprocdefService;
+    @Resource
+    private FlowableApiUtils flowableApiUtils;
+    @Resource
+    private TaskService taskService;
+    @Resource
+    private HistoryService historyService;
 
     //获取默认的管理员信息
 //    @RequestMapping(value = "/rest/account", method = RequestMethod.GET, produces = "application/json")
@@ -100,7 +117,6 @@ public class FlowableController {
     public UtilResultSet deploy(String modelId) {
         // 根据模型 ID 获取模型
         Model modelData = modelService.getModel(modelId);
-
         byte[] bytes = modelService.getBpmnXML(modelData);
         if (bytes == null) {
             throw new ServiceException("模型数据为空，请先设计流程并成功保存，再进行发布");
@@ -111,6 +127,8 @@ public class FlowableController {
         }
         byte[] bpmnBytes = new BpmnXMLConverter().convertToXML(model);
         String processName = modelData.getName() + ".bpmn20.xml";
+        // 删除已部署的数据
+//        actReprocdefService.deleteByName(modelData.getKey());
 
         // 部署流程
         Deployment deploy = repositoryService.createDeployment()
@@ -127,16 +145,28 @@ public class FlowableController {
      * 启动流程
      *
      * @param deployId 部署的流程 Id，来自 ACT_RE_PROCDEF
-     * @param userId   用户 Id
-     * @param dataKey  数据 Key，业务键，一般为表单数据的 ID，仅作为表单数据与流程实例关联的依据
      * @return
      */
-//    @RequestMapping(value = "/start/{deployId}/{userId}/{dataKey}", method = RequestMethod.GET)
-    public UtilResultSet start(@PathVariable(value = "deployId") String deployId, @PathVariable(value = "userId") String userId, @PathVariable(value = "dataKey") String dataKey) {
+    @RequestMapping(value = "/start", method = RequestMethod.POST)
+    @ApiOperation(value = "启动流程 流程实例化接口 ",notes = "type：PROJECT_PROCESS(\"项目管理\") LEAVE(\"请假审批\")")
+    public UtilResultSet start(String deployId, String dateJson, FlowableType type) {
+        User user = UserTokenHolder.getUser();
         // 设置发起人
-        identityService.setAuthenticatedUserId(userId);
+        identityService.setAuthenticatedUserId(String.valueOf(user.getId()));
         // 根据流程 ID 启动流程
-        runtimeService.startProcessInstanceById(deployId, dataKey);
+        Map<String,Object> variables = new HashMap<>();
+        Long dataKey = 0L;
+        switch (type) {
+            case PROJECT_PROCESS:
+
+            case LEAVE:
+        }
+        try {
+            JsonNode jsonNode = JacksonUtil.jsonStringToJsonNode(dateJson);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        runtimeService.startProcessInstanceById(deployId, String.valueOf(dataKey),variables);
         return UtilResultSet.success("流程启动成功：" + deployId + " " + new Date());
     }
 
@@ -146,5 +176,67 @@ public class FlowableController {
         return UtilResultSet.success(actDeModelService.getActDeModels());
     }
 
+    @RequestMapping(value = "getProcdefList",method = RequestMethod.POST)
+    @ApiOperation(value = "获取已部署列表")
+    public UtilResultSet getProcdefList() {
+        return UtilResultSet.success(actReprocdefService.getActReprocdef());
+    }
 
+    @RequestMapping(value = "/deleteProcess",method = RequestMethod.POST)
+    @ApiOperation(value = "中止流程")
+    public UtilResultSet deleteProcess(String processId) {
+        flowableApiUtils.deleteProcess(processId);
+        return UtilResultSet.success("终止成功");
+    }
+
+    /**
+     * 流程列表查询
+     * @param searchType 流程列表 1.待我审核 2.全部流程
+     */
+    @RequestMapping(value = "/getInstantiateList",method = RequestMethod.POST)
+    @ApiOperation(value = "获取流程实例化列表")
+    public UtilResultSet getInstantiateList(int pageNo,int pageSize,String searchType) {
+
+        return UtilResultSet.success(Collections.emptyList());
+    }
+
+    /**
+     * 流程审批
+     * @param review 审核结果 1.通过 2.不通过 3.退回到上一步
+     */
+    @RequestMapping(value = "/Audit",method = RequestMethod.POST)
+    @ApiOperation(value = "流程审核接口")
+    public UtilResultSet audit(String review){
+        // 领导审批
+        List<Task> teacherTaskList = taskService.createTaskQuery().taskCandidateGroup("a").list();
+        Map<String, Object> teacherMap = new HashMap<>();
+        teacherMap.put("outcome", "通过");
+        for (Task teacherTask : teacherTaskList) {
+            taskService.complete(teacherTask.getId(), teacherMap);
+        }
+        return UtilResultSet.success("审核通过");
+    }
+
+    /**
+     * 根据实例化流程id获取流程实例图
+     * @param taskId 实例化流程id
+     */
+    @RequestMapping(value = "/getTaskProcessDiagram",method = RequestMethod.POST)
+    @ApiOperation(value = "根据实例化id获取流程图实例（对流程图进行处理标明执行情况）")
+    public void getTaskProcessDiagram(String taskId, HttpServletResponse httpServletResponse){
+        flowableApiUtils.getTaskProcessDiagram(taskId,httpServletResponse);
+    }
+
+    /**
+     * 查看审批历史
+     * @param processInstanceId 实例化流程id
+     */
+    @RequestMapping(value = "/getHistoryList",method = RequestMethod.POST)
+    @ApiOperation(value = "查看当前实例化流程审批历史")
+    public UtilResultSet getHistoryList(String processInstanceId) {
+        List<HistoricActivityInstance> historyList = flowableApiUtils.getHistoryList(processInstanceId);
+        if (historyList.isEmpty()) {
+            return UtilResultSet.bad_request("当前流程无审批记录");
+        }else return UtilResultSet.success(historyList);
+    }
 }

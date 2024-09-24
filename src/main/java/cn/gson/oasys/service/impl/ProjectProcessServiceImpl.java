@@ -43,15 +43,15 @@ public class ProjectProcessServiceImpl implements ProjectProcessService {
     private FlowableApiUtils flowableApiUtils;
 
     @Override
-    public boolean createProject(ProjectProcess projectProcess) {
+    public boolean createProject(ProjectProcess projectProcess,String deployId,String dataJson) {
         User user = UserTokenHolder.getUser();
-        List<org.flowable.idm.api.User> users = identityService.createUserQuery().list();
-        org.flowable.idm.api.User user1 = users.stream().filter(it -> it.getDisplayName().equals(user.getUserName())).collect(Collectors.toList()).get(0);
+//        List<org.flowable.idm.api.User> users = identityService.createUserQuery().list();
+//        org.flowable.idm.api.User user1 = users.stream().filter(it -> it.getDisplayName().equals(user.getUserName())).collect(Collectors.toList()).get(0);
         projectProcess.setCreateUser(user.getUserName());
         projectProcess.setCreateTime(new Date());
         if (projectProcessDao.insert(projectProcess)>0){
             // 设置发起人
-            identityService.setAuthenticatedUserId(user1.getId());
+            identityService.setAuthenticatedUserId(String.valueOf(user.getId()));
             // 根据流程 ID 启动流程
 
             Map<String,Object> variables = new HashMap<>();
@@ -61,7 +61,7 @@ public class ProjectProcessServiceImpl implements ProjectProcessService {
             variables.put("assignee2","王五");
             variables.put("assignee3","赵财务");
             // 启动流程实例，第一个参数是流程定义的id
-            ProcessInstance processInstance = runtimeService.startProcessInstanceById("22cedfd0-7593-11ef-8029-c29ca75c1290", String.valueOf(projectProcess.getId()),variables);
+            ProcessInstance processInstance = runtimeService.startProcessInstanceById("project_process:4:12504", String.valueOf(projectProcess.getId()),variables);
             // 输出相关的流程实例信息
             System.out.println("流程定义的ID：" + processInstance.getProcessDefinitionId());
             System.out.println("流程实例的ID：" + processInstance.getId());

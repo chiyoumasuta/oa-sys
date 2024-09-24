@@ -10,7 +10,7 @@ public interface FileService {
     /**
      * 存储文件
      */
-    File saveFile(MultipartFile file, Long nowPath, File.model model) throws IOException;
+    Long saveFile(MultipartFile file, Long nowPath, File.model model) throws IOException;
 
     /**
      * 获取当前文件夹文件列表

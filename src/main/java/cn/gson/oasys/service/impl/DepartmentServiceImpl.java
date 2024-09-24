@@ -6,22 +6,13 @@ import cn.gson.oasys.entity.Department;
 import cn.gson.oasys.entity.User;
 import cn.gson.oasys.service.DepartmentService;
 import cn.gson.oasys.service.UserService;
-import cn.gson.oasys.support.Page;
-import cn.gson.oasys.support.UtilResultSet;
 import cn.gson.oasys.vo.DepartmentVo;
-import org.flowable.engine.IdentityService;
-import org.flowable.engine.ProcessEngine;
-import org.flowable.engine.ProcessEngines;
-import org.flowable.idm.api.Group;
 import org.hibernate.service.spi.ServiceException;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import tk.mybatis.mapper.entity.Example;
 
 import javax.annotation.Resource;
-import javax.sql.rowset.serial.SerialException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -41,6 +32,12 @@ public class DepartmentServiceImpl implements DepartmentService {
 
     @Override
     public boolean deleteDepartment(Long id) {
+        Example example = new Example(User.class);
+        example.createCriteria().andLike("deptId", "%"+id+"%");
+        List<User> users = userDao.selectByExample(example);
+        if (users.size()>0) {
+            throw new ServiceException("当前部门存在职员，不允许删除");
+        }
         return departmentDao.deleteByPrimaryKey(id)>0;
     }
 
@@ -101,7 +98,7 @@ public class DepartmentServiceImpl implements DepartmentService {
         if (department == null) {
             throw new ServiceException("未找到部门");
         }
-        String dept = Arrays.stream(user.getDeptId().split(",")).filter(it->it.equals(String.valueOf(deptId))).collect(Collectors.joining(","));
+        String dept = Arrays.stream(user.getDeptId().split(",")).filter(it->!it.equals(String.valueOf(deptId))).collect(Collectors.joining(","));
         user.setDeptId(dept);
         return userDao.updateByPrimaryKeySelective(user) > 0;
     }

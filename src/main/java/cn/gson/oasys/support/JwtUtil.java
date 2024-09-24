@@ -23,7 +23,6 @@ import java.util.Map;
 @Component
 public class JwtUtil {
 
-    private static final Logger logger = LoggerFactory.getLogger(JwtUtil.class);
     /**
      * 密钥
      */
@@ -65,8 +64,6 @@ public class JwtUtil {
             JWTVerifier verifier = JWT.require(Algorithm.HMAC256(SECRET)).build();
             jwt = verifier.verify(token);
         } catch (Exception e) {
-            logger.error(e.getMessage());
-            logger.error("token解码异常");
             // 解码异常则抛出异常或返回null
             return null;
         }

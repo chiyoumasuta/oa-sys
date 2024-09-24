@@ -39,7 +39,7 @@ public class FileServiceImpl implements FileService {
     private UserService userService;
 
     @Override
-    public File saveFile(MultipartFile file, Long nowPath, File.model model) throws IllegalStateException, IOException {
+    public Long saveFile(MultipartFile file, Long nowPath, File.model model) throws IllegalStateException, IOException {
         User user = UserTokenHolder.getUser();
         if (user==null){
             throw new ServerException("用户信息获取失败");
@@ -66,7 +66,8 @@ public class FileServiceImpl implements FileService {
         filelist.setContentType(file.getContentType());
         filelist.setUserId(user.getId());
         flDao.insert(filelist);
-        return filelist;
+
+        return filelist.getFileId();
     }
 
     @Override
@@ -96,7 +97,11 @@ public class FileServiceImpl implements FileService {
         Long userId = UserTokenHolder.getUser().getId();
         Long father = nowPath==null?0:nowPath;
         Example example = new Example(File.class);
-        example.createCriteria().andLike("sharePeople","%"+userId+"%").orEqualTo("userId",userId).andEqualTo("father",father);
+        if ("回收站".equals(type)||"共享文件夹".equals(type)){
+            example.createCriteria().andLike("sharePeople","%"+userId+"%").orEqualTo("userId",userId);
+        }else {
+            example.createCriteria().andLike("sharePeople","%"+userId+"%").orEqualTo("userId",userId).andEqualTo("father",father);
+        }
         List<File> byUserIdAndFather = flDao.selectByExample(example);
         FileListVo result = new FileListVo();
         type = type==null?"所有文件":type;

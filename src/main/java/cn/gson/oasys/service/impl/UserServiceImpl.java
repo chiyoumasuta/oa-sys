@@ -61,7 +61,7 @@ public class UserServiceImpl implements UserService {
             it.setManager(isMannger.get());
             return it;
         }).collect(Collectors.toList());
-        if (lists.size() == 0) {
+        if (lists.isEmpty()) {
             return new Page<>();
         }
         return new Page<>(pageNo, pageSize, pageInfo.getTotal(), lists);
@@ -90,7 +90,7 @@ public class UserServiceImpl implements UserService {
             user.setPassword(defaultUserPwd);
             userDao.insert(user);
             //维护流程系统用户
-            flowableUserService.createUser(user.getUserName());
+//            flowableUserService.createUser(user.getUserName());
         } else {
             userDao.updateByPrimaryKeySelective(user);
         }

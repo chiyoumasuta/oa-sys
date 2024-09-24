@@ -23,8 +23,8 @@ public class ProjectProcessController {
 
     @RequestMapping("/createProject")
     @ApiOperation(value = "创建")
-    public UtilResultSet createProject(ProjectProcess projectProcess){
-        if (projectProcessService.createProject(projectProcess)){
+    public UtilResultSet createProject(ProjectProcess projectProcess,String deployId,String dataJson){
+        if (projectProcessService.createProject(projectProcess,deployId,dataJson)){
             return UtilResultSet.success("添加成功");
         }else return UtilResultSet.bad_request("添加失败");
     }

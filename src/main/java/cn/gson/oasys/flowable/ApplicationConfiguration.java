@@ -1,5 +1,9 @@
 package cn.gson.oasys.flowable;
 
+import cn.gson.oasys.service.impl.CustomIdmIdentityServiceImpl;
+import cn.gson.oasys.service.impl.FlowableUserServiceImpl;
+import org.flowable.idm.spring.SpringIdmEngineConfiguration;
+import org.flowable.spring.boot.EngineConfigurationConfigurer;
 import org.flowable.ui.common.service.idm.RemoteIdmService;
 import org.flowable.ui.modeler.properties.FlowableModelerAppProperties;
 import org.flowable.ui.modeler.servlet.ApiDispatcherServletConfiguration;
@@ -39,5 +43,10 @@ public class ApplicationConfiguration {
         registrationBean.setLoadOnStartup(1);
         registrationBean.setAsyncSupported(true);
         return registrationBean;
+    }
+    @Bean
+    public EngineConfigurationConfigurer<SpringIdmEngineConfiguration> idmEngineConfigurationConfigurer() {
+        return idmEngineConfiguration -> idmEngineConfiguration.setIdmIdentityService(
+            new CustomIdmIdentityServiceImpl());
     }
 }

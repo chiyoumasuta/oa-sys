@@ -20,33 +20,33 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @RequestMapping(value = "/page")
+    @RequestMapping(value = "/page",method = RequestMethod.POST)
     @ApiOperation(value = "分页获取用户列表")
     public UtilResultSet getPage(String name, String phone, String roleName, int pageNo, int pageSize) {
         return UtilResultSet.success(userService.page(name, phone, roleName, pageNo, pageSize));
     }
 
-    @RequestMapping(value = "/findDetailByIds")
+    @RequestMapping(value = "/findDetailByIds",method = RequestMethod.POST)
     @ApiOperation(value = "根据id获取用户详情")
     public UtilResultSet findDetailByIds(@RequestBody List<Long> userIds) {
         return UtilResultSet.success(userService.findDetailByIds(userIds));
     }
 
-    @RequestMapping(value = "/saveOrUpdate")
+    @RequestMapping(value = "/saveOrUpdate",method = RequestMethod.POST)
     @ApiOperation(value = "添加或修改用户信息")
     public UtilResultSet saveOrUpdate(User user) {
         userService.saveOrUpdate(user);
         return UtilResultSet.success("User saved/updated successfully");
     }
 
-    @RequestMapping(value = "/del")
+    @RequestMapping(value = "/del",method = RequestMethod.POST)
     @ApiOperation(value = "删除用户")
     public UtilResultSet del(Long id) {
         userService.del(id);
         return UtilResultSet.success("User deleted successfully");
     }
 
-    @RequestMapping(value = "/verifyByPhone")
+    @RequestMapping(value = "/verifyByPhone",method = RequestMethod.POST)
     @ApiOperation(value = "根据手机号修改密码")
     public UtilResultSet verifyByPhone(String phone, String password) {
         User user = userService.verifyByPhone(phone, password);
@@ -57,7 +57,7 @@ public class UserController {
         }
     }
 
-    @RequestMapping(value = "/resetPwd")
+    @RequestMapping(value = "/resetPwd",method = RequestMethod.POST)
     @ApiOperation(value = "重设用户密码")
     public UtilResultSet resetPwd(Long id) {
         boolean result = userService.resetPwd(id);
@@ -68,7 +68,7 @@ public class UserController {
         }
     }
 
-    @RequestMapping(value = "/changePwd")
+    @RequestMapping(value = "/changePwd",method = RequestMethod.POST)
     @ApiOperation(value = "修改密码")
     public UtilResultSet changePwd(
             String phone,
@@ -82,7 +82,7 @@ public class UserController {
         }
     }
 
-    @RequestMapping(value = "/changePwdSimple")
+    @RequestMapping(value = "/changePwdSimple",method = RequestMethod.POST)
     @ApiOperation(value = "通过手机号和密码查找用户信息")
     public UtilResultSet changePwdSimple(
             String phone,
@@ -95,7 +95,7 @@ public class UserController {
         }
     }
 
-    @RequestMapping(value = "/findByLoginName")
+    @RequestMapping(value = "/findByLoginName",method = RequestMethod.POST)
     @ApiOperation(value = "通过用户登录名获取用户登录信息")
     public UtilResultSet findByLoginName(String loginName) {
         User user = userService.findByLoginName(loginName);
@@ -106,7 +106,7 @@ public class UserController {
         }
     }
 
-    @RequestMapping(value = "/findByToken")
+    @RequestMapping(value = "/findByToken",method = RequestMethod.POST)
     @ApiOperation(value = "通过token获取用户信息")
     public UtilResultSet findByToken(String token) {
         User user = userService.findByToken(token);
@@ -117,7 +117,7 @@ public class UserController {
         }
     }
 
-    @RequestMapping(value = "/findByPhone")
+    @RequestMapping(value = "/findByPhone",method = RequestMethod.POST)
     @ApiOperation(value = "通过手机号获取用户数据")
     public UtilResultSet findByPhone(String phone) {
         User user = userService.findByPhone(phone);

@@ -41,7 +41,7 @@ public class ProjectProcess {
     @Column(name = "approved",columnDefinition = "是否立项")
     private boolean approved;
 
-    @Column(name = "bid_preparation_and-bidding",columnDefinition = "招投标/标书制作")
+    @Column(name = "bid_preparation_and_bidding",columnDefinition = "招投标/标书制作")
     private Long bidPreparationAndBidding;
     @Column(name = "won_bid",columnDefinition = "中标后")
     private Long wonBid;

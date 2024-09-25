@@ -127,4 +127,10 @@ public class UserController {
             return UtilResultSet.bad_request(null);
         }
     }
+
+    @RequestMapping(value = "findByIds",method = RequestMethod.POST)
+    @ApiOperation(value = "通过id查询用户信息，id用','隔开")
+    public UtilResultSet findByIds(String ids) {
+        return UtilResultSet.success(userService.findByIds(ids));
+    }
 }

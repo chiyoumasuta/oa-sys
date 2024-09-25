@@ -4,7 +4,9 @@ import cn.gson.oasys.dao.DepartmentDao;
 import cn.gson.oasys.dao.UserDao;
 import cn.gson.oasys.entity.Department;
 import cn.gson.oasys.entity.User;
+import cn.gson.oasys.entity.config.SysConfig;
 import cn.gson.oasys.service.DepartmentService;
+import cn.gson.oasys.service.SysConfigService;
 import cn.gson.oasys.service.UserService;
 import cn.gson.oasys.vo.DepartmentVo;
 import org.hibernate.service.spi.ServiceException;
@@ -25,9 +27,18 @@ public class DepartmentServiceImpl implements DepartmentService {
     private UserService userService;
     @Resource
     private UserDao userDao;
+    @Resource
+    private SysConfigService sysConfigService;
+
     @Override
     public boolean saveDepartment(Department department) {
-        return departmentDao.insert(department)>0;
+        if (departmentDao.insert(department)>0){
+            SysConfig sysConfig = new SysConfig();
+            sysConfig.setName(department.getName());
+            sysConfigService.save(sysConfig);
+            return true;
+        };
+        return false;
     }
 
     @Override

@@ -151,4 +151,8 @@ public interface UserService {
      * 查询部门所有用户
      */
     List<User> findAllByDeptId(Long deptId);
+    /**
+     * 通过Id查询用户
+     */
+    List<User> findByIds(String ids);
 }

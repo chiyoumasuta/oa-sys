@@ -24,9 +24,7 @@ import org.springframework.web.servlet.DispatcherServlet;
         "org.flowable.ui.modeler.service",
         "org.flowable.ui.common.service",
         "org.flowable.ui.common.repository",
-//        "org.flowable.ui.common.conf", // flowable 开发环境内置的数据库连接
         "org.flowable.ui.common.tenant" },excludeFilters = {
-        // 移除 RemoteIdmService
         @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = RemoteIdmService.class)
     }
 )

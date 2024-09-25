@@ -9,7 +9,7 @@ import javax.persistence.*;
 @Data
 public class SysConfig {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private int id;
     @Column(name = "name",columnDefinition = "配置名称")
     private String name;

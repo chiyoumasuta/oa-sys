@@ -6,7 +6,7 @@ import javax.persistence.*;
 import java.util.Date;
 
 @Entity
-@Table(name = "act_de_model")
+@Table(name = "ACT_DE_MODEL")
 @Data
 public class ActDeModel {
     

@@ -2,12 +2,11 @@ package cn.gson.oasys.controller;
 
 import cn.gson.oasys.dao.FileDao;
 import cn.gson.oasys.entity.File;
+import cn.gson.oasys.exception.ServiceException;
 import cn.gson.oasys.support.UtilResultSet;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.apache.commons.io.IOUtils;
-import org.hibernate.service.spi.ServiceException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.InputStreamResource;

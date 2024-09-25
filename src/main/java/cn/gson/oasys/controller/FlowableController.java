@@ -1,6 +1,7 @@
 package cn.gson.oasys.controller;
 
 import cn.gson.oasys.entity.User;
+import cn.gson.oasys.exception.ServiceException;
 import cn.gson.oasys.flowable.utils.FlowableApiUtils;
 import cn.gson.oasys.service.ActDeModelService;
 import cn.gson.oasys.service.ActReprocdefService;
@@ -23,11 +24,9 @@ import org.flowable.ui.common.model.UserRepresentation;
 import org.flowable.ui.common.security.DefaultPrivileges;
 import org.flowable.ui.modeler.domain.Model;
 import org.flowable.ui.modeler.serviceapi.ModelService;
-import org.hibernate.service.spi.ServiceException;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;

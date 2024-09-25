@@ -4,11 +4,11 @@ import cn.gson.oasys.dao.FileAuditRecordDao;
 import cn.gson.oasys.dao.FileDao;
 import cn.gson.oasys.entity.File;
 import cn.gson.oasys.entity.FileAuditRecord;
+import cn.gson.oasys.exception.ServiceException;
 import cn.gson.oasys.service.FileAuditRecordService;
 import cn.gson.oasys.support.Page;
 import cn.gson.oasys.support.UserTokenHolder;
 import com.github.pagehelper.PageHelper;
-import org.hibernate.service.spi.ServiceException;
 import org.springframework.stereotype.Service;
 import tk.mybatis.mapper.entity.Example;
 

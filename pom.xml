@@ -9,7 +9,7 @@
 	<groupId>cn.gson</groupId>
 	<artifactId>oasys</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<packaging>jar</packaging> <!-- 打包类型为 WAR，因为这是 Web 项目 -->
+	<packaging>war</packaging> <!-- 打包类型为 WAR，因为这是 Web 项目 -->
 
 	<name>oasys</name>
 	<description>Demo project for Spring Boot</description>
@@ -58,12 +58,6 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
-		</dependency>
-
-		<!-- JPA 数据库支持 -->
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
 
 		<!-- AOP支持 -->
@@ -134,13 +128,6 @@
 			<artifactId>fastjson</artifactId>
 			<version>1.2.83</version>
 		</dependency>
-
-		<!-- Hibernate JPA 模型生成器 -->
-		<dependency>
-			<groupId>org.hibernate</groupId>
-			<artifactId>hibernate-jpamodelgen</artifactId>
-		</dependency>
-
 		<!-- 文件上传功能支持 -->
 		<dependency>
 			<groupId>commons-fileupload</groupId>

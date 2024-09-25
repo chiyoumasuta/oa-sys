@@ -1,12 +1,12 @@
 package cn.gson.oasys.controller;
 
 import cn.gson.oasys.entity.Department;
+import cn.gson.oasys.exception.ServiceException;
 import cn.gson.oasys.service.DepartmentService;
 import cn.gson.oasys.support.UtilResultSet;
 import cn.gson.oasys.vo.DepartmentVo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import org.hibernate.service.spi.ServiceException;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;

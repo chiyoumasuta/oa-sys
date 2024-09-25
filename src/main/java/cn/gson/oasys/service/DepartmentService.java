@@ -2,8 +2,6 @@ package cn.gson.oasys.service;
 
 import cn.gson.oasys.entity.Department;
 import cn.gson.oasys.vo.DepartmentVo;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 

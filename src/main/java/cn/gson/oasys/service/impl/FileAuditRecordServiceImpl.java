@@ -80,7 +80,7 @@ public class FileAuditRecordServiceImpl implements FileAuditRecordService {
         file.setShare(result);
         fileAuditRecord.setAuditTime(new Date());
         fileAuditRecord.setResult("通过");
-        file.setSharePeople(sharePeople);
+        file.setSharePeople((file.getSharePeople()==null?"":file.getSharePeople()+",")+sharePeople);
         return flDao.updateByPrimaryKeySelective(file)>0&&fileAuditRecordDao.updateByPrimaryKeySelective(fileAuditRecord)>0;
     }
 }

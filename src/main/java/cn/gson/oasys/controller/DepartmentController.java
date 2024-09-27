@@ -53,10 +53,10 @@ public class DepartmentController {
 
     @RequestMapping(value = "/find/{id}",method = RequestMethod.POST)
     @ApiOperation("通过id查询部门信息")
-    public UtilResultSet findDepartmentById(@PathVariable Long id) {
-        Department department = departmentService.findDepartmentById(id);
-        if (department != null) {
-            return UtilResultSet.success(department);
+    public UtilResultSet findDepartmentById(String id) {
+        List<Department> department = departmentService.findDepartmentById(id);
+        if (!department.isEmpty()) {
+            return UtilResultSet.success(department.get(0));
         } else {
             return UtilResultSet.bad_request("部门未找到");
         }

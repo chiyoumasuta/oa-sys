@@ -1,15 +1,14 @@
 package cn.gson.oasys.controller;
 
+import cn.gson.oasys.dao.LeaveApplicationDao;
+import cn.gson.oasys.entity.LeaveApplication;
 import cn.gson.oasys.entity.User;
 import cn.gson.oasys.exception.ServiceException;
-import cn.gson.oasys.flowable.utils.FlowableApiUtils;
-import cn.gson.oasys.service.ActDeModelService;
-import cn.gson.oasys.service.ActReprocdefService;
-import cn.gson.oasys.support.FlowableType;
-import cn.gson.oasys.support.JacksonUtil;
+import cn.gson.oasys.support.FlowableApiUtils;
+import cn.gson.oasys.service.*;
 import cn.gson.oasys.support.UserTokenHolder;
 import cn.gson.oasys.support.UtilResultSet;
-import com.fasterxml.jackson.databind.JsonNode;
+import cn.gson.oasys.vo.TaskDTO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.apache.commons.codec.binary.Base64;
@@ -18,12 +17,14 @@ import org.flowable.bpmn.model.BpmnModel;
 import org.flowable.engine.*;
 import org.flowable.engine.history.HistoricActivityInstance;
 import org.flowable.engine.repository.Deployment;
+import org.flowable.engine.runtime.ProcessInstance;
 import org.flowable.image.ProcessDiagramGenerator;
 import org.flowable.task.api.Task;
 import org.flowable.ui.common.model.UserRepresentation;
 import org.flowable.ui.common.security.DefaultPrivileges;
 import org.flowable.ui.modeler.domain.Model;
 import org.flowable.ui.modeler.serviceapi.ModelService;
+import org.junit.jupiter.api.Test;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -31,6 +32,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Flowable 相关接口
@@ -61,6 +63,15 @@ public class FlowableController {
     private TaskService taskService;
     @Resource
     private HistoryService historyService;
+    @Resource
+    private LeaveApplicationDao leaveApplicationDao;
+    @Resource
+    private UserService userService;
+    @Resource
+    private DepartmentService departmentService;
+    @Resource
+    FlowableService flowableService;
+    @Resource LeaveApplicationService leaveApplicationService;
 
     //获取默认的管理员信息
 //    @RequestMapping(value = "/rest/account", method = RequestMethod.GET, produces = "application/json")
@@ -126,8 +137,6 @@ public class FlowableController {
         }
         byte[] bpmnBytes = new BpmnXMLConverter().convertToXML(model);
         String processName = modelData.getName() + ".bpmn20.xml";
-        // 删除已部署的数据
-//        actReprocdefService.deleteByName(modelData.getKey());
 
         // 部署流程
         Deployment deploy = repositoryService.createDeployment()
@@ -147,26 +156,11 @@ public class FlowableController {
      * @return
      */
     @RequestMapping(value = "/start", method = RequestMethod.POST)
-    @ApiOperation(value = "启动流程 流程实例化接口 ",notes = "type：PROJECT_PROCESS(\"项目管理\") LEAVE(\"请假审批\")")
-    public UtilResultSet start(String deployId, String dateJson, FlowableType type) {
-        User user = UserTokenHolder.getUser();
-        // 设置发起人
-        identityService.setAuthenticatedUserId(String.valueOf(user.getId()));
-        // 根据流程 ID 启动流程
-        Map<String,Object> variables = new HashMap<>();
-        Long dataKey = 0L;
-        switch (type) {
-            case PROJECT_PROCESS:
-
-            case LEAVE:
-        }
-        try {
-            JsonNode jsonNode = JacksonUtil.jsonStringToJsonNode(dateJson);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        runtimeService.startProcessInstanceById(deployId, String.valueOf(dataKey),variables);
-        return UtilResultSet.success("流程启动成功：" + deployId + " " + new Date());
+    @ApiOperation(value = "启动流程 流程实例化接口 ",notes = "type：project_process(\"项目管理\") leave(\"请假审批\")")
+    public UtilResultSet start(String deployId, String dateJson, String type) {
+        if (flowableService.start(deployId, dateJson, type)){
+            return UtilResultSet.success("流程实例化成功");
+        }return UtilResultSet.bad_request("流程实例化失败");
     }
 
     @RequestMapping(value = "/getActDeModels",method = RequestMethod.POST)
@@ -194,26 +188,73 @@ public class FlowableController {
      */
     @RequestMapping(value = "/getInstantiateList",method = RequestMethod.POST)
     @ApiOperation(value = "获取流程实例化列表")
-    public UtilResultSet getInstantiateList(int pageNo,int pageSize,String searchType) {
+    public UtilResultSet getInstantiateList(String searchType) {
+        List<Task> taskList;
+        User user = UserTokenHolder.getUser();
 
-        return UtilResultSet.success(Collections.emptyList());
+        // 根据 searchType 进行不同类型的查询
+        if ("1".equals(searchType)) {
+            // 查询待审核的任务，假设待审核任务与你用户相关的逻辑处理
+            taskList = taskService.createTaskQuery()
+                    .taskCandidateOrAssigned(String.valueOf(user.getId()))  // 替换为实际用户ID或逻辑
+                    .list();
+        } else {
+            // 查询全部流程任务
+            taskList = taskService.createTaskQuery().list();
+        }
+
+        // 避免懒加载问题，将需要的字段包装到 DTO 中
+        List<TaskDTO> taskDTOList = taskList.stream()
+                .map(task -> {
+                    TaskDTO taskDTO = new TaskDTO(task.getId(), task.getName(),
+                            task.getTaskDefinitionKey(),
+                            task.getExecutionId(),
+                            task.getProcessInstanceId());
+                    // 从数据库中获取与流程实例ID关联的业务数据
+                    // 根据任务获取流程实例
+                    ProcessInstance processInstance = runtimeService.createProcessInstanceQuery().processInstanceId(task.getProcessInstanceId()).singleResult();
+                    // 获取流程实例中的业务键
+                    String businessKey = processInstance.getBusinessKey();
+                    LeaveApplication leaveApplication = leaveApplicationService.getLeaveApplication(task.getProcessInstanceId());
+                    leaveApplication.setInitiatorName(userService.findById(Long.valueOf(leaveApplication.getDepartment())).getUserName());
+                    leaveApplication.setApproverName(userService.findById(Long.valueOf(leaveApplication.getApprover())).getUserName());
+                    leaveApplication.setCcPersonName(userService.findByIds(leaveApplication.getCcPerson()).stream().map(User::getUserName).collect(Collectors.joining(",")));
+                    leaveApplication.setDepartmentName(departmentService.findDepartmentById(leaveApplication.getDepartment()).get(0).getName());
+                    // 将业务数据封装到DTO中
+                    taskDTO.setBusinessData(leaveApplication);
+                    return taskDTO;
+                })
+                .collect(Collectors.toList());
+
+        // 返回包装后的列表
+        return UtilResultSet.success(taskDTOList);
+    }
+
+    /**
+     * 查询个人任务
+     */
+
+    @Test
+    public void createTaskQuery() {
+        String assignee = "张三";
+        String processDefinitionKey = "leave";
+        List<Task> list = taskService.createTaskQuery()
+                .taskAssignee(assignee)
+                .processDefinitionKey(processDefinitionKey).list();
+        list.forEach(v -> System.out.println(v.getId() + " "
+                + v.getName() + " " + v.getTaskDefinitionKey()
+                + " " + v.getExecutionId() + " " + v.getProcessInstanceId() + " " + v.getCreateTime()));
     }
 
     /**
      * 流程审批
-     * @param review 审核结果 1.通过 2.不通过 3.退回到上一步
      */
-    @RequestMapping(value = "/Audit",method = RequestMethod.POST)
+    @RequestMapping(value = "/audit",method = RequestMethod.POST)
     @ApiOperation(value = "流程审核接口")
-    public UtilResultSet audit(String review){
-        // 领导审批
-        List<Task> teacherTaskList = taskService.createTaskQuery().taskCandidateGroup("a").list();
-        Map<String, Object> teacherMap = new HashMap<>();
-        teacherMap.put("outcome", "通过");
-        for (Task teacherTask : teacherTaskList) {
-            taskService.complete(teacherTask.getId(), teacherMap);
-        }
-        return UtilResultSet.success("审核通过");
+    public UtilResultSet audit(String taskId,String result){
+        if (flowableService.audit(taskId,result)){
+            return UtilResultSet.success("审批成功");
+        }else return UtilResultSet.bad_request("审批失败");
     }
 
     /**

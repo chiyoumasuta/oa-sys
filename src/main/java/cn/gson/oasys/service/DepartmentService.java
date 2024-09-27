@@ -25,7 +25,7 @@ public interface DepartmentService {
     /**
      * 根据Id查询部门
      */
-    Department findDepartmentById(Long id);
+    List<Department> findDepartmentById(String id);
 
     /**
      * 获取部门列表

@@ -52,7 +52,7 @@ public class UserServiceImpl implements UserService {
             AtomicBoolean isMannger = new AtomicBoolean(false);
             if (it.getDeptId()!=null){
                 deptName = Arrays.stream(it.getDeptId().split(",")).filter(v->v!=null).map(d->{
-                    Department departmentById = departmentService.findDepartmentById(Long.valueOf(d));
+                    Department departmentById = departmentService.findDepartmentById(d).get(0);
                     if (departmentById!=null&&departmentById.getManagerId().equals(it.getId())) isMannger.set(true);
                     return departmentById.getName();
                 }).collect(Collectors.joining(","));

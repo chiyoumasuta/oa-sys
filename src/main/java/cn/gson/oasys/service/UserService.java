@@ -12,8 +12,6 @@ public interface UserService {
      *
      * @param name     用户名
      * @param phone    电话
-     * @param areas    区县
-     * @param type     用户可登录类型 1平台 2APP 3全部
      * @param pageNo
      * @param pageSize
      * @return org.gcm.fiber.support.Page<org.gcm.fiber.bean.User>

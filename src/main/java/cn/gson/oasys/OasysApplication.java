@@ -1,7 +1,7 @@
 package cn.gson.oasys;
 
-import cn.gson.oasys.flowable.AppDispatcherServletConfiguration;
-import cn.gson.oasys.flowable.ApplicationConfiguration;
+import cn.gson.oasys.config.AppDispatcherServletConfiguration;
+import cn.gson.oasys.config.ApplicationConfiguration;
 import org.flowable.ui.modeler.conf.DatabaseConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

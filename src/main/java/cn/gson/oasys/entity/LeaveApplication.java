@@ -7,15 +7,13 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import lombok.Data;
 import javax.persistence.*;
-import java.time.LocalDateTime;
 import java.util.Date;
 
 @Entity
-@Table(name = "leave")
+@Table(name = "leave_application")
 @Data
-public class Leave {
+public class LeaveApplication {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -46,4 +44,42 @@ public class Leave {
     private String ccPerson;
     @Column(name = "created_at", columnDefinition = "TIMESTAMP COMMENT '发起时间'")
     private Date createdAt;
+    @Column(name = "stats",columnDefinition = "审核状态")
+    private String stats;
+    @Column(name = "process_instance_id",columnDefinition = "流程实例化id")
+    private String processInstanceId;
+    @Transient
+    protected String initiatorName;
+    @Transient
+    protected String approverName;
+    @Transient
+    protected String ccPersonName;
+    @Transient
+    protected String departmentName;
+
+    public Double getDuration() {
+        return calculateLeaveDays();
+    }
+
+    public void setDuration() {
+        this.duration = calculateLeaveDays();
+    }
+
+    public double calculateLeaveDays() {
+        // 将开始时间和结束时间转为毫秒
+        long startMillis = startTime.getTime();
+        long endMillis = endTime.getTime();
+        // 计算时间差（以天为单位）
+        double leaveDays = (endMillis - startMillis) / (1000.0 * 60 * 60 * 24);
+        // 处理上午和下午的情况
+        if (startPeriod.equals("下午")) {
+            leaveDays -= 0.5; // 如果是下午开始，减去0.5天
+        }
+        if (endPeriod.equals("上午")) {
+            leaveDays -= 0.5; // 如果是上午结束，减去0.5天
+        }
+        // 确保最低为0.5天
+        return Math.max(leaveDays, 0.5);
+    }
+
 }

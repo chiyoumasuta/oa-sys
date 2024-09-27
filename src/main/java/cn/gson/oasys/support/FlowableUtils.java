@@ -1,4 +1,4 @@
-package cn.gson.oasys.flowable.utils;
+package cn.gson.oasys.support;
 
 import org.flowable.bpmn.model.*;
 import org.flowable.engine.impl.bpmn.behavior.ParallelMultiInstanceBehavior;

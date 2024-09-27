@@ -126,7 +126,7 @@ public class LoginController {
         AtomicBoolean isMannger = new AtomicBoolean(false);
         if (user.getDeptId()!=null){
             deptName = Arrays.stream(user.getDeptId().split(",")).filter(v->v!=null).map(d->{
-                Department departmentById = departmentService.findDepartmentById(Long.valueOf(d));
+                Department departmentById = departmentService.findDepartmentById(d).get(0);
                 if (departmentById!=null&&departmentById.getManagerId().equals(user.getId())) isMannger.set(true);
                 return departmentById.getName();
             }).collect(Collectors.joining(","));

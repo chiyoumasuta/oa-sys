@@ -1,4 +1,4 @@
-package cn.gson.oasys.flowable;
+package cn.gson.oasys.config;
 
 import org.flowable.ui.modeler.rest.app.EditorGroupsResource;
 import org.flowable.ui.modeler.rest.app.EditorUsersResource;

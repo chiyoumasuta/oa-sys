@@ -58,8 +58,10 @@ public class DepartmentServiceImpl implements DepartmentService {
     }
 
     @Override
-    public Department findDepartmentById(Long id) {
-        return departmentDao.selectByPrimaryKey(id);
+    public List<Department> findDepartmentById(String ids) {
+        Example example = new Example(Department.class);
+        example.createCriteria().andIn("id", Arrays.asList(ids.split(",")));
+        return departmentDao.selectByExample(example);
     }
 
     @Override

@@ -1,7 +1,6 @@
-package cn.gson.oasys.flowable;
+package cn.gson.oasys.config;
 
 import cn.gson.oasys.service.impl.CustomIdmIdentityServiceImpl;
-import cn.gson.oasys.service.impl.FlowableUserServiceImpl;
 import org.flowable.idm.spring.SpringIdmEngineConfiguration;
 import org.flowable.spring.boot.EngineConfigurationConfigurer;
 import org.flowable.ui.common.service.idm.RemoteIdmService;

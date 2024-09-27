@@ -1,4 +1,4 @@
-package cn.gson.oasys.flowable.conf;
+package cn.gson.oasys.config;
 
 import liquibase.Liquibase;
 import liquibase.database.Database;

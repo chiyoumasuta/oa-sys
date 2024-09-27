@@ -1,6 +1,7 @@
 package cn.gson.oasys.service.impl;
 
 import cn.gson.oasys.dao.FileDao;
+import cn.gson.oasys.dao.UserDao;
 import cn.gson.oasys.entity.Department;
 import cn.gson.oasys.entity.File;
 import cn.gson.oasys.entity.FileAuditRecord;
@@ -23,6 +24,7 @@ import java.io.*;
 import java.rmi.ServerException;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class FileServiceImpl implements FileService {
@@ -88,6 +90,7 @@ public class FileServiceImpl implements FileService {
         filelist.setFather(nowPath==null?0:nowPath);
         filelist.setUploadTime(new Date());
         filelist.setUserId(user.getId());
+        filelist.setModel(File.model.CLOUD);
         flDao.insert(filelist);
         return true;
     }
@@ -100,7 +103,10 @@ public class FileServiceImpl implements FileService {
         if ("回收站".equals(type)||"共享文件夹".equals(type)){
             example.createCriteria().andLike("sharePeople","%"+userId+"%").orEqualTo("userId",userId);
         }else {
-            example.createCriteria().andLike("sharePeople","%"+userId+"%").orEqualTo("userId",userId).andEqualTo("father",father);
+            Example.Criteria criteria = example.createCriteria();
+            criteria.andLike("sharePeople","%"+userId+"%").orEqualTo("userId",userId);
+            example.and(criteria);
+            example.createCriteria().andEqualTo("father",father);
         }
         List<File> byUserIdAndFather = flDao.selectByExample(example);
         FileListVo result = new FileListVo();
@@ -108,27 +114,27 @@ public class FileServiceImpl implements FileService {
         switch (type){
             case "所有文件":
                 result.setFile(byUserIdAndFather.stream()
-                        .filter(it->!it.isFileInTrash()&&it.getUserId().equals(userId))
+                        .filter(it->!it.isFileInTrash()&&it.getUserId().equals(userId)&&it.getModel().equals(File.model.CLOUD))
                         .collect(Collectors.toList()));
                 break;
             case "回收站":
                 result.setFile(byUserIdAndFather.stream()
-                        .filter(it-> it.isFileInTrash()&&Objects.equals(it.getUserId(), userId))
+                        .filter(it-> it.isFileInTrash()&&Objects.equals(it.getUserId(), userId)&&it.getModel().equals(File.model.CLOUD))
                         .collect(Collectors.toList()));
                 break;
             case "报销附件":
                 result.setFile(byUserIdAndFather.stream()
-                        .filter(it->it.getModel().equals(File.model.REIMBURSEMENT)&&it.getUserId().equals(userId))
+                        .filter(it->it.getModel().equals(File.model.REIMBURSEMENT)&&it.getUserId().equals(userId)&&it.getModel().equals(File.model.REIMBURSEMENT))
                         .collect(Collectors.toList()));
                 break;
             case "待审核":
                 result.setFile(byUserIdAndFather.stream()
-                        .filter(it->(it.getStatus()==1||it.getStatus()==2||it.getStatus()==3)&&it.getUserId().equals(userId))
+                        .filter(it->(it.getStatus()==1||it.getStatus()==2||it.getStatus()==3)&&it.getUserId().equals(userId)&&it.getModel().equals(File.model.CLOUD))
                         .collect(Collectors.toList())
                 );
                 break;
             case "共享文件夹":
-                result.setFile(byUserIdAndFather.stream().filter(it->it.isShare()).collect(Collectors.toList()));
+                result.setFile(byUserIdAndFather.stream().filter(File::isShare).collect(Collectors.toList()));
                 break;
             case "所有文件夹":
                 result.setFile(byUserIdAndFather.stream().filter(it->!it.isShare()&&"folder".equals(it.getType())).collect(Collectors.toList()));
@@ -235,18 +241,40 @@ public class FileServiceImpl implements FileService {
         User user = UserTokenHolder.getUser();
         Example example = new Example(File.class);
         example.createCriteria().andIn("fileId",Arrays.asList(fileId.split(",")));
-        Department departmentById = departmentService.findDepartmentById(Long.valueOf(user.getDeptId().split(",")[0]));
-        User manager = userService.findById(departmentById.getManagerId());
+        boolean needAudit;
+        List<Department> departmentById;
+        if (user.getDeptId()!=null){
+            departmentById= departmentService.findDepartmentById(user.getDeptId());
+            if (user.getDeptId()!=null){
+                if (!departmentById.isEmpty()){
+                    List<Department> departmentStream = departmentById.stream().filter(it -> it.getManagerId().equals(user.getId())).collect(Collectors.toList());
+                    if (!departmentStream.isEmpty()){
+                        needAudit = false;
+                    } else {
+                        needAudit = true;
+                    }
+                } else {
+                    needAudit = true;
+                }
+            } else {
+                needAudit = true;
+            }
+        }else {
+            departmentById = new ArrayList<>();
+            needAudit = true;
+        }
+
 
         flDao.selectByExample(example).forEach(it->{
             File file = flDao.selectByPrimaryKey(fileId);
-            file.setStatus(manager==null?0:1);
+            file.setStatus(needAudit?1:0);
             if (it.isShare())throw new ServiceException(it.getFileName()+"已分享");
-            if (manager==null){
+            if (!needAudit||file.isShare()||user.isManager()){
                 if (sharePerson==null){
                     throw new ServiceException("请选择分享人");
                 }
-                file.setSharePeople(sharePerson);
+                file.setShare(true);
+                file.setSharePeople((file.getSharePeople()==null?"":file.getSharePeople()+",")+sharePerson);
             } else {
                 FileAuditRecord fileAuditRecord = new FileAuditRecord();
                 fileAuditRecord.setFileId(file.getFileId());
@@ -254,11 +282,11 @@ public class FileServiceImpl implements FileService {
                 fileAuditRecord.setFileName(file.getFileName());
                 fileAuditRecord.setSubmitUserName(user.getUserName());
                 fileAuditRecord.setSubmitUserId(user.getId());
-                fileAuditRecord.setPersonInCharge(1L);
-                fileAuditRecord.setPersonInChargeName("admin");
+                fileAuditRecord.setPersonInCharge(departmentById.isEmpty()?1L: userService.findById(departmentById.get(0).getManagerId()).getId());
+                fileAuditRecord.setPersonInChargeName(departmentById.isEmpty()?"admin": userService.findById(departmentById.get(0).getManagerId()).getLoginName());
                 fileAuditRecordService.saveFileAuditRecord(fileAuditRecord);
+                flDao.updateByPrimaryKeySelective(file);
             }
-            flDao.updateByPrimaryKeySelective(file);
         });
         return true;
     }

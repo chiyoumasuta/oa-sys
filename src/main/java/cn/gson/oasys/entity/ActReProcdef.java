@@ -5,7 +5,7 @@ import lombok.Data;
 import javax.persistence.*;
 
 @Entity
-@Table(name = "act_re_procdef")
+@Table(name = "ACT_RE_PROCDEF")
 @Data
 public class ActReProcdef {
     @Id

@@ -36,8 +36,6 @@ public class LoginController {
     @Resource
     private DepartmentService departmentService;
 
-    @Value("${keys.path}")
-    private String outPath;
     @Value("${user.password}")
     private String resetPassword;
 

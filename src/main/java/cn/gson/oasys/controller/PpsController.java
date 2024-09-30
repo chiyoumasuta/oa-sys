@@ -1,6 +1,7 @@
 package cn.gson.oasys.controller;
 
 
+import cn.gson.oasys.dao.PpsItemDao;
 import cn.gson.oasys.entity.Pps;
 import cn.gson.oasys.entity.PpsItem;
 import cn.gson.oasys.service.PpsService;
@@ -19,6 +20,8 @@ import javax.annotation.Resource;
 public class PpsController {
     @Resource
     private PpsService ppsService;
+    @Resource
+    private PpsItemDao ppsItemDao;
 
     @RequestMapping(value = "/page",method = RequestMethod.POST)
     @ApiOperation(value = "分页查询")
@@ -56,5 +59,11 @@ public class PpsController {
         if (ppsService.deletePps(id)){
             return UtilResultSet.success("删除成功");
         }return UtilResultSet.bad_request("删除失败");
+    }
+
+    @RequestMapping(value = "/getItemList",method = RequestMethod.POST)
+    @ApiOperation(value = "查询进度详情列表")
+    public UtilResultSet getItemList(Long ppsId){
+        return UtilResultSet.success(ppsService.findByPpsId(ppsId));
     }
 }

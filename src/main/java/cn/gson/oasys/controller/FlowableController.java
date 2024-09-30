@@ -188,46 +188,9 @@ public class FlowableController {
      */
     @RequestMapping(value = "/getInstantiateList",method = RequestMethod.POST)
     @ApiOperation(value = "获取流程实例化列表")
-    public UtilResultSet getInstantiateList(String searchType) {
-        List<Task> taskList;
-        User user = UserTokenHolder.getUser();
-
-        // 根据 searchType 进行不同类型的查询
-        if ("1".equals(searchType)) {
-            // 查询待审核的任务，假设待审核任务与你用户相关的逻辑处理
-            taskList = taskService.createTaskQuery()
-                    .taskCandidateOrAssigned(String.valueOf(user.getId()))  // 替换为实际用户ID或逻辑
-                    .list();
-        } else {
-            // 查询全部流程任务
-            taskList = taskService.createTaskQuery().list();
-        }
-
-        // 避免懒加载问题，将需要的字段包装到 DTO 中
-        List<TaskDTO> taskDTOList = taskList.stream()
-                .map(task -> {
-                    TaskDTO taskDTO = new TaskDTO(task.getId(), task.getName(),
-                            task.getTaskDefinitionKey(),
-                            task.getExecutionId(),
-                            task.getProcessInstanceId());
-                    // 从数据库中获取与流程实例ID关联的业务数据
-                    // 根据任务获取流程实例
-                    ProcessInstance processInstance = runtimeService.createProcessInstanceQuery().processInstanceId(task.getProcessInstanceId()).singleResult();
-                    // 获取流程实例中的业务键
-                    String businessKey = processInstance.getBusinessKey();
-                    LeaveApplication leaveApplication = leaveApplicationService.getLeaveApplication(task.getProcessInstanceId());
-                    leaveApplication.setInitiatorName(userService.findById(Long.valueOf(leaveApplication.getDepartment())).getUserName());
-                    leaveApplication.setApproverName(userService.findById(Long.valueOf(leaveApplication.getApprover())).getUserName());
-                    leaveApplication.setCcPersonName(userService.findByIds(leaveApplication.getCcPerson()).stream().map(User::getUserName).collect(Collectors.joining(",")));
-                    leaveApplication.setDepartmentName(departmentService.findDepartmentById(leaveApplication.getDepartment()).get(0).getName());
-                    // 将业务数据封装到DTO中
-                    taskDTO.setBusinessData(leaveApplication);
-                    return taskDTO;
-                })
-                .collect(Collectors.toList());
-
+    public UtilResultSet getInstantiateList(String searchType,String type) {
         // 返回包装后的列表
-        return UtilResultSet.success(taskDTOList);
+        return UtilResultSet.success(flowableService.getInstantiateList(searchType,type));
     }
 
     /**

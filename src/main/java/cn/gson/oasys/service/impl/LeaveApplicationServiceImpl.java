@@ -36,8 +36,6 @@ public class LeaveApplicationServiceImpl implements LeaveApplicationService {
      */
     @Override
     public LeaveApplication getLeaveApplication(String id) {
-        Example example = new Example(LeaveApplication.class);
-        example.createCriteria().andEqualTo("processInstanceId", id);
-        return leaveApplicationDao.selectOneByExample(example);
+        return leaveApplicationDao.selectByPrimaryKey(Long.valueOf(id));
     }
 }

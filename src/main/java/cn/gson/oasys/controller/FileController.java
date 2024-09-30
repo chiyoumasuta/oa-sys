@@ -129,10 +129,11 @@ public class FileController {
     @RequestMapping(value = "/makeFolder",method = RequestMethod.POST)
     @ApiOperation(value = "创建文件夹")
     public UtilResultSet makeFolder(Long nowPath,String name) {
-        if (fileService.makeFolder(nowPath,name)) {
+        try {
+            fileService.makeFolder(nowPath,name);
             return UtilResultSet.success("创建文件夹成功");
-        } else {
-            return UtilResultSet.bad_request("创建文件夹失败");
+        }catch (Exception e) {
+            return UtilResultSet.bad_request(e.getMessage());
         }
     }
 
@@ -173,10 +174,10 @@ public class FileController {
     @RequestMapping(value = "/share",method = RequestMethod.POST)
     @ApiOperation(value = "分享文件")
     public UtilResultSet shareFile(String fileId,String sharePerson) {
-        if (fileService.shareFile(fileId,sharePerson)) {
+        try {
             return UtilResultSet.success("文件分享成功");
-        } else {
-            return UtilResultSet.bad_request("文件分享失败");
+        }catch (Exception e){
+            return UtilResultSet.bad_request("文件分享失败:"+e.getMessage());
         }
     }
 

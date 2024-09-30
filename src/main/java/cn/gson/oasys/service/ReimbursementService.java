@@ -1,15 +1,16 @@
 package cn.gson.oasys.service;
 
-import cn.gson.oasys.entity.Reimbursement;
-import cn.gson.oasys.support.Page;
+import cn.gson.oasys.entity.reimbursement.Reimbursement;
+
 
 public interface ReimbursementService {
     /**
-     * 创建申请工单
-     * @param reimbursement
-     * @return
+     * 实例化项目
      */
-    Reimbursement saveOrUpdate(Reimbursement reimbursement);
-    Page<Reimbursement> page(int pageNo, int pageSize,int searchType);
+    boolean start(String deployId, String dateJson);
 
+    /**
+     * 获取业务代码信息
+     */
+    Reimbursement getInfo(Long id);
 }

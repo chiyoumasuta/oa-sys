@@ -41,4 +41,10 @@ public class SysConfigController {
     public UtilResultSet getLeaveConfig() {
         return UtilResultSet.success(sysConfigService.getLeaveConfig());
     }
+
+    @RequestMapping(value = "/getListByName",method = RequestMethod.POST)
+    @ApiOperation(value = "根据名称获取配置list")
+    public UtilResultSet getListByName(String name) {
+        return UtilResultSet.success(sysConfigService.getSysConfigByList(name));
+    }
 }

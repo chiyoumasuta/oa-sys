@@ -4,6 +4,8 @@ import cn.gson.oasys.entity.Pps;
 import cn.gson.oasys.entity.PpsItem;
 import cn.gson.oasys.support.Page;
 
+import java.util.List;
+
 /**
  * 项目推进统计
  */
@@ -32,4 +34,8 @@ public interface PpsService {
      * 通过id删除项目进度统计
      */
     boolean deletePps(Long id);
+    /**
+     * 查询进度详情列表
+     */
+    List<PpsItem> findByPpsId(Long id);
 }

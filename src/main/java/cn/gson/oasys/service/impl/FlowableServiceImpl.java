@@ -3,10 +3,10 @@ package cn.gson.oasys.service.impl;
 import cn.gson.oasys.dao.LeaveApplicationDao;
 import cn.gson.oasys.entity.LeaveApplication;
 import cn.gson.oasys.entity.User;
-import cn.gson.oasys.service.FlowableService;
-import cn.gson.oasys.service.LeaveApplicationService;
+import cn.gson.oasys.entity.reimbursement.Reimbursement;
+import cn.gson.oasys.service.*;
 import cn.gson.oasys.support.UserTokenHolder;
-import cn.gson.oasys.support.UtilResultSet;
+import cn.gson.oasys.vo.TaskDTO;
 import com.alibaba.fastjson.JSONObject;
 import org.flowable.engine.IdentityService;
 import org.flowable.engine.RuntimeService;
@@ -16,9 +16,8 @@ import org.flowable.task.api.Task;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class FlowableServiceImpl implements FlowableService {
@@ -33,6 +32,12 @@ public class FlowableServiceImpl implements FlowableService {
     private LeaveApplicationDao leaveApplicationDao;
     @Resource
     private RuntimeService runtimeService;
+    @Resource
+    private UserService userService;
+    @Resource
+    private DepartmentService departmentService;
+    @Resource
+    private ReimbursementService reimbursementService;
 
     /**
      * 审核
@@ -64,12 +69,12 @@ public class FlowableServiceImpl implements FlowableService {
         // 设置发起人
         identityService.setAuthenticatedUserId(String.valueOf(user.getId()));
         // 根据流程 ID 启动流程
-        Map<String,Object> variables = new HashMap<>();
-        Long dataKey = 0L;
         switch (type) {
             case "project_process":
                 //项目标准化流程接口
             case "leave":
+                Long dataKey = 0L;
+                Map<String,Object> variables = new HashMap<>();
                 LeaveApplication data = JSONObject.toJavaObject(JSONObject.parseObject(dateJson), LeaveApplication.class);
                 data.setCreatedAt(new Date());
                 data.setStats("待审核");
@@ -83,7 +88,62 @@ public class FlowableServiceImpl implements FlowableService {
                 data.setProcessInstanceId(processInstance.getProcessInstanceId());
                 leaveApplicationDao.updateByPrimaryKeySelective(data);
                 return true;
+            case "reimbursement_process":
+                reimbursementService.start(deployId, dateJson);
         }
         return true;
+    }
+
+    /**
+     * 获取任务列表
+     *
+     * @param searchType
+     */
+    @Override
+    public List<TaskDTO> getInstantiateList(String searchType,String type) {
+        List<Task> taskList;
+        User user = UserTokenHolder.getUser();
+
+        // 根据 searchType 进行不同类型的查询
+        if ("1".equals(searchType)) {
+            // 查询待审核的任务，假设待审核任务与你用户相关的逻辑处理
+            taskList = taskService.createTaskQuery()
+//                    .active()
+                    .taskCandidateOrAssigned(String.valueOf(user.getId()))
+                    .list();
+        } else {
+            // 查询全部流程任务
+            taskList = taskService.createTaskQuery()
+//                    .active()
+                    .list();
+        }
+
+        // 避免懒加载问题，将需要的字段包装到 DTO 中
+        return taskList.stream().filter(it->it.getProcessDefinitionId().contains(type))
+                .map(task -> {
+                    TaskDTO taskDTO = new TaskDTO(task.getId(), task.getName(),
+                            task.getTaskDefinitionKey(),
+                            task.getExecutionId(),
+                            task.getProcessInstanceId());
+                    // 从数据库中获取与流程实例ID关联的业务数据
+                    // 根据任务获取流程实例
+                    ProcessInstance processInstance = runtimeService.createProcessInstanceQuery().processInstanceId(task.getProcessInstanceId()).singleResult();
+                    // 获取流程实例中的业务键
+                    String processDefinitionKey = processInstance.getProcessDefinitionKey();
+                    switch (processDefinitionKey){
+                        case "leave":
+                            LeaveApplication leaveApplication = leaveApplicationService.getLeaveApplication(processInstance.getBusinessKey());
+                            leaveApplication.setInitiatorName(userService.findById(Long.valueOf(leaveApplication.getDepartment())).getUserName());
+                            leaveApplication.setApproverName(userService.findById(Long.valueOf(leaveApplication.getApprover())).getUserName());
+                            leaveApplication.setCcPersonName(userService.findByIds(leaveApplication.getCcPerson()).stream().map(User::getUserName).collect(Collectors.joining(",")));
+                            leaveApplication.setDepartmentName(departmentService.findDepartmentById(leaveApplication.getDepartment()).get(0).getName());
+                            // 将业务数据封装到DTO中
+                            taskDTO.setBusinessData(leaveApplication);
+                        case "reimbursement_process":
+                            Reimbursement info = reimbursementService.getInfo(Long.valueOf(processInstance.getBusinessKey()));
+                            taskDTO.setBusinessData(info);
+                    }
+                    return taskDTO;
+                }).collect(Collectors.toList());
     }
 }

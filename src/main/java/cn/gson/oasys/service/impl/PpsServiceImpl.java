@@ -98,7 +98,7 @@ public class PpsServiceImpl implements PpsService {
         item.setCreateUser(user.getId());
         item.setCreateUserName(user.getUserName());
         item.setCreateTime(new Date());
-        return false;
+        return ppsItemDao.insert(item)>0;
     }
 
     /**
@@ -123,7 +123,8 @@ public class PpsServiceImpl implements PpsService {
         return ppsDao.updateByPrimaryKeySelective(pps)>0;
     }
 
-    List<PpsItem> findByPpsId(Long id) {
+    @Override
+    public List<PpsItem> findByPpsId(Long id) {
         Example example = new Example(PpsItem.class);
         example.createCriteria().andEqualTo("ppsId", id);
         return ppsItemDao.selectByExample(example);

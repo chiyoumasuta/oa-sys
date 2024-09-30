@@ -58,6 +58,13 @@ public class FileServiceImpl implements FileService {
 
         File filelist = new File();
         String filename = file.getOriginalFilename();
+        if (File.model.CLOUD.equals(model)) {
+            Example example = new Example(File.class);
+            example.createCriteria().andEqualTo("fileName", filename).andEqualTo("father",nowPath==null?0:nowPath).andEqualTo("userId",user.getId());
+            List<File> files = flDao.selectByExample(example);
+            if (!files.isEmpty()) throw new ServiceException("文件名重复");
+        }
+
         filelist.setFileName(filename);
         filelist.setFilePath(targetFile.getAbsolutePath().replace("\\", "/").replace(this.rootPath, ""));
         filelist.setType(type);
@@ -82,9 +89,15 @@ public class FileServiceImpl implements FileService {
                 return false;
             }
         }
+        Example example = new Example(File.class);
+        example.createCriteria().andEqualTo("fileName", name)
+                .andEqualTo("father",nowPath==null?0:nowPath)
+                .andEqualTo("userId",user.getId()).andEqualTo("type","folder");
+        List<File> files = flDao.selectByExample(example);
+        if (!files.isEmpty()) throw new ServiceException("文件夹名重复");
+
         File filelist = new File();
-        String filename = name;
-        filelist.setFileName(filename);
+        filelist.setFileName(name);
         filelist.setFilePath(folder.getAbsolutePath().replace("\\", "/").replace(this.rootPath, ""));
         filelist.setType("folder");
         filelist.setFather(nowPath==null?0:nowPath);
@@ -102,11 +115,11 @@ public class FileServiceImpl implements FileService {
         Example example = new Example(File.class);
         if ("回收站".equals(type)||"共享文件夹".equals(type)){
             example.createCriteria().andLike("sharePeople","%"+userId+"%").orEqualTo("userId",userId);
-        }else {
+        } else {
+            example.createCriteria().andEqualTo("father",father);
             Example.Criteria criteria = example.createCriteria();
             criteria.andLike("sharePeople","%"+userId+"%").orEqualTo("userId",userId);
             example.and(criteria);
-            example.createCriteria().andEqualTo("father",father);
         }
         List<File> byUserIdAndFather = flDao.selectByExample(example);
         FileListVo result = new FileListVo();

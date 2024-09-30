@@ -1,6 +1,7 @@
 package cn.gson.oasys.service;
 
 import cn.gson.oasys.entity.config.SysConfig;
+import cn.gson.oasys.vo.SysConfigListVo;
 
 import java.util.List;
 
@@ -22,4 +23,7 @@ public interface SysConfigService {
      * 获取所有请假申请配置
      */
     List<SysConfig> getLeaveConfig();
+
+    List<SysConfigListVo> getSysConfigByList(String name);
+
 }

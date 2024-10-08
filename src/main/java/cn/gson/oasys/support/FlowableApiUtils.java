@@ -70,9 +70,7 @@ public class FlowableApiUtils {
     public List<String> taskInfo(String taskId) {
         List<String> group = new ArrayList<>();
         List<IdentityLink> taskName = taskService.getIdentityLinksForTask(taskId);
-        taskName.forEach(identityLink -> {
-            group.add(identityLink.getGroupId());
-        });
+        taskName.forEach(identityLink -> group.add(identityLink.getGroupId()));
         return group;
     }
 
@@ -219,7 +217,7 @@ public class FlowableApiUtils {
     public List<Map<String, Object>> getRuntimeBusinessKeyByGroup(List<String> groupIds) {
         List<Map<String, Object>> idList = new ArrayList<>();
         // 判断是否有组信息
-        if (groupIds != null && groupIds.size() > 0) {
+        if (groupIds != null && !groupIds.isEmpty()) {
             // 根据发起人获取正在执行的任务列表
             List<Task> tasks = taskService.createTaskQuery().taskCandidateGroupIn(groupIds).list();
             tasks.forEach(task -> {

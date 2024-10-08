@@ -2,6 +2,7 @@ package cn.gson.oasys.support;
  
 import cn.gson.oasys.dao.UserDao;
 import cn.gson.oasys.entity.User;
+import cn.gson.oasys.exception.UnknownAccountException;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
@@ -59,13 +60,12 @@ public class JwtUtil {
      * 校验token并解析token
      */
     public static User verifyToken(String token) {
-        DecodedJWT jwt = null;
+        DecodedJWT jwt;
         try {
             JWTVerifier verifier = JWT.require(Algorithm.HMAC256(SECRET)).build();
             jwt = verifier.verify(token);
         } catch (Exception e) {
-            // 解码异常则抛出异常或返回null
-            return null;
+            throw new UnknownAccountException();
         }
 
         Claim userIdClaim = jwt.getClaim("user");

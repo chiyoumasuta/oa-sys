@@ -3,6 +3,7 @@ package cn.gson.oasys.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.swagger.annotations.Api;
 import org.flowable.ui.common.service.exception.InternalServerErrorException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/app")
+@Api(tags = "flowable汉化保留接口")
 public class FlowableStencilSetResource {
 
     @Autowired

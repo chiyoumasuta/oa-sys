@@ -23,6 +23,7 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -39,7 +40,7 @@ public class LoginController {
     @Value("${user.password}")
     private String resetPassword;
 
-    private Pattern pattern = Pattern.compile("^(?![A-Z]*$)(?![a-z]*$)(?![0-9]*$)(?![^a-zA-Z0-9]*$)\\S{12,20}$");
+    private final Pattern pattern = Pattern.compile("^(?![A-Z]*$)(?![a-z]*$)(?![0-9]*$)(?![^a-zA-Z0-9]*$)\\S{12,20}$");
 
     @RequestMapping(value = "/check" )
     @ApiOperation(value="检查用户是否登录")
@@ -59,7 +60,8 @@ public class LoginController {
             if (currentUser != null) {
                 currentUser = userService.getPermsByUser(currentUser, -1);
                 UserTokenHolder.setUser(currentUser);
-                return UtilResultSet.success(JwtUtil.createToken(currentUser));
+                String token = JwtUtil.createToken(currentUser);
+                return UtilResultSet.success(token);
             }
             return UtilResultSet.bad_request("账号或密码不正确");
         } catch (Exception e) {
@@ -118,12 +120,12 @@ public class LoginController {
     public Object userInfo(HttpServletRequest req) {
         User user = UserTokenHolder.getUser();
         if (user == null) {
-            return new ResponseEntity<>("登录失效", HttpStatus.UNAUTHORIZED);
+            throw new UnknownAccountException();
         }
         String deptName = "";
         AtomicBoolean isMannger = new AtomicBoolean(false);
         if (user.getDeptId()!=null){
-            deptName = Arrays.stream(user.getDeptId().split(",")).filter(v->v!=null).map(d->{
+            deptName = Arrays.stream(user.getDeptId().split(",")).filter(Objects::nonNull).map(d->{
                 Department departmentById = departmentService.findDepartmentById(d).get(0);
                 if (departmentById!=null&&departmentById.getManagerId().equals(user.getId())) isMannger.set(true);
                 return departmentById.getName();

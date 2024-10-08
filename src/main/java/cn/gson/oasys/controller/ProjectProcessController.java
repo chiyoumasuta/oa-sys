@@ -8,6 +8,7 @@ import cn.gson.oasys.support.UtilResultSet;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
@@ -21,7 +22,7 @@ public class ProjectProcessController {
     @Resource
     private FlowableApiUtils flowableApiUtils;
 
-    @RequestMapping("/createProject")
+    @RequestMapping(value = "/createProject",method = RequestMethod.POST)
     @ApiOperation(value = "创建")
     public UtilResultSet createProject(ProjectProcess projectProcess,String deployId,String dataJson){
         if (projectProcessService.createProject(projectProcess,deployId,dataJson)){
@@ -29,19 +30,19 @@ public class ProjectProcessController {
         }else return UtilResultSet.bad_request("添加失败");
     }
 
-    @RequestMapping("/page")
+    @RequestMapping(value = "/page",method = RequestMethod.POST)
     @ApiOperation(value = "获取需要审核的业务列表")
     public UtilResultSet page(int pageNo, int pageSize, String name){
         return UtilResultSet.success(flowableApiUtils.getRuntimeBusinessKeyByUser(String.valueOf(UserTokenHolder.getUser().getId()),"项目管理"));
     }
 
-    @RequestMapping("/getInfo")
+    @RequestMapping(value = "/getInfo",method = RequestMethod.POST)
     @ApiOperation(value = "获取详情")
     public UtilResultSet getInfo(Long id){
        return UtilResultSet.success(projectProcessService.getInfo(id));
     }
 
-    @RequestMapping("/getConfig")
+    @RequestMapping(value = "/getConfig",method = RequestMethod.POST)
     @ApiOperation(value = "获取配置信息")
     public UtilResultSet getConfig(){
         return UtilResultSet.success(projectProcessService.getConfig());

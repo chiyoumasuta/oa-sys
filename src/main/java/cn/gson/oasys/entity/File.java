@@ -52,10 +52,14 @@ public class File {
 		CLOUD("云盘"),
 		REIMBURSEMENT("报销文件");
 
-		private String text;
+		private final String text;
 
 		model(String text) {
 			this.text = text;
 		}
-	}
+
+        public String getText() {
+            return text;
+        }
+    }
 }

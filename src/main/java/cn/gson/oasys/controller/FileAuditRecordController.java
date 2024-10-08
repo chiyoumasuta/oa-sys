@@ -46,15 +46,11 @@ public class FileAuditRecordController {
     @RequestMapping(value = "/audit",method = RequestMethod.POST)
     @ApiOperation("审核文件分享")
     public UtilResultSet auditFile(Long id, boolean result, String sharePeople) {
-        try {
-            boolean auditResult = fileAuditRecordService.audit(id, result, sharePeople);
-            if (auditResult) {
-                return UtilResultSet.success("文件审核成功");
-            } else {
-                return UtilResultSet.bad_request("文件审核失败");
-            }
-        } catch (Exception e) {
-            return UtilResultSet.bad_request("审核出错: " + e.getMessage());
+        boolean auditResult = fileAuditRecordService.audit(id, result, sharePeople);
+        if (auditResult) {
+            return UtilResultSet.success("文件审核成功");
+        } else {
+            return UtilResultSet.bad_request("文件审核失败");
         }
     }
 }

@@ -35,7 +35,7 @@ public class UserServiceImpl implements UserService {
     private FlowableUserService flowableUserService;
 
     @Override
-    public Page<User> page(String name, String phone, String roleName, int pageNo, int pageSize) {
+    public Page<User> page(String name, String phone, int pageNo, int pageSize) {
         PageHelper.startPage(pageNo, pageSize);
         Example example = new Example(User.class);
         Example.Criteria criteria = example.createCriteria();
@@ -46,12 +46,12 @@ public class UserServiceImpl implements UserService {
         if (StringUtils.isNotBlank(phone)) {
             criteria.andLike("phone", "%" + phone + "%");
         }
-        com.github.pagehelper.Page<User> pageInfo = (com.github.pagehelper.Page) userDao.selectByExample(example);
-        List<User> lists = pageInfo.getResult().stream().map(it->{
+        com.github.pagehelper.Page<User> pageInfo = (com.github.pagehelper.Page<User>) userDao.selectByExample(example);
+        List<User> lists = pageInfo.getResult().stream().peek(it->{
             String deptName = "";
             AtomicBoolean isMannger = new AtomicBoolean(false);
             if (it.getDeptId()!=null){
-                deptName = Arrays.stream(it.getDeptId().split(",")).filter(v->v!=null).map(d->{
+                deptName = Arrays.stream(it.getDeptId().split(",")).filter(Objects::nonNull).map(d->{
                     Department departmentById = departmentService.findDepartmentById(d).get(0);
                     if (departmentById!=null&&departmentById.getManagerId().equals(it.getId())) isMannger.set(true);
                     return departmentById.getName();
@@ -59,7 +59,6 @@ public class UserServiceImpl implements UserService {
             }
             it.setDeptName(deptName);
             it.setManager(isMannger.get());
-            return it;
         }).collect(Collectors.toList());
         if (lists.isEmpty()) {
             return new Page<>();
@@ -76,7 +75,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void saveOrUpdate(User user) {
-        if (user.getId() != null && user.getId() == 1l) {
+        if (user.getId() != null && user.getId() == 1L) {
             throw new ServiceException("超级管理员拥有所有权限，不允许操作");
         }
 
@@ -104,7 +103,7 @@ public class UserServiceImpl implements UserService {
         ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
         // 通过 IdentityService 完成相关的用户和组的管理
         IdentityService identityService = processEngine.getIdentityService();
-        org.flowable.idm.api.User user = null;
+        org.flowable.idm.api.User user;
         for (User u : userDao.selectAll()) {
             user = identityService.newUser(u.getUserName());
             user.setFirstName(u.getUserName());
@@ -116,7 +115,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void del(Long id) {
-        if (id == 1l) {
+        if (id == 1L) {
             throw new ServiceException("超级管理员拥有所有权限，不允许操作");
         }
         User oldUser = userDao.selectByPrimaryKey(id);
@@ -159,7 +158,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public boolean resetPwd(Long id) {
-        if (id == 1l) {
+        if (id == 1L) {
             throw new ServiceException("超级管理员拥有所有权限，不允许操作");
         }
         User oldUser = userDao.selectByPrimaryKey(id);
@@ -176,7 +175,7 @@ public class UserServiceImpl implements UserService {
         if (oldUser == null) {
             throw new ServiceException("当前操作用户不存在");
         }
-        if (oldUser.getId() == 1l) {
+        if (oldUser.getId() == 1L) {
             throw new ServiceException("超级管理员拥有所有权限，不允许操作");
         }
         if (!oldUser.getPassword().equals(oldpwd)) {
@@ -196,7 +195,7 @@ public class UserServiceImpl implements UserService {
         if (oldUser == null) {
             throw new ServiceException("当前操作用户不存在");
         }
-        if (oldUser.getId() == 1l) {
+        if (oldUser.getId() == 1L) {
             throw new ServiceException("超级管理员拥有所有权限，不允许操作");
         }
         if (oldUser.getPassword().equals(newPwd)) {
@@ -240,7 +239,6 @@ public class UserServiceImpl implements UserService {
         example.createCriteria().andEqualTo("token", token);
         User user = userDao.selectOneByExample(example);
         if (user != null) {
-//            user.setRoles(sysUserRoleService.getRoles(user));
             return user;
         }
         return null;

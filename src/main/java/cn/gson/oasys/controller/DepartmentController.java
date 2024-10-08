@@ -20,7 +20,7 @@ public class DepartmentController {
     @Resource
     private DepartmentService departmentService;
 
-    @RequestMapping(value = "/save")
+    @RequestMapping(value = "/save",method = RequestMethod.POST)
     @ApiOperation("新增部门")
     public UtilResultSet saveDepartment(Department department) {
         if (departmentService.saveDepartment(department)) {

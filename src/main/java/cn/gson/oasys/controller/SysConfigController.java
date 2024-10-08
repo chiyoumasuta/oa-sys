@@ -1,6 +1,9 @@
 package cn.gson.oasys.controller;
 
+import cn.gson.oasys.entity.Project;
+import cn.gson.oasys.entity.ReiType;
 import cn.gson.oasys.entity.config.SysConfig;
+import cn.gson.oasys.exception.ServiceException;
 import cn.gson.oasys.service.SysConfigService;
 import cn.gson.oasys.support.UtilResultSet;
 import io.swagger.annotations.Api;
@@ -10,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
+import javax.sql.rowset.serial.SerialException;
 
 /**
  * 系统配置
@@ -25,7 +29,7 @@ public class SysConfigController {
     @RequestMapping(value = "/saveOrUpdate",method = RequestMethod.POST)
     @ApiOperation(value = "更新/添加配置")
     public UtilResultSet saveOrUpdate(SysConfig config) {
-        if (sysConfigService.save(config)){
+        if (sysConfigService.saveOrUpdate(config)){
             return UtilResultSet.success("更新/添加成功");
         }return UtilResultSet.bad_request("更新/添加失败");
     }
@@ -46,5 +50,31 @@ public class SysConfigController {
     @ApiOperation(value = "根据名称获取配置list")
     public UtilResultSet getListByName(String name) {
         return UtilResultSet.success(sysConfigService.getSysConfigByList(name));
+    }
+
+    @RequestMapping(value = "/getProjectList",method = RequestMethod.POST)
+    @ApiOperation(value = "获取项目配置表")
+    public UtilResultSet getProjectList(){
+        return UtilResultSet.success(sysConfigService.getProjectList());
+    }
+
+    @RequestMapping(value = "/saveOrUpdateProject",method = RequestMethod.POST)
+    @ApiOperation(value = "添加/删除项目")
+    public UtilResultSet saveOrUpdate(Project project){
+        sysConfigService.saveOrUpdate(project);
+        return UtilResultSet.success("添加/修改成功");
+    }
+
+    @RequestMapping(value = "/getReiTypeList",method = RequestMethod.POST)
+    @ApiOperation(value = "获取报销明细类型配置")
+    public UtilResultSet getReiTypeList(String type){
+        return UtilResultSet.success(sysConfigService.getReiTypeList(type));
+    }
+
+    @RequestMapping(value = "/saveOrUpdateReiType",method = RequestMethod.POST)
+    @ApiOperation(value = "添加/修改报销费用明细类型")
+    public UtilResultSet saveOrUpdate(ReiType reiType){
+        sysConfigService.saveOrUpdate(reiType);
+        return UtilResultSet.success("添加/修改成功");
     }
 }

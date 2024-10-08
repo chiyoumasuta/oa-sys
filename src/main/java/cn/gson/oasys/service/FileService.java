@@ -44,7 +44,7 @@ public interface FileService {
     /**
      * 文件共享
      */
-    public boolean shareFile(String fileId,String sharePerson);
+    boolean shareFile(String fileId, String sharePerson);
 
     /**
      * 创建文件

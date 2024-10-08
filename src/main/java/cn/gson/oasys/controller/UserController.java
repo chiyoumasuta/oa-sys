@@ -22,8 +22,8 @@ public class UserController {
 
     @RequestMapping(value = "/page",method = RequestMethod.POST)
     @ApiOperation(value = "分页获取用户列表")
-    public UtilResultSet getPage(String name, String phone, String roleName, int pageNo, int pageSize) {
-        return UtilResultSet.success(userService.page(name, phone, roleName, pageNo, pageSize));
+    public UtilResultSet getPage(String name, String phone, int pageNo, int pageSize) {
+        return UtilResultSet.success(userService.page(name, phone, pageNo, pageSize));
     }
 
     @RequestMapping(value = "/findDetailByIds",method = RequestMethod.POST)

@@ -21,7 +21,7 @@ public class ReimbursementItem {
     @Column(name = "type",columnDefinition = "项目名称(出差,日常)")
     private String type;
     @Column(name = "cost",columnDefinition = "费用占比(出差,日常)")
-    private String cost;
+    private Double cost;
     @Column(name = "participants",columnDefinition = "参与人(施工)")
     private String participants;
     @Column(name = "days",columnDefinition = "参与天数(施工)")

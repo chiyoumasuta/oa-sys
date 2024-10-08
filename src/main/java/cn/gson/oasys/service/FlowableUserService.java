@@ -10,11 +10,11 @@ import org.flowable.idm.api.Group;
  */
 public interface FlowableUserService {
     //维护用户
-    public void createUser(String name);
+    void createUser(String name);
 
     //维护用户组
-    public void createGroup(String groupName,String name,String type);
+    void createGroup(String groupName, String name, String type);
 
     //用户和用户组关联
-    public void userGroup(String userId,String groupName);
+    void userGroup(String userId, String groupName);
 }

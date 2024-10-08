@@ -7,8 +7,8 @@ public enum ResultStatus {
     REGISTER_FAIL(201,"exists"),
     NOT_LOGIN(401,"not login"),
     NO_PERMISSION(403,"No permission");
-    private Integer code;
-    private String msg;
+    private final Integer code;
+    private final String msg;
 
     ResultStatus(int code, String msg){
         this.code=code;

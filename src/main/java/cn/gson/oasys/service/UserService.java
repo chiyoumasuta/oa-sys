@@ -18,7 +18,7 @@ public interface UserService {
      * @author 不愿透露
      * @date 2022/10/9 17:33
      */
-    Page<User> page(String name, String phone, String roleName, int pageNo, int pageSize);
+    Page<User> page(String name, String phone, int pageNo, int pageSize);
 
     /**
      * 通过id查询用户详情
@@ -58,7 +58,6 @@ public interface UserService {
     User verifyByPhone(String phone, String password);
 
     /**
-     * @updateBy wwj[yeshengkele@outlook.com]
      * @description 校验用户并返回用户，返回为null代表校验失败
      */
     User verifyAndGetUser(String phone, String passWord);

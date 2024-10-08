@@ -113,7 +113,7 @@ public class FlowableUtils {
                     // 获取子流程用户任务节点
                     List<UserTask> childUserTaskList = findChildProcessUserTasks((StartEvent) ((SubProcess) sequenceFlow.getSourceFlowElement()).getFlowElements().toArray()[0], null, null);
                     // 如果找到节点，则说明该线路找到节点，不继续向下找，反之继续
-                    if (childUserTaskList != null && childUserTaskList.size() > 0) {
+                    if (childUserTaskList != null && !childUserTaskList.isEmpty()) {
                         userTaskList.addAll(childUserTaskList);
                         continue;
                     }
@@ -163,7 +163,7 @@ public class FlowableUtils {
                 if (sequenceFlow.getTargetFlowElement() instanceof SubProcess) {
                     List<UserTask> childUserTaskList = iteratorFindChildUserTasks((FlowElement) (((SubProcess) sequenceFlow.getTargetFlowElement()).getFlowElements().toArray()[0]), runTaskKeyList, hasSequenceFlow, null);
                     // 如果找到节点，则说明该线路找到节点，不继续向下找，反之继续
-                    if (childUserTaskList != null && childUserTaskList.size() > 0) {
+                    if (childUserTaskList != null && !childUserTaskList.isEmpty()) {
                         userTaskList.addAll(childUserTaskList);
                         continue;
                     }
@@ -207,7 +207,7 @@ public class FlowableUtils {
                 if (sequenceFlow.getTargetFlowElement() instanceof SubProcess) {
                     List<UserTask> childUserTaskList = findChildProcessUserTasks((FlowElement) (((SubProcess) sequenceFlow.getTargetFlowElement()).getFlowElements().toArray()[0]), hasSequenceFlow, null);
                     // 如果找到节点，则说明该线路找到节点，不继续向下找，反之继续
-                    if (childUserTaskList != null && childUserTaskList.size() > 0) {
+                    if (childUserTaskList != null && !childUserTaskList.isEmpty()) {
                         userTaskList.addAll(childUserTaskList);
                         continue;
                     }
@@ -421,7 +421,7 @@ public class FlowableUtils {
         // 根据类型，获取入口连线
         List<SequenceFlow> sequenceFlows = getElementIncomingFlows(source);
 
-        if (sequenceFlows != null && sequenceFlows.size() != 0) {
+        if (sequenceFlows != null && !sequenceFlows.isEmpty()) {
             for (SequenceFlow sequenceFlow: sequenceFlows) {
                 // 如果发现连线重复，说明循环了，跳过这个循环
                 if (hasSequenceFlow.contains(sequenceFlow.getId())) {
@@ -493,11 +493,11 @@ public class FlowableUtils {
             if (stack.peek().getDeleteReason() != null && !stack.peek().getDeleteReason().equals("MI_END")) {
                 // 可以理解为脏线路起点
                 String dirtyPoint = "";
-                if (stack.peek().getDeleteReason().indexOf("Change activity to ") >= 0) {
+                if (stack.peek().getDeleteReason().contains("Change activity to ")) {
                     dirtyPoint = stack.peek().getDeleteReason().replace("Change activity to ", "");
                 }
                 // 会签回退删除原因有点不同
-                if (stack.peek().getDeleteReason().indexOf("Change parent activity to ") >= 0) {
+                if (stack.peek().getDeleteReason().contains("Change parent activity to ")) {
                     dirtyPoint = stack.peek().getDeleteReason().replace("Change parent activity to ", "");
                 }
                 FlowElement dirtyTask = null;
@@ -515,12 +515,12 @@ public class FlowableUtils {
                 System.out.println(stack.peek().getTaskDefinitionKey() + "点脏路线集合：" + dirtyDataLine);
                 // 是全新的需要添加的脏线路
                 boolean isNewDirtyData = true;
-                for (int i = 0; i < dirtyDataLineList.size(); i++) {
+                for (Set<String> strings : dirtyDataLineList) {
                     // 如果发现他的上个节点在脏线路内，说明这个点可能是并行的节点，或者连续驳回
                     // 这时，都以之前的脏线路节点为标准，只需合并脏线路即可，也就是路线补全
-                    if (dirtyDataLineList.get(i).contains(userTaskKey.toString())) {
+                    if (strings.contains(userTaskKey.toString())) {
                         isNewDirtyData = false;
-                        dirtyDataLineList.get(i).addAll(dirtyDataLine);
+                        strings.addAll(dirtyDataLine);
                     }
                 }
                 // 已确定时全新的脏线路

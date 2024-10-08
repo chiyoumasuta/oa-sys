@@ -11,7 +11,7 @@ import java.io.Serializable;
  * @author 不愿透露
  */
 public class AppUserToken implements Serializable {
-    public static final ThreadLocal<AppUserToken> THREAD_LOCAL_TOKEN = new ThreadLocal<AppUserToken>();
+    public static final ThreadLocal<AppUserToken> THREAD_LOCAL_TOKEN = new ThreadLocal<>();
     private User user;
 
 

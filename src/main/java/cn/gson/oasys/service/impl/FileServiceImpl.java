@@ -137,7 +137,7 @@ public class FileServiceImpl implements FileService {
                 break;
             case "报销附件":
                 result.setFile(byUserIdAndFather.stream()
-                        .filter(it->it.getModel().equals(File.model.REIMBURSEMENT)&&it.getUserId().equals(userId)&&it.getModel().equals(File.model.REIMBURSEMENT))
+                        .filter(it->it.getModel().equals(File.model.REIMBURSEMENT)&&it.getUserId().equals(userId))
                         .collect(Collectors.toList()));
                 break;
             case "待审核":
@@ -166,7 +166,7 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public boolean drop(String fileIds) {
-        for (Long fileId : Arrays.stream(fileIds.split(",")).filter(it->it!=null).map(Long::valueOf).collect(Collectors.toList())) {
+        for (Long fileId : Arrays.stream(fileIds.split(",")).filter(Objects::nonNull).map(Long::valueOf).collect(Collectors.toList())) {
             File file = flDao.selectByPrimaryKey(fileId);
             file.setFileInTrash(true);
             file.setShare(false);
@@ -186,7 +186,7 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public boolean reDrop(String fileIds) {
-        Arrays.stream(fileIds.split(",")).filter(it->it!=null).map(Long::valueOf).forEach(it->{
+        Arrays.stream(fileIds.split(",")).filter(Objects::nonNull).map(Long::valueOf).forEach(it->{
             File file = flDao.selectByPrimaryKey(it);
             file.setFileInTrash(false);
             flDao.updateByPrimaryKeySelective(file);
@@ -196,7 +196,7 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public boolean delete(String fileIds) {
-        for (Long fileId : Arrays.stream(fileIds.split(",")).filter(it->it!=null).map(Long::valueOf).collect(Collectors.toList())) {
+        for (Long fileId : Arrays.stream(fileIds.split(",")).filter(Objects::nonNull).map(Long::valueOf).collect(Collectors.toList())) {
             File fileList = flDao.selectByPrimaryKey(fileId);
             java.io.File file = new java.io.File(this.rootPath,fileList.getFilePath());
             if(file.exists()&&file.isFile()){
@@ -228,7 +228,7 @@ public class FileServiceImpl implements FileService {
                 flDao.updateByPrimaryKeySelective(file);
             });
         }catch (Exception e){
-            System.out.println(e.toString());
+            System.out.println(e);
             return false;
         }
         return true;

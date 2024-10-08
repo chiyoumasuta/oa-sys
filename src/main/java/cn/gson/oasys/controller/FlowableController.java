@@ -132,7 +132,7 @@ public class FlowableController {
             throw new ServiceException("模型数据为空，请先设计流程并成功保存，再进行发布");
         }
         BpmnModel model = modelService.getBpmnModel(modelData);
-        if (model.getProcesses().size() == 0) {
+        if (model.getProcesses().isEmpty()) {
             throw new ServiceException("数据模型不符要求，请至少设计一条主线流程");
         }
         byte[] bpmnBytes = new BpmnXMLConverter().convertToXML(model);
@@ -158,9 +158,13 @@ public class FlowableController {
     @RequestMapping(value = "/start", method = RequestMethod.POST)
     @ApiOperation(value = "启动流程 流程实例化接口 ",notes = "type：project_process(\"项目管理\") leave(\"请假审批\")")
     public UtilResultSet start(String deployId, String dateJson, String type) {
-        if (flowableService.start(deployId, dateJson, type)){
-            return UtilResultSet.success("流程实例化成功");
-        }return UtilResultSet.bad_request("流程实例化失败");
+        try {
+            if (flowableService.start(deployId, dateJson, type)){
+                return UtilResultSet.success("流程实例化成功");
+            }return UtilResultSet.bad_request("流程实例化失败");
+        } catch (Exception e){
+            throw  new ServiceException(e.getMessage());
+        }
     }
 
     @RequestMapping(value = "/getActDeModels",method = RequestMethod.POST)
@@ -215,9 +219,13 @@ public class FlowableController {
     @RequestMapping(value = "/audit",method = RequestMethod.POST)
     @ApiOperation(value = "流程审核接口")
     public UtilResultSet audit(String taskId,String result){
-        if (flowableService.audit(taskId,result)){
-            return UtilResultSet.success("审批成功");
-        }else return UtilResultSet.bad_request("审批失败");
+        try {
+            if (flowableService.audit(taskId,result)){
+                return UtilResultSet.success("审批成功");
+            }else return UtilResultSet.bad_request("审批失败");
+        } catch (Exception e){
+            throw new ServiceException(e.getMessage());
+        }
     }
 
     /**

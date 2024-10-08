@@ -1,18 +1,12 @@
 package cn.gson.oasys.entity;
 
-import cn.gson.oasys.vo.SysMenuVo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 import javax.persistence.*;
 import java.util.Date;
-import java.util.List;
-import java.util.Set;
 
-/**
- * @author l
- */
-//@Entity
+@Entity
 @Table(name = "user")
 @Data
 public class User {
@@ -44,17 +38,7 @@ public class User {
     @Column
     private boolean del;//是否删除
     @Transient
-    private List<SysRole> roles;
-    @Transient
-    private String roleName;
-    @Transient
-    private String roleIds;
-    @Transient
     private String deptName;
     @Transient
-    private List<SysMenuVo> menus;
-    @Transient
-    private Set<String> permissions;
-    @Transient
-    private boolean isManager=true;
+    private boolean isManager=false;
 }

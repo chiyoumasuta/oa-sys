@@ -50,16 +50,24 @@ public class FlowableServiceImpl implements FlowableService {
     public boolean audit(String taskId, String result) {
         // 领导审批
         Task task = taskService.createTaskQuery().taskId(taskId).singleResult();
+        String assignee = task.getAssignee();
+        User user = UserTokenHolder.getUser();
+        if (!assignee.equals(user.getLoginName())){
+            return false;
+        }
         Map<String, Object> resultDataMap = new HashMap<>();
-        resultDataMap.put("outcome", result);
+        if (result!=null) {
+            resultDataMap.put("outcome", result);
+        }
         taskService.complete(task.getId(), resultDataMap);
         switch (task.getProcessDefinitionId().split(":")[0]) {
             case "leave":
                 return leaveApplicationService.audit(task.getProcessInstanceId(), result);
+            case "reimbursement_process":
+                return reimbursementService.audit(task.getProcessInstanceId(), result);
             default:
                 break;
         }
-
         return false;
     }
 
@@ -73,7 +81,7 @@ public class FlowableServiceImpl implements FlowableService {
             case "project_process":
                 //项目标准化流程接口
             case "leave":
-                Long dataKey = 0L;
+                Long dataKey;
                 Map<String,Object> variables = new HashMap<>();
                 LeaveApplication data = JSONObject.toJavaObject(JSONObject.parseObject(dateJson), LeaveApplication.class);
                 data.setCreatedAt(new Date());
@@ -108,13 +116,13 @@ public class FlowableServiceImpl implements FlowableService {
         if ("1".equals(searchType)) {
             // 查询待审核的任务，假设待审核任务与你用户相关的逻辑处理
             taskList = taskService.createTaskQuery()
-//                    .active()
+                    .active()
                     .taskCandidateOrAssigned(String.valueOf(user.getId()))
                     .list();
         } else {
             // 查询全部流程任务
             taskList = taskService.createTaskQuery()
-//                    .active()
+                    .active()
                     .list();
         }
 

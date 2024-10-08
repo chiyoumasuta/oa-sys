@@ -35,9 +35,9 @@ public class DepartmentServiceImpl implements DepartmentService {
         if (departmentDao.insert(department)>0){
             SysConfig sysConfig = new SysConfig();
             sysConfig.setName(department.getName());
-            sysConfigService.save(sysConfig);
+            sysConfigService.saveOrUpdate(sysConfig);
             return true;
-        };
+        }
         return false;
     }
 
@@ -46,7 +46,7 @@ public class DepartmentServiceImpl implements DepartmentService {
         Example example = new Example(User.class);
         example.createCriteria().andLike("deptId", "%"+id+"%");
         List<User> users = userDao.selectByExample(example);
-        if (users.size()>0) {
+        if (!users.isEmpty()) {
             throw new ServiceException("当前部门存在职员，不允许删除");
         }
         return departmentDao.deleteByPrimaryKey(id)>0;

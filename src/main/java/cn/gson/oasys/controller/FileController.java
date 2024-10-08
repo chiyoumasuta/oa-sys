@@ -25,6 +25,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 @RestController
 @RequestMapping("/file")
@@ -82,7 +83,7 @@ public class FileController {
             java.io.File file = fileService.getFile(filelist.getFilePath());
             response.setContentLength(filelist.getSize().intValue());
             response.setContentType(filelist.getContentType());
-            response.setHeader("Content-Disposition","attachment;filename=" + new String(filelist.getFileName().getBytes("UTF-8"), "ISO8859-1"));
+            response.setHeader("Content-Disposition","attachment;filename=" + new String(filelist.getFileName().getBytes(StandardCharsets.UTF_8), "ISO8859-1"));
             writefile(response, file);
         } catch (Exception e) {
             e.printStackTrace();

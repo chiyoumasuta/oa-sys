@@ -1,5 +1,6 @@
 package cn.gson.oasys.entity.reimbursement;
 
+import cn.gson.oasys.entity.ProjectProcess;
 import lombok.Data;
 
 import javax.persistence.*;
@@ -20,12 +21,16 @@ public class Reimbursement {
     @Column(name = "department", columnDefinition = "部门")    private Long department;
     @Column(name = "department_name",columnDefinition = "部门名称") private String departmentName;
     @Column(name = "expense_type", columnDefinition = "费用类型")    private ExpenseType type;
+    @Column(name = "submit_user",columnDefinition = "提交人") private Long submitUser;
+    @Column(name = "submit_user_name",columnDefinition = "提交人名称")private String submitUserName;
     @Column(name = "submit_date", columnDefinition = "提交日期")    private Date submitDate;
     @Column(name = "approval_date", columnDefinition = "批准日期")    private Date approvalDate;
     @Column(name = "attachment_id", columnDefinition = "文件列表(支持多个)")    private String attachmentId;
     @Column(name = "status", columnDefinition = "状态(提交/审核/批准/驳回，按照阶段自动显示)")    private Status status;
     @Column(name = "approver", columnDefinition = "审批人")    private Long approver;
     @Column(name = "approver_name", columnDefinition = "审批人")    private String approverName;
+    @Column(name = "approver_time", columnDefinition = "审批时间") private Date approverTime;
+    @Column(name = "accounting_time",columnDefinition = "财务审核时间") private Date accountingTime;
     @Column(name = "reimbursement_amount", columnDefinition = "报销金额")    private Double reimbursementAmount;
     @Column(name = "actual_amount", columnDefinition = "实际金额")    private Double actualAmount;
     @Column(name = "project", columnDefinition = "所属项目")    private String project;
@@ -45,18 +50,32 @@ public class Reimbursement {
     private List<ReimbursementItem> details;
 
     public enum Status{
-        SUBMITTED("提交"),
-        UNDER_REVIEW("审核"),
-        APPROVED("批准"),
-        REJECTED("驳回");
+        MANAGER("部门负责人审核",1),
+        ACCOUNTING("财务审核",2),
+        GENERAL("总经理审核",3),
+        APPROVED("批准",4),
+        REJECTED("驳回",5);
         private final String name;
+        private final int leave;
 
-        Status(String name) {
+        Status(String name, int leave) {
             this.name = name;
+            this.leave = leave;
         }
 
         public String getName() {
             return name;
+        }
+
+        public int getLeave() {return leave;}
+
+        public static Status getNextStatus(Status status) {
+            for (Status value : Status.values()) {
+                if (value.getLeave() == (status.getLeave()+1)) {
+                    return value;
+                }
+            }
+            return null;
         }
     }
 

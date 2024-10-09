@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/fileAudit")
-@Api(tags = "上传文件审核")
+@Api(tags = "文件分享审核")
 public class FileAuditRecordController {
 
     @Autowired

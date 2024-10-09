@@ -1,24 +1,20 @@
 package cn.gson.oasys.controller;
 
 import cn.gson.oasys.dao.LeaveApplicationDao;
-import cn.gson.oasys.entity.LeaveApplication;
-import cn.gson.oasys.entity.User;
 import cn.gson.oasys.exception.ServiceException;
-import cn.gson.oasys.support.FlowableApiUtils;
 import cn.gson.oasys.service.*;
-import cn.gson.oasys.support.UserTokenHolder;
 import cn.gson.oasys.support.UtilResultSet;
 import cn.gson.oasys.vo.TaskDTO;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
-import org.apache.commons.codec.binary.Base64;
+import org.apache.ibatis.annotations.Param;
 import org.flowable.bpmn.converter.BpmnXMLConverter;
 import org.flowable.bpmn.model.BpmnModel;
 import org.flowable.engine.*;
 import org.flowable.engine.history.HistoricActivityInstance;
 import org.flowable.engine.repository.Deployment;
-import org.flowable.engine.runtime.ProcessInstance;
-import org.flowable.image.ProcessDiagramGenerator;
 import org.flowable.task.api.Task;
 import org.flowable.ui.common.model.UserRepresentation;
 import org.flowable.ui.common.security.DefaultPrivileges;
@@ -30,15 +26,14 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Flowable 相关接口
+ *
  * @author linjinp
  * @date 2019/10/31 10:55
-*/
+ */
 @RestController
 @RequestMapping("/flowable")
 @Api(tags = "流程通用接口")
@@ -58,8 +53,6 @@ public class FlowableController {
     @Resource
     private ActReprocdefService actReprocdefService;
     @Resource
-    private FlowableApiUtils flowableApiUtils;
-    @Resource
     private TaskService taskService;
     @Resource
     private HistoryService historyService;
@@ -71,10 +64,10 @@ public class FlowableController {
     private DepartmentService departmentService;
     @Resource
     FlowableService flowableService;
-    @Resource LeaveApplicationService leaveApplicationService;
+    @Resource
+    LeaveApplicationService leaveApplicationService;
 
-    //获取默认的管理员信息
-//    @RequestMapping(value = "/rest/account", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/rest/account", method = RequestMethod.GET, produces = "application/json")
     @ApiOperation(value = "获取默认的管理员信息")
     public UserRepresentation getAccount() {
         UserRepresentation userRepresentation = new UserRepresentation();
@@ -92,37 +85,10 @@ public class FlowableController {
         return userRepresentation;
     }
 
-    //获取流程图
-    @RequestMapping(value = "/getFlowDiagram",method = RequestMethod.POST)
-    @ApiOperation(value = "获取流程图")
-    public UtilResultSet getFlowDiagram(String processDefinedId) throws IOException {
-        List<String> flows = new ArrayList<>();
-        //获取流程图
-        BpmnModel bpmnModel = repositoryService.getBpmnModel(processDefinedId);
-        ProcessEngineConfiguration processEngineConfig = processEngine.getProcessEngineConfiguration();
-
-        ProcessDiagramGenerator diagramGenerator = processEngineConfig.getProcessDiagramGenerator();
-        InputStream in = diagramGenerator.generateDiagram(bpmnModel, "bmp", new ArrayList<>(), flows, processEngineConfig.getActivityFontName(),
-                processEngineConfig.getLabelFontName(), processEngineConfig.getAnnotationFontName(), processEngineConfig.getClassLoader(), 1.0, true);
-
-        // in.available()返回文件的字节长度
-        byte[] buf = new byte[in.available()];
-        // 将文件中的内容读入到数组中
-        in.read(buf);
-        // 进行Base64编码处理
-        String base64Img =  new String(Base64.encodeBase64(buf));
-        in.close();
-        return UtilResultSet.success(base64Img);
-    }
-
-
-    /**
-     * 流程部署
-     *
-     * @param modelId 流程ID，来自 ACT_DE_MODEL
-     * @return
-     */
     @RequestMapping(value = "/deploy", method = RequestMethod.POST)
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "modelId", value = "流程ID，来自 ACT_DE_MODEL", required = true, dataType = "String")
+    })
     @ApiOperation("流程部署")
     public UtilResultSet deploy(String modelId) {
         // 根据模型 ID 获取模型
@@ -149,58 +115,47 @@ public class FlowableController {
         return UtilResultSet.success("流程部署成功：" + modelId + " " + new Date());
     }
 
-    /**
-     * 启动流程
-     *
-     * @param deployId 部署的流程 Id，来自 ACT_RE_PROCDEF
-     * @return
-     */
     @RequestMapping(value = "/start", method = RequestMethod.POST)
-    @ApiOperation(value = "启动流程 流程实例化接口 ",notes = "type：project_process(\"项目管理\") leave(\"请假审批\")")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "deployId", value = "部署的流程Id,来自ACT_RE_PROCDEF", required = true, dataType = "String"),
+            @ApiImplicitParam(name = "type", value = "project_process(项目管理) leave(请假审批) reimbursement_process(报销流程)", required = true, dataType = "String")
+    })
+    @ApiOperation(value = "启动流程 流程实例化接口 ")
     public UtilResultSet start(String deployId, String dateJson, String type) {
-        try {
-            if (flowableService.start(deployId, dateJson, type)){
-                return UtilResultSet.success("流程实例化成功");
-            }return UtilResultSet.bad_request("流程实例化失败");
-        } catch (Exception e){
-            throw  new ServiceException(e.getMessage());
+        if (flowableService.start(deployId, dateJson, type)) {
+            return UtilResultSet.success("流程实例化成功");
         }
+        return UtilResultSet.bad_request("流程实例化失败");
     }
 
-    @RequestMapping(value = "/getActDeModels",method = RequestMethod.POST)
+    @RequestMapping(value = "/getActDeModels", method = RequestMethod.POST)
     @ApiOperation(value = "获取未部署流程列表")
     public UtilResultSet getActDeModels() {
         return UtilResultSet.success(actDeModelService.getActDeModels());
     }
 
-    @RequestMapping(value = "getProcdefList",method = RequestMethod.POST)
+    @RequestMapping(value = "getProcdefList", method = RequestMethod.POST)
     @ApiOperation(value = "获取已部署列表")
     public UtilResultSet getProcdefList() {
         return UtilResultSet.success(actReprocdefService.getActReprocdef());
     }
 
-    @RequestMapping(value = "/deleteProcess",method = RequestMethod.POST)
+    @RequestMapping(value = "/deleteProcess", method = RequestMethod.POST)
     @ApiOperation(value = "中止流程")
     public UtilResultSet deleteProcess(String processId) {
-        flowableApiUtils.deleteProcess(processId);
+        flowableService.deleteProcess(processId);
         return UtilResultSet.success("终止成功");
     }
 
-    /**
-     * 流程列表查询
-     * @param searchType 流程列表 1.待我审核 2.全部流程
-     */
-    @RequestMapping(value = "/getInstantiateList",method = RequestMethod.POST)
+    @RequestMapping(value = "/getInstantiateList", method = RequestMethod.POST)
     @ApiOperation(value = "获取流程实例化列表")
-    public UtilResultSet getInstantiateList(String searchType,String type) {
-        // 返回包装后的列表
-        return UtilResultSet.success(flowableService.getInstantiateList(searchType,type));
+    public UtilResultSet getInstantiateList(String searchType, String type) {
+        return UtilResultSet.success(flowableService.getInstantiateList(searchType, type));
     }
 
     /**
      * 查询个人任务
      */
-
     @Test
     public void createTaskQuery() {
         String assignee = "张三";
@@ -213,41 +168,63 @@ public class FlowableController {
                 + " " + v.getExecutionId() + " " + v.getProcessInstanceId() + " " + v.getCreateTime()));
     }
 
-    /**
-     * 流程审批
-     */
-    @RequestMapping(value = "/audit",method = RequestMethod.POST)
+    @RequestMapping(value = "/audit", method = RequestMethod.POST)
     @ApiOperation(value = "流程审核接口")
-    public UtilResultSet audit(String taskId,String result){
+    public UtilResultSet audit(String taskId, String result) {
         try {
-            if (flowableService.audit(taskId,result)){
+            if (flowableService.audit(taskId, result)) {
                 return UtilResultSet.success("审批成功");
-            }else return UtilResultSet.bad_request("审批失败");
-        } catch (Exception e){
+            } else return UtilResultSet.bad_request("审批失败");
+        } catch (Exception e) {
             throw new ServiceException(e.getMessage());
         }
     }
 
-    /**
-     * 根据实例化流程id获取流程实例图
-     * @param taskId 实例化流程id
-     */
-    @RequestMapping(value = "/getTaskProcessDiagram",method = RequestMethod.POST)
-    @ApiOperation(value = "根据实例化id获取流程图实例（对流程图进行处理标明执行情况）")
-    public void getTaskProcessDiagram(String taskId, HttpServletResponse httpServletResponse){
-        flowableApiUtils.getTaskProcessDiagram(taskId,httpServletResponse);
+    @RequestMapping(value = "/getFlowDiagram", method = RequestMethod.POST)
+    @ApiOperation(value = "获取流程图(未实例化)")
+    public UtilResultSet getFlowDiagram(String processDefinedId) throws IOException {
+        String base64Img = flowableService.getFlowDiagram(processDefinedId);
+        return UtilResultSet.success(base64Img);
     }
 
-    /**
-     * 查看审批历史
-     * @param processInstanceId 实例化流程id
-     */
-    @RequestMapping(value = "/getHistoryList",method = RequestMethod.POST)
+    @RequestMapping(value = "/getTaskProcessDiagram", method = RequestMethod.POST)
+    @ApiOperation(value = "根据实例化id获取流程图实例（标明执行情况）")
+    public void getTaskProcessDiagram(String taskId, HttpServletResponse httpServletResponse) {
+        flowableService.getTaskProcessDiagram(taskId, httpServletResponse);
+    }
+
+    @RequestMapping(value = "/getHistoryList", method = RequestMethod.POST)
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "processInstanceId", value = "实例化流程id", required = true, dataType = "String")
+    })
     @ApiOperation(value = "查看当前实例化流程审批历史")
     public UtilResultSet getHistoryList(String processInstanceId) {
-        List<HistoricActivityInstance> historyList = flowableApiUtils.getHistoryList(processInstanceId);
+        List<HistoricActivityInstance> historyList = flowableService.getHistoryList(processInstanceId);
         if (historyList.isEmpty()) {
             return UtilResultSet.bad_request("当前流程无审批记录");
-        }else return UtilResultSet.success(historyList);
+        }
+        return UtilResultSet.success(historyList);
+    }
+
+    @RequestMapping(value = "/checkProcessInstanceFinish", method = RequestMethod.POST)
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "processInstanceId", value = "部署的流程Id,来自ACT_RE_PROCDEF", required = true, dataType = "String"),
+    })
+    @ApiOperation(value = "检查流程实例是否结束")
+    public UtilResultSet checkProcessInstanceFinish(String processInstanceId) {
+        if (flowableService.checkProcessInstanceFinish(processInstanceId)) {
+            return UtilResultSet.success("结束");
+        }
+        return UtilResultSet.success("未结束");
+    }
+
+    @RequestMapping(value = "/getRuntimeBusinessKeyByUser", method = RequestMethod.POST)
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "userId", value = "用户的ID/用户名", required = true, dataType = "String"),
+            @ApiImplicitParam(name = "type", value = "流程类型", required = true, dataType = "String")
+    })
+    @ApiOperation("根据用户 ID 获取需要审核的业务键列表")
+    List<Map<String, Object>> getRuntimeBusinessKeyByUser(String userId, String type) {
+        return flowableService.getRuntimeBusinessKeyByUser(userId, type);
     }
 }

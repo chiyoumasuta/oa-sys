@@ -1,7 +1,7 @@
 package cn.gson.oasys.controller;
 
 import cn.gson.oasys.entity.ProjectProcess;
-import cn.gson.oasys.support.FlowableApiUtils;
+import cn.gson.oasys.service.FlowableService;
 import cn.gson.oasys.service.ProjectProcessService;
 import cn.gson.oasys.support.UserTokenHolder;
 import cn.gson.oasys.support.UtilResultSet;
@@ -20,7 +20,7 @@ public class ProjectProcessController {
     @Resource
     private ProjectProcessService projectProcessService;
     @Resource
-    private FlowableApiUtils flowableApiUtils;
+    private FlowableService flowableService;
 
     @RequestMapping(value = "/createProject",method = RequestMethod.POST)
     @ApiOperation(value = "创建")
@@ -33,7 +33,7 @@ public class ProjectProcessController {
     @RequestMapping(value = "/page",method = RequestMethod.POST)
     @ApiOperation(value = "获取需要审核的业务列表")
     public UtilResultSet page(int pageNo, int pageSize, String name){
-        return UtilResultSet.success(flowableApiUtils.getRuntimeBusinessKeyByUser(String.valueOf(UserTokenHolder.getUser().getId()),"项目管理"));
+        return UtilResultSet.success(flowableService.getRuntimeBusinessKeyByUser(String.valueOf(UserTokenHolder.getUser().getId()),"项目管理"));
     }
 
     @RequestMapping(value = "/getInfo",method = RequestMethod.POST)

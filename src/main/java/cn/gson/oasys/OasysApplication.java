@@ -2,6 +2,7 @@ package cn.gson.oasys;
 
 import cn.gson.oasys.config.AppDispatcherServletConfiguration;
 import cn.gson.oasys.config.ApplicationConfiguration;
+import cn.gson.oasys.handler.JwtFilter;
 import org.flowable.ui.modeler.conf.DatabaseConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -14,12 +15,12 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import tk.mybatis.spring.annotation.MapperScan;
 
-
-//启用全局异常拦截器
 @Import(value={
 		ApplicationConfiguration.class,
 		AppDispatcherServletConfiguration.class,
-		DatabaseConfiguration.class})
+		DatabaseConfiguration.class,
+		JwtFilter.class
+})
 @SpringBootApplication(exclude={SecurityAutoConfiguration.class, SecurityFilterAutoConfiguration.class})
 @EnableTransactionManagement
 @EnableScheduling
@@ -31,6 +32,5 @@ public class OasysApplication extends SpringBootServletInitializer {
 	}
 	public static void main(String[] args) {
 		SpringApplication.run(OasysApplication.class, args);
-
 	}
 }

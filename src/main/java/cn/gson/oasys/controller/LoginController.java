@@ -2,6 +2,7 @@ package cn.gson.oasys.controller;
 
 import cn.gson.oasys.entity.Department;
 import cn.gson.oasys.entity.User;
+import cn.gson.oasys.exception.ServiceException;
 import cn.gson.oasys.exception.UnknownAccountException;
 import cn.gson.oasys.service.DepartmentService;
 import cn.gson.oasys.service.UserService;
@@ -55,19 +56,17 @@ public class LoginController {
     @RequestMapping(value = "/web/login")
     @ApiOperation(value = "登录接口")
     public UtilResultSet login(String phone, String password, HttpServletRequest req) {
-        try {
-            User currentUser = userService.verifyAndGetUser(phone, password);
-            if (currentUser != null) {
-                currentUser = userService.getPermsByUser(currentUser, -1);
-                UserTokenHolder.setUser(currentUser);
-                String token = JwtUtil.createToken(currentUser);
-                return UtilResultSet.success(token);
-            }
-            return UtilResultSet.bad_request("账号或密码不正确");
-        } catch (Exception e) {
-            e.printStackTrace();
-            return UtilResultSet.bad_request("登录错误");
+        if (phone==null||password==null) {
+            throw new ServiceException("未输入账号或密码");
         }
+        User currentUser = userService.verifyAndGetUser(phone, password);
+        if (currentUser != null) {
+            currentUser = userService.getPermsByUser(currentUser, -1);
+            UserTokenHolder.setUser(currentUser);
+            String token = JwtUtil.createToken(currentUser);
+            return UtilResultSet.success(token);
+        }
+        return UtilResultSet.bad_request("账号或密码不正确");
     }
 
     @RequestMapping(value = "/logout")

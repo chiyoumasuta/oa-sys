@@ -22,14 +22,18 @@ public class SwaggerConfig {
  
     @Bean
     public Docket createRestApi() {
+//        return new Docket(DocumentationType.SWAGGER_2).apiInfo(apiInfo()).select()
+//                .apis(RequestHandlerSelectors.basePackage("cn.gson.oasys.controller")).paths(PathSelectors.any())
+//                .build().globalOperationParameters(setHeaderToken()).pathMapping("/api");
+
         return new Docket(DocumentationType.SWAGGER_2).apiInfo(apiInfo()).select()
                 .apis(RequestHandlerSelectors.basePackage("cn.gson.oasys.controller")).paths(PathSelectors.any())
-                .build().globalOperationParameters(setHeaderToken()).pathMapping("/api");
+                .build().globalOperationParameters(setHeaderToken());
  
     }
  
     private ApiInfo apiInfo() {
-        return new ApiInfoBuilder().title("action-swagger").description("swagger实战").termsOfServiceUrl("")
+        return new ApiInfoBuilder().title("OA-System").description("OA系统接口").termsOfServiceUrl("")
                 .version("1.0").build();
     }
  

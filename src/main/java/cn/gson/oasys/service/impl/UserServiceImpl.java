@@ -148,6 +148,9 @@ public class UserServiceImpl implements UserService {
     @Override
     public User verifyAndGetUser(String phone, String passWord) {
         Example example = new Example(User.class);
+        if (phone==null){
+            throw new ServiceException("请输入手机号");
+        }
         example.createCriteria().andEqualTo("phone", phone).andEqualTo("del", false);
         User user = userDao.selectOneByExample(example);
         if (user == null || !user.getPassword().equals(passWord)) return null;

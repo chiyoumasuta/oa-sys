@@ -131,10 +131,6 @@ public class UserTokenHolder {
         return user;
     }
 
-    public static AppUserToken getToken() {
-        return AppUserToken.THREAD_LOCAL_TOKEN.get();
-    }
-
     /**
      * 获取当前登录的手机号
      *

@@ -6,7 +6,7 @@ import cn.gson.oasys.entity.config.SysConfig;
 import cn.gson.oasys.entity.User;
 import cn.gson.oasys.entity.ProjectProcess;
 import cn.gson.oasys.exception.ServiceException;
-import cn.gson.oasys.support.FlowableApiUtils;
+import cn.gson.oasys.service.FlowableService;
 import cn.gson.oasys.service.ProjectProcessService;
 import cn.gson.oasys.service.SysConfigService;
 import cn.gson.oasys.service.UserService;
@@ -40,7 +40,7 @@ public class ProjectProcessServiceImpl implements ProjectProcessService {
     @Resource
     private RuntimeService runtimeService;
     @Resource
-    private FlowableApiUtils flowableApiUtils;
+    private FlowableService flowableService;
 
     @Override
     public boolean createProject(ProjectProcess projectProcess,String deployId,String dataJson) {
@@ -155,17 +155,17 @@ public class ProjectProcessServiceImpl implements ProjectProcessService {
                 break;
         }
 
-        flowableApiUtils.setVariables(taskId,map);
+        flowableService.setVariables(taskId,map);
 
         // 根据任务节点 Id，获取流程实例 Id
-        String processInstanceId = flowableApiUtils.getTaskInfo(taskId);
+        String processInstanceId = flowableService.getTaskInfo(taskId);
 
         // 完成任务，taskId 任务节点 ID
-        flowableApiUtils.taskByAssignee(taskId, user.getUserName(), map);
+        flowableService.taskByAssignee(taskId, user.getUserName(), map);
         projectProcess.setStats(ProjectProcess.Stats.getNextStats(projectProcess.getStats()));
 
         // 通过流程实例 Id，判断流程是否结束
-        boolean isFinish = flowableApiUtils.checkProcessInstanceFinish(processInstanceId);
+        boolean isFinish = flowableService.checkProcessInstanceFinish(processInstanceId);
         if (isFinish) {
             projectProcess.setStats(ProjectProcess.Stats.DONE);
         }

@@ -38,6 +38,11 @@ public interface SysConfigService {
     List<Project> getProjectList();
 
     /**
+     * 删除项目
+     */
+    boolean deleteProject(Long id);
+
+    /**
      * 增加/修改项目列表
      */
     boolean saveOrUpdate(Project project);
@@ -46,6 +51,11 @@ public interface SysConfigService {
      * 获取报销明细类型配置列表
      */
     List<ReiType> getReiTypeList(String type);
+
+    /**
+     * 删除报销明细类型
+     */
+    boolean deleteReiType(Long id);
 
     /**
      * 增加/修改报销明细类型列表

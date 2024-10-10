@@ -20,7 +20,7 @@ public class DepartmentController {
     @Resource
     private DepartmentService departmentService;
 
-    @RequestMapping(value = "/save",method = RequestMethod.POST)
+    @RequestMapping(value = "/save", method = RequestMethod.POST)
     @ApiOperation("新增部门")
     public UtilResultSet saveDepartment(Department department) {
         if (departmentService.saveDepartment(department)) {
@@ -31,7 +31,7 @@ public class DepartmentController {
     }
 
     // 删除部门
-    @RequestMapping(value = "/delete",method = RequestMethod.POST)
+    @RequestMapping(value = "/delete", method = RequestMethod.POST)
     @ApiOperation("删除部门")
     public UtilResultSet deleteDepartment(Long id) {
         if (departmentService.deleteDepartment(id)) {
@@ -41,7 +41,7 @@ public class DepartmentController {
         }
     }
 
-    @RequestMapping(value = "/update",method = RequestMethod.POST)
+    @RequestMapping(value = "/update", method = RequestMethod.POST)
     @ApiOperation("更新部门信息")
     public UtilResultSet updateDepartment(Department department) {
         if (departmentService.updateDepartment(department)) {
@@ -51,7 +51,7 @@ public class DepartmentController {
         }
     }
 
-    @RequestMapping(value = "/find/{id}",method = RequestMethod.POST)
+    @RequestMapping(value = "/find/{id}", method = RequestMethod.POST)
     @ApiOperation("通过id查询部门信息")
     public UtilResultSet findDepartmentById(String id) {
         List<Department> department = departmentService.findDepartmentById(id);
@@ -62,7 +62,7 @@ public class DepartmentController {
         }
     }
 
-    @RequestMapping(value = "/list",method = RequestMethod.POST)
+    @RequestMapping(value = "/list", method = RequestMethod.POST)
     @ApiOperation("查询所有部门及其用户信息")
     public UtilResultSet findAllDepartments() {
         List<DepartmentVo> departmentVos = departmentService.findAllDepartments();
@@ -74,7 +74,7 @@ public class DepartmentController {
     }
 
     // 设置部门下的用户
-    @RequestMapping(value = "/setDept",method = RequestMethod.POST)
+    @RequestMapping(value = "/setDept", method = RequestMethod.POST)
     @ApiOperation("设置部门用户")
     public UtilResultSet setDept(Long deptId, String users) {
         try {
@@ -88,11 +88,12 @@ public class DepartmentController {
         }
     }
 
-    @RequestMapping(value = "/deleteUserFormDept",method = RequestMethod.POST)
+    @RequestMapping(value = "/deleteUserFormDept", method = RequestMethod.POST)
     @ApiOperation("将用户从部门删除")
-    public UtilResultSet deleteUserFormDept(Long deptId, Long userId){
+    public UtilResultSet deleteUserFormDept(Long deptId, Long userId) {
         if (departmentService.deleteUserFormDept(deptId, userId)) {
             return UtilResultSet.success("删除成功");
-        }return UtilResultSet.bad_request("删除失败");
+        }
+        return UtilResultSet.bad_request("删除失败");
     }
 }

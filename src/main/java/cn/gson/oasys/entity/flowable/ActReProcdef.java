@@ -1,4 +1,4 @@
-package cn.gson.oasys.entity;
+package cn.gson.oasys.entity.flowable;
 
 import lombok.Data;
 

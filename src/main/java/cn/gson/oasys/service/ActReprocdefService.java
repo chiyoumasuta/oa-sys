@@ -1,6 +1,6 @@
 package cn.gson.oasys.service;
 
-import cn.gson.oasys.entity.ActReProcdef;
+import cn.gson.oasys.entity.flowable.ActReProcdef;
 
 import java.util.List;
 

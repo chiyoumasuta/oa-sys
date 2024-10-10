@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Primary;
 
 /**
  * 流程引擎配置文件
+ *
  * @author: linjinp
  * @create: 2019-10-21 16:49
  **/
@@ -35,6 +36,7 @@ public class ProcessEngineConfig {
 
     /**
      * 初始化流程引擎
+     *
      * @return
      */
     @Primary
@@ -58,7 +60,7 @@ public class ProcessEngineConfig {
                     // POP3/SMTP服务的授权码
                     .setMailServerPassword("xxxxxxx")
                     // 默认发件人
-                    .setMailServerDefaultFrom("836369078@qq.com")
+                    .setMailServerDefaultFrom("1727970649@qq.com")
                     // 设置发件人用户名
                     .setMailServerUsername("管理员")
                     // 解决流程图乱码

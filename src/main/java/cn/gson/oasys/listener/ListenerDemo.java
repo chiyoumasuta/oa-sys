@@ -9,34 +9,36 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
 
 /**
  * 会签监听器示例
+ *
  * @author: linjinp
  * @create: 2019-11-18 11:43
  **/
 @Component
-public class MyListener implements ExecutionListener {
+public class ListenerDemo implements ExecutionListener {
 
     // 页面配置参数注入
     private FixedValue num;
 
-    @Autowired
+    @Resource
     private RuntimeService runtimeService;
 
-    private static MyListener myListener;
+    private static ListenerDemo listenerDemo;
 
     // 解决监听器中 Bean 获取不到问题
     @PostConstruct
     public void init() {
-        myListener = this;
-        myListener.runtimeService = this.runtimeService;
+        listenerDemo = this;
+        listenerDemo.runtimeService = this.runtimeService;
     }
 
     @Override
     public void notify(DelegateExecution delegateExecution) {
         // 调用 runtimeService 示例
-        ProcessInstance processInstance = myListener.runtimeService.createProcessInstanceQuery().processInstanceId(delegateExecution.getProcessInstanceId()).singleResult();
+        ProcessInstance processInstance = listenerDemo.runtimeService.createProcessInstanceQuery().processInstanceId(delegateExecution.getProcessInstanceId()).singleResult();
         System.out.println(processInstance.getProcessDefinitionId());
 
         // 获取页面配置参数的值

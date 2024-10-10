@@ -14,12 +14,12 @@ import org.springframework.web.servlet.i18n.SessionLocaleResolver;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 @Configuration
-@ComponentScan(value = { "org.flowable.ui.modeler.rest.app",
-    },excludeFilters = {
+@ComponentScan(value = {"org.flowable.ui.modeler.rest.app",
+}, excludeFilters = {
         @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = EditorUsersResource.class),
         @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = EditorGroupsResource.class),
         @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = StencilSetResource.class),
-    }
+}
 )
 @EnableAsync
 public class AppDispatcherServletConfiguration implements WebMvcRegistrations {
@@ -41,7 +41,7 @@ public class AppDispatcherServletConfiguration implements WebMvcRegistrations {
         RequestMappingHandlerMapping requestMappingHandlerMapping = new RequestMappingHandlerMapping();
         requestMappingHandlerMapping.setUseSuffixPatternMatch(false);
         requestMappingHandlerMapping.setRemoveSemicolonContent(false);
-        Object[] interceptors = { localeChangeInterceptor() };
+        Object[] interceptors = {localeChangeInterceptor()};
         requestMappingHandlerMapping.setInterceptors(interceptors);
         return requestMappingHandlerMapping;
     }

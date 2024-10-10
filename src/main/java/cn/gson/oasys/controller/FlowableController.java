@@ -4,12 +4,10 @@ import cn.gson.oasys.dao.LeaveApplicationDao;
 import cn.gson.oasys.exception.ServiceException;
 import cn.gson.oasys.service.*;
 import cn.gson.oasys.support.UtilResultSet;
-import cn.gson.oasys.vo.TaskDTO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
-import org.apache.ibatis.annotations.Param;
 import org.flowable.bpmn.converter.BpmnXMLConverter;
 import org.flowable.bpmn.model.BpmnModel;
 import org.flowable.engine.*;
@@ -39,15 +37,9 @@ import java.util.*;
 @Api(tags = "流程通用接口")
 public class FlowableController {
     @Resource
-    private ProcessEngine processEngine;
-    @Resource
     private RepositoryService repositoryService;
     @Resource
     private ModelService modelService;
-    @Resource
-    private IdentityService identityService;
-    @Resource
-    private RuntimeService runtimeService;
     @Resource
     private ActDeModelService actDeModelService;
     @Resource
@@ -55,17 +47,7 @@ public class FlowableController {
     @Resource
     private TaskService taskService;
     @Resource
-    private HistoryService historyService;
-    @Resource
-    private LeaveApplicationDao leaveApplicationDao;
-    @Resource
-    private UserService userService;
-    @Resource
-    private DepartmentService departmentService;
-    @Resource
     FlowableService flowableService;
-    @Resource
-    LeaveApplicationService leaveApplicationService;
 
     @RequestMapping(value = "/rest/account", method = RequestMethod.GET, produces = "application/json")
     @ApiOperation(value = "获取默认的管理员信息")

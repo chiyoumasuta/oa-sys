@@ -43,24 +43,24 @@ public class FileServiceImpl implements FileService {
     @Override
     public Long saveFile(MultipartFile file, Long nowPath, File.model model) throws IllegalStateException, IOException {
         User user = UserTokenHolder.getUser();
-        if (user==null){
+        if (user == null) {
             throw new ServerException("用户信息获取失败");
         }
-        java.io.File savepath = new java.io.File(this.rootPath,user.getUserName());
+        java.io.File savepath = new java.io.File(this.rootPath, user.getUserName());
         if (!savepath.exists()) {
             savepath.mkdirs();
         }
 
         String type = FilenameUtils.getExtension(file.getOriginalFilename());
-        String newFileName = UUID.randomUUID().toString().toLowerCase()+"."+type;
-        java.io.File targetFile = new java.io.File(savepath,newFileName);
+        String newFileName = UUID.randomUUID().toString().toLowerCase() + "." + type;
+        java.io.File targetFile = new java.io.File(savepath, newFileName);
         file.transferTo(targetFile);
 
         File filelist = new File();
         String filename = file.getOriginalFilename();
         if (File.model.CLOUD.equals(model)) {
             Example example = new Example(File.class);
-            example.createCriteria().andEqualTo("fileName", filename).andEqualTo("father",nowPath==null?0:nowPath).andEqualTo("userId",user.getId());
+            example.createCriteria().andEqualTo("fileName", filename).andEqualTo("father", nowPath == null ? 0 : nowPath).andEqualTo("userId", user.getId());
             List<File> files = flDao.selectByExample(example);
             if (!files.isEmpty()) throw new ServiceException("文件名重复");
         }
@@ -68,8 +68,8 @@ public class FileServiceImpl implements FileService {
         filelist.setFileName(filename);
         filelist.setFilePath(targetFile.getAbsolutePath().replace("\\", "/").replace(this.rootPath, ""));
         filelist.setType(type);
-        filelist.setModel(model==null?File.model.CLOUD:model);
-        filelist.setFather(nowPath==null?0:nowPath);
+        filelist.setModel(model == null ? File.model.CLOUD : model);
+        filelist.setFather(nowPath == null ? 0 : nowPath);
         filelist.setSize(file.getSize());
         filelist.setUploadTime(new Date());
         filelist.setContentType(file.getContentType());
@@ -80,19 +80,19 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public boolean makeFolder(Long nowPath,String name){
+    public boolean makeFolder(Long nowPath, String name) {
         User user = UserTokenHolder.getUser();
-        java.io.File savepath = new java.io.File(this.rootPath,user.getUserName());
-        java.io.File folder = new java.io.File(savepath,name);
-        if (!folder.exists()){
-            if (!folder.mkdirs()){
+        java.io.File savepath = new java.io.File(this.rootPath, user.getUserName());
+        java.io.File folder = new java.io.File(savepath, name);
+        if (!folder.exists()) {
+            if (!folder.mkdirs()) {
                 return false;
             }
         }
         Example example = new Example(File.class);
         example.createCriteria().andEqualTo("fileName", name)
-                .andEqualTo("father",nowPath==null?0:nowPath)
-                .andEqualTo("userId",user.getId()).andEqualTo("type","folder");
+                .andEqualTo("father", nowPath == null ? 0 : nowPath)
+                .andEqualTo("userId", user.getId()).andEqualTo("type", "folder");
         List<File> files = flDao.selectByExample(example);
         if (!files.isEmpty()) throw new ServiceException("文件夹名重复");
 
@@ -100,7 +100,7 @@ public class FileServiceImpl implements FileService {
         filelist.setFileName(name);
         filelist.setFilePath(folder.getAbsolutePath().replace("\\", "/").replace(this.rootPath, ""));
         filelist.setType("folder");
-        filelist.setFather(nowPath==null?0:nowPath);
+        filelist.setFather(nowPath == null ? 0 : nowPath);
         filelist.setUploadTime(new Date());
         filelist.setUserId(user.getId());
         filelist.setModel(File.model.CLOUD);
@@ -111,38 +111,38 @@ public class FileServiceImpl implements FileService {
     @Override
     public FileListVo fileList(Long nowPath, String type) {
         Long userId = UserTokenHolder.getUser().getId();
-        Long father = nowPath==null?0:nowPath;
+        Long father = nowPath == null ? 0 : nowPath;
         Example example = new Example(File.class);
-        if ("回收站".equals(type)||"共享文件夹".equals(type)){
-            example.createCriteria().andLike("sharePeople","%"+userId+"%").orEqualTo("userId",userId);
+        if ("回收站".equals(type) || "共享文件夹".equals(type)) {
+            example.createCriteria().andLike("sharePeople", "%" + userId + "%").orEqualTo("userId", userId);
         } else {
-            example.createCriteria().andEqualTo("father",father);
+            example.createCriteria().andEqualTo("father", father);
             Example.Criteria criteria = example.createCriteria();
-            criteria.andLike("sharePeople","%"+userId+"%").orEqualTo("userId",userId);
+            criteria.andLike("sharePeople", "%" + userId + "%").orEqualTo("userId", userId);
             example.and(criteria);
         }
         List<File> byUserIdAndFather = flDao.selectByExample(example);
         FileListVo result = new FileListVo();
-        type = type==null?"所有文件":type;
-        switch (type){
+        type = type == null ? "所有文件" : type;
+        switch (type) {
             case "所有文件":
                 result.setFile(byUserIdAndFather.stream()
-                        .filter(it->!it.isFileInTrash()&&it.getUserId().equals(userId)&&it.getModel().equals(File.model.CLOUD))
+                        .filter(it -> !it.isFileInTrash() && it.getUserId().equals(userId) && it.getModel().equals(File.model.CLOUD))
                         .collect(Collectors.toList()));
                 break;
             case "回收站":
                 result.setFile(byUserIdAndFather.stream()
-                        .filter(it-> it.isFileInTrash()&&Objects.equals(it.getUserId(), userId)&&it.getModel().equals(File.model.CLOUD))
+                        .filter(it -> it.isFileInTrash() && Objects.equals(it.getUserId(), userId) && it.getModel().equals(File.model.CLOUD))
                         .collect(Collectors.toList()));
                 break;
             case "报销附件":
                 result.setFile(byUserIdAndFather.stream()
-                        .filter(it->it.getModel().equals(File.model.REIMBURSEMENT)&&it.getUserId().equals(userId))
+                        .filter(it -> it.getModel().equals(File.model.REIMBURSEMENT) && it.getUserId().equals(userId))
                         .collect(Collectors.toList()));
                 break;
             case "待审核":
                 result.setFile(byUserIdAndFather.stream()
-                        .filter(it->(it.getStatus()==1||it.getStatus()==2||it.getStatus()==3)&&it.getUserId().equals(userId)&&it.getModel().equals(File.model.CLOUD))
+                        .filter(it -> (it.getStatus() == 1 || it.getStatus() == 2 || it.getStatus() == 3) && it.getUserId().equals(userId) && it.getModel().equals(File.model.CLOUD))
                         .collect(Collectors.toList())
                 );
                 break;
@@ -150,10 +150,10 @@ public class FileServiceImpl implements FileService {
                 result.setFile(byUserIdAndFather.stream().filter(File::isShare).collect(Collectors.toList()));
                 break;
             case "所有文件夹":
-                result.setFile(byUserIdAndFather.stream().filter(it->!it.isShare()&&"folder".equals(it.getType())).collect(Collectors.toList()));
+                result.setFile(byUserIdAndFather.stream().filter(it -> !it.isShare() && "folder".equals(it.getType())).collect(Collectors.toList()));
                 break;
         }
-        if (nowPath!=null){
+        if (nowPath != null) {
             result.setNowFile(flDao.selectByPrimaryKey(nowPath));
         }
         List<File> sortedFiles = result.getFile().stream()
@@ -171,13 +171,13 @@ public class FileServiceImpl implements FileService {
             file.setFileInTrash(true);
             file.setShare(false);
             flDao.updateByPrimaryKeySelective(file);
-            if ("folder".equals(file.getType())){
+            if ("folder".equals(file.getType())) {
                 Example example = new Example(File.class);
                 example.createCriteria().andEqualTo("father", file.getFileId());
                 List<File> byFather = flDao.selectByExample(example);
                 example.clear();
-                if (!byFather.isEmpty()){
-                    byFather.forEach(it->drop(String.valueOf(it.getFileId())));
+                if (!byFather.isEmpty()) {
+                    byFather.forEach(it -> drop(String.valueOf(it.getFileId())));
                 }
             }
         }
@@ -186,7 +186,7 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public boolean reDrop(String fileIds) {
-        Arrays.stream(fileIds.split(",")).filter(Objects::nonNull).map(Long::valueOf).forEach(it->{
+        Arrays.stream(fileIds.split(",")).filter(Objects::nonNull).map(Long::valueOf).forEach(it -> {
             File file = flDao.selectByPrimaryKey(it);
             file.setFileInTrash(false);
             flDao.updateByPrimaryKeySelective(file);
@@ -198,21 +198,21 @@ public class FileServiceImpl implements FileService {
     public boolean delete(String fileIds) {
         for (Long fileId : Arrays.stream(fileIds.split(",")).filter(Objects::nonNull).map(Long::valueOf).collect(Collectors.toList())) {
             File fileList = flDao.selectByPrimaryKey(fileId);
-            java.io.File file = new java.io.File(this.rootPath,fileList.getFilePath());
-            if(file.exists()&&file.isFile()){
-                System.out.println("现在删除"+fileList.getFileName()+"数据库存档>>>>>>>>>");
+            java.io.File file = new java.io.File(this.rootPath, fileList.getFilePath());
+            if (file.exists() && file.isFile()) {
+                System.out.println("现在删除" + fileList.getFileName() + "数据库存档>>>>>>>>>");
                 flDao.delete(fileList);
-                System.out.println("现在删除"+fileList.getFileName()+"本地文件>>>>>>>>>");
+                System.out.println("现在删除" + fileList.getFileName() + "本地文件>>>>>>>>>");
                 file.delete();
             }
             flDao.delete(fileList);
-            if ("folder".equals(fileList.getType())){
+            if ("folder".equals(fileList.getType())) {
                 Example example = new Example(File.class);
                 example.createCriteria().andEqualTo("father", fileList.getFileId());
                 List<File> byFather = flDao.selectByExample(example);
                 example.clear();
-                if (!byFather.isEmpty()){
-                    byFather.forEach(it->delete(String.valueOf(it.getFileId())));
+                if (!byFather.isEmpty()) {
+                    byFather.forEach(it -> delete(String.valueOf(it.getFileId())));
                 }
             }
         }
@@ -222,12 +222,12 @@ public class FileServiceImpl implements FileService {
     @Override
     public boolean rename(String fileId, String newName) {
         try {
-            Arrays.stream(fileId.split(",")).map(Long::valueOf).forEach(it->{
+            Arrays.stream(fileId.split(",")).map(Long::valueOf).forEach(it -> {
                 File file = flDao.selectByPrimaryKey(fileId);
                 file.setFileName(newName);
                 flDao.updateByPrimaryKeySelective(file);
             });
-        }catch (Exception e){
+        } catch (Exception e) {
             System.out.println(e);
             return false;
         }
@@ -237,12 +237,12 @@ public class FileServiceImpl implements FileService {
     @Override
     public boolean moveFile(String fileId, Long newFatherId) {
         try {
-            Arrays.stream(fileId.split(",")).map(Long::valueOf).forEach(it->{
+            Arrays.stream(fileId.split(",")).map(Long::valueOf).forEach(it -> {
                 File file = flDao.selectByPrimaryKey(fileId);
                 file.setFather(newFatherId);
                 flDao.updateByPrimaryKeySelective(file);
             });
-        }catch (Exception e){
+        } catch (Exception e) {
             System.out.println(e);
             return false;
         }
@@ -250,18 +250,18 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public boolean shareFile(String fileId,String sharePerson){
+    public boolean shareFile(String fileId, String sharePerson) {
         User user = UserTokenHolder.getUser();
         Example example = new Example(File.class);
-        example.createCriteria().andIn("fileId",Arrays.asList(fileId.split(",")));
+        example.createCriteria().andIn("fileId", Arrays.asList(fileId.split(",")));
         boolean needAudit;
         List<Department> departmentById;
-        if (user.getDeptId()!=null){
-            departmentById= departmentService.findDepartmentById(user.getDeptId());
-            if (user.getDeptId()!=null){
-                if (!departmentById.isEmpty()){
+        if (user.getDeptId() != null) {
+            departmentById = departmentService.findDepartmentById(user.getDeptId());
+            if (user.getDeptId() != null) {
+                if (!departmentById.isEmpty()) {
                     List<Department> departmentStream = departmentById.stream().filter(it -> it.getManagerId().equals(user.getId())).collect(Collectors.toList());
-                    if (!departmentStream.isEmpty()){
+                    if (!departmentStream.isEmpty()) {
                         needAudit = false;
                     } else {
                         needAudit = true;
@@ -272,22 +272,22 @@ public class FileServiceImpl implements FileService {
             } else {
                 needAudit = true;
             }
-        }else {
+        } else {
             departmentById = new ArrayList<>();
             needAudit = true;
         }
 
 
-        flDao.selectByExample(example).forEach(it->{
+        flDao.selectByExample(example).forEach(it -> {
             File file = flDao.selectByPrimaryKey(fileId);
-            file.setStatus(needAudit?1:0);
-            if (it.isShare())throw new ServiceException(it.getFileName()+"已分享");
-            if (!needAudit||file.isShare()||user.isManager()){
-                if (sharePerson==null){
+            file.setStatus(needAudit ? 1 : 0);
+            if (it.isShare()) throw new ServiceException(it.getFileName() + "已分享");
+            if (!needAudit || file.isShare() || user.isManager()) {
+                if (sharePerson == null) {
                     throw new ServiceException("请选择分享人");
                 }
                 file.setShare(true);
-                file.setSharePeople((file.getSharePeople()==null?"":file.getSharePeople()+",")+sharePerson);
+                file.setSharePeople((file.getSharePeople() == null ? "" : file.getSharePeople() + ",") + sharePerson);
             } else {
                 FileAuditRecord fileAuditRecord = new FileAuditRecord();
                 fileAuditRecord.setFileId(file.getFileId());
@@ -295,8 +295,8 @@ public class FileServiceImpl implements FileService {
                 fileAuditRecord.setFileName(file.getFileName());
                 fileAuditRecord.setSubmitUserName(user.getUserName());
                 fileAuditRecord.setSubmitUserId(user.getId());
-                fileAuditRecord.setPersonInCharge(departmentById.isEmpty()?1L: userService.findById(departmentById.get(0).getManagerId()).getId());
-                fileAuditRecord.setPersonInChargeName(departmentById.isEmpty()?"admin": userService.findById(departmentById.get(0).getManagerId()).getLoginName());
+                fileAuditRecord.setPersonInCharge(departmentById.isEmpty() ? 1L : userService.findById(departmentById.get(0).getManagerId()).getId());
+                fileAuditRecord.setPersonInChargeName(departmentById.isEmpty() ? "admin" : userService.findById(departmentById.get(0).getManagerId()).getLoginName());
                 fileAuditRecordService.saveFileAuditRecord(fileAuditRecord);
                 flDao.updateByPrimaryKeySelective(file);
             }
@@ -306,10 +306,11 @@ public class FileServiceImpl implements FileService {
 
     /**
      * 得到文件
+     *
      * @param filepath
      * @return
      */
-    public java.io.File getFile(String filepath){
-        return new java.io.File(this.rootPath,filepath);
+    public java.io.File getFile(String filepath) {
+        return new java.io.File(this.rootPath, filepath);
     }
 }

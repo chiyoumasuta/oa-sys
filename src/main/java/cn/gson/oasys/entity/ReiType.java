@@ -18,8 +18,8 @@ public class ReiType {
     @Id
     @Column(name = "id")
     private Long id;
-    @Column(name = "name",columnDefinition = "名称")
+    @Column(name = "name", columnDefinition = "名称")
     private String name;
-    @Column(name = "type",columnDefinition = "所属报销类型")
+    @Column(name = "type", columnDefinition = "所属报销类型")
     private Reimbursement.ExpenseType type;
 }

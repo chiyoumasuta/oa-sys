@@ -19,14 +19,14 @@ public class PpsItem {
     @Id
     @Column(name = "id")
     private Long id;
-    @Column(name = "pps_id",columnDefinition = "主表id")
+    @Column(name = "pps_id", columnDefinition = "主表id")
     private Long ppsId;
-    @Column(name = "create_user",columnDefinition = "更新人")
+    @Column(name = "create_user", columnDefinition = "更新人")
     private Long createUser;
-    @Column(name = "create_user_name",columnDefinition = "更新人名称")
+    @Column(name = "create_user_name", columnDefinition = "更新人名称")
     private String createUserName;
-    @Column(name = "create_time",columnDefinition = "更新时间")
+    @Column(name = "create_time", columnDefinition = "更新时间")
     private Date createTime;
-    @Column(name = "info",columnDefinition = "进度描述")
+    @Column(name = "info", columnDefinition = "进度描述")
     private String info;
 }

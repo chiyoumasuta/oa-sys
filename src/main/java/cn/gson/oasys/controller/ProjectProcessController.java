@@ -22,29 +22,29 @@ public class ProjectProcessController {
     @Resource
     private FlowableService flowableService;
 
-    @RequestMapping(value = "/createProject",method = RequestMethod.POST)
+    @RequestMapping(value = "/createProject", method = RequestMethod.POST)
     @ApiOperation(value = "创建")
-    public UtilResultSet createProject(ProjectProcess projectProcess,String deployId,String dataJson){
-        if (projectProcessService.createProject(projectProcess,deployId,dataJson)){
+    public UtilResultSet createProject(ProjectProcess projectProcess, String deployId, String dataJson) {
+        if (projectProcessService.createProject(projectProcess, deployId, dataJson)) {
             return UtilResultSet.success("添加成功");
-        }else return UtilResultSet.bad_request("添加失败");
+        } else return UtilResultSet.bad_request("添加失败");
     }
 
-    @RequestMapping(value = "/page",method = RequestMethod.POST)
+    @RequestMapping(value = "/page", method = RequestMethod.POST)
     @ApiOperation(value = "获取需要审核的业务列表")
-    public UtilResultSet page(int pageNo, int pageSize, String name){
-        return UtilResultSet.success(flowableService.getRuntimeBusinessKeyByUser(String.valueOf(UserTokenHolder.getUser().getId()),"项目管理"));
+    public UtilResultSet page(int pageNo, int pageSize, String name) {
+        return UtilResultSet.success(flowableService.getRuntimeBusinessKeyByUser(String.valueOf(UserTokenHolder.getUser().getId()), "项目管理"));
     }
 
-    @RequestMapping(value = "/getInfo",method = RequestMethod.POST)
+    @RequestMapping(value = "/getInfo", method = RequestMethod.POST)
     @ApiOperation(value = "获取详情")
-    public UtilResultSet getInfo(Long id){
-       return UtilResultSet.success(projectProcessService.getInfo(id));
+    public UtilResultSet getInfo(Long id) {
+        return UtilResultSet.success(projectProcessService.getInfo(id));
     }
 
-    @RequestMapping(value = "/getConfig",method = RequestMethod.POST)
+    @RequestMapping(value = "/getConfig", method = RequestMethod.POST)
     @ApiOperation(value = "获取配置信息")
-    public UtilResultSet getConfig(){
+    public UtilResultSet getConfig() {
         return UtilResultSet.success(projectProcessService.getConfig());
     }
 }

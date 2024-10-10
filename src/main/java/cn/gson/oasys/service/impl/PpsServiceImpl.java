@@ -42,18 +42,18 @@ public class PpsServiceImpl implements PpsService {
     @Override
     public Page<Pps> page(int pageSize, int pageNo, String projectName) {
         PageHelper.startPage(pageNo, pageSize);
-        Example example  = new Example(Pps.class);
+        Example example = new Example(Pps.class);
         Example.Criteria criteria = example.createCriteria();
         if (StringUtils.isNotBlank(projectName)) {
             criteria.andEqualTo("projectName", projectName);
         }
-        criteria.andEqualTo("invalid",false);
+        criteria.andEqualTo("invalid", false);
         com.github.pagehelper.Page<Pps> page = (com.github.pagehelper.Page) ppsDao.selectByExample(example);
         List<Pps> collect = page.getResult().stream().map(it -> {
             it.setPpsItems(findByPpsId(it.getId()));
             return it;
         }).collect(Collectors.toList());
-        return new Page<>(pageNo,pageSize,page.getTotal(),collect);
+        return new Page<>(pageNo, pageSize, page.getTotal(), collect);
     }
 
     /**
@@ -77,8 +77,8 @@ public class PpsServiceImpl implements PpsService {
             pps.setCreateUserName(user.getUserName());
             pps.setDeptName(departmentService.findDepartmentById(String.valueOf(pps.getDeptId())).get(0).getName());
             pps.setInvalid(false);
-            return ppsDao.insert(pps)>0;
-        }else return ppsDao.updateByPrimaryKeySelective(pps)>0;
+            return ppsDao.insert(pps) > 0;
+        } else return ppsDao.updateByPrimaryKeySelective(pps) > 0;
     }
 
     /**
@@ -98,7 +98,7 @@ public class PpsServiceImpl implements PpsService {
         item.setCreateUser(user.getId());
         item.setCreateUserName(user.getUserName());
         item.setCreateTime(new Date());
-        return ppsItemDao.insert(item)>0;
+        return ppsItemDao.insert(item) > 0;
     }
 
     /**
@@ -108,7 +108,7 @@ public class PpsServiceImpl implements PpsService {
      */
     @Override
     public boolean deleteItem(Long id) {
-        return ppsItemDao.deleteByPrimaryKey(id)>0;
+        return ppsItemDao.deleteByPrimaryKey(id) > 0;
     }
 
     /**
@@ -120,7 +120,7 @@ public class PpsServiceImpl implements PpsService {
     public boolean deletePps(Long id) {
         Pps pps = ppsDao.selectByPrimaryKey(id);
         pps.setInvalid(true);
-        return ppsDao.updateByPrimaryKeySelective(pps)>0;
+        return ppsDao.updateByPrimaryKeySelective(pps) > 0;
     }
 
     @Override

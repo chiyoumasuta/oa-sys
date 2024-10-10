@@ -18,14 +18,17 @@ import org.springframework.web.servlet.DispatcherServlet;
 
 @Configuration
 @EnableConfigurationProperties(FlowableModelerAppProperties.class)
-@ComponentScan(basePackages = {
-        "org.flowable.ui.modeler.repository",
-        "org.flowable.ui.modeler.service",
-        "org.flowable.ui.common.service",
-        "org.flowable.ui.common.repository",
-        "org.flowable.ui.common.tenant" },excludeFilters = {
-        @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = RemoteIdmService.class)
-    }
+@ComponentScan(
+        basePackages = {
+                "org.flowable.ui.modeler.repository",
+                "org.flowable.ui.modeler.service",
+                "org.flowable.ui.common.service",
+                "org.flowable.ui.common.repository",
+                "org.flowable.ui.common.tenant"
+        },
+        excludeFilters = {
+                @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = RemoteIdmService.class)
+        }
 )
 public class ApplicationConfiguration {
 
@@ -41,9 +44,10 @@ public class ApplicationConfiguration {
         registrationBean.setAsyncSupported(true);
         return registrationBean;
     }
+
     @Bean
     public EngineConfigurationConfigurer<SpringIdmEngineConfiguration> idmEngineConfigurationConfigurer() {
         return idmEngineConfiguration -> idmEngineConfiguration.setIdmIdentityService(
-            new CustomIdmIdentityServiceImpl());
+                new CustomIdmIdentityServiceImpl());
     }
 }

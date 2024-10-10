@@ -46,7 +46,6 @@ public class ExceptionHandler {
     @org.springframework.web.bind.annotation.ExceptionHandler(UnknownAccountException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public UtilResultSet handlerRTUErrorException(UnknownAccountException errorException) {
-        //errorException.printStackTrace();
         return UtilResultSet.success(errorException.getLocalizedMessage());
     }
 

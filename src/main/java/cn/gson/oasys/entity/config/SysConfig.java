@@ -11,8 +11,8 @@ public class SysConfig {
     @Id
     @Column(name = "id")
     private int id;
-    @Column(name = "name",columnDefinition = "配置名称")
+    @Column(name = "name", columnDefinition = "配置名称")
     private String name;
-    @Column(name = "value",columnDefinition = "配置信息")
+    @Column(name = "value", columnDefinition = "配置信息")
     private String value;
 }

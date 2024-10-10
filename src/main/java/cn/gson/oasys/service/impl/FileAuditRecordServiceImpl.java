@@ -27,7 +27,7 @@ public class FileAuditRecordServiceImpl implements FileAuditRecordService {
     @Override
     public boolean saveFileAuditRecord(FileAuditRecord FileAuditRecord) {
         FileAuditRecord.setResult("待审核");
-        return fileAuditRecordDao.insert(FileAuditRecord)>0;
+        return fileAuditRecordDao.insert(FileAuditRecord) > 0;
     }
 
     @Override
@@ -36,12 +36,12 @@ public class FileAuditRecordServiceImpl implements FileAuditRecordService {
         File file = flDao.selectByPrimaryKey(fileAuditRecord.getFileId());
         file.setStatus(0);
         flDao.updateByPrimaryKey(file);
-        return fileAuditRecordDao.deleteByPrimaryKey(id)>0;
+        return fileAuditRecordDao.deleteByPrimaryKey(id) > 0;
     }
 
     @Override
     public boolean updateFileAuditRecord(FileAuditRecord FileAuditRecord) {
-        return fileAuditRecordDao.updateByPrimaryKeySelective(FileAuditRecord)>0;
+        return fileAuditRecordDao.updateByPrimaryKeySelective(FileAuditRecord) > 0;
     }
 
     @Override
@@ -53,10 +53,10 @@ public class FileAuditRecordServiceImpl implements FileAuditRecordService {
     public Page<FileAuditRecord> findAllFileAuditRecords(int pageNo, int pageSize, int searchType) {
         Example example = new Example(FileAuditRecord.class);
         Long userId = UserTokenHolder.getUser().getId();
-        if (searchType==1){//用户提交
-            example.createCriteria().andEqualTo("submitUserId",userId);
-        }else {//用户处理
-            example.createCriteria().andEqualTo("personInCharge",userId);
+        if (searchType == 1) {//用户提交
+            example.createCriteria().andEqualTo("submitUserId", userId);
+        } else {//用户处理
+            example.createCriteria().andEqualTo("personInCharge", userId);
         }
         PageHelper.startPage(pageNo, pageSize);
         com.github.pagehelper.Page<FileAuditRecord> pageInfo = (com.github.pagehelper.Page) fileAuditRecordDao.selectByExample(example);
@@ -64,23 +64,23 @@ public class FileAuditRecordServiceImpl implements FileAuditRecordService {
     }
 
     @Override
-    public boolean audit(Long id, boolean result,String sharePeople) {
+    public boolean audit(Long id, boolean result, String sharePeople) {
         FileAuditRecord fileAuditRecord = fileAuditRecordDao.selectByPrimaryKey(id);
         File file = flDao.selectByPrimaryKey(fileAuditRecord.getFileId());
-        if (file ==null){
+        if (file == null) {
             throw new ServiceException("文件已被删除无需审核");
         }
-        if (file.getStatus()!=1){
+        if (file.getStatus() != 1) {
             throw new ServiceException("当前状态无需审核");
         }
-        if (result &&sharePeople==null){
+        if (result && sharePeople == null) {
             throw new ServiceException("请填写分享用户");
         }
-        file.setStatus(result?2:3);
+        file.setStatus(result ? 2 : 3);
         file.setShare(result);
         fileAuditRecord.setAuditTime(new Date());
         fileAuditRecord.setResult("通过");
-        file.setSharePeople((file.getSharePeople()==null?"":file.getSharePeople()+",")+sharePeople);
-        return flDao.updateByPrimaryKeySelective(file)>0&&fileAuditRecordDao.updateByPrimaryKeySelective(fileAuditRecord)>0;
+        file.setSharePeople((file.getSharePeople() == null ? "" : file.getSharePeople() + ",") + sharePeople);
+        return flDao.updateByPrimaryKeySelective(file) > 0 && fileAuditRecordDao.updateByPrimaryKeySelective(fileAuditRecord) > 0;
     }
 }

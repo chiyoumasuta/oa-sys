@@ -1,6 +1,6 @@
 package cn.gson.oasys.dao;
 
-import cn.gson.oasys.entity.ActReProcdef;
+import cn.gson.oasys.entity.flowable.ActReProcdef;
 import org.springframework.stereotype.Repository;
 import tk.mybatis.mapper.common.Mapper;
 

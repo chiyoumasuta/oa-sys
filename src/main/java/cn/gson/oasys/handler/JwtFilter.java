@@ -3,6 +3,7 @@ package cn.gson.oasys.handler;
 import cn.gson.oasys.entity.User;
 import cn.gson.oasys.support.JwtUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import javax.servlet.*;
 import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
@@ -38,9 +39,9 @@ public class JwtFilter implements Filter {
         final String token = request.getHeader("token");
 
         String requestURI = request.getRequestURI();
-        if (requestURI.equals("/") || endpoints.stream().noneMatch(requestURI::contains) || requestURI.equals("/web/login") || requestURI.split("/").length>2) {
+        if (requestURI.equals("/") || endpoints.stream().noneMatch(requestURI::contains) || requestURI.equals("/web/login") || requestURI.split("/").length > 2) {
             chain.doFilter(req, res);
-        }else {
+        } else {
             if (token == null) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 writeJsonResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "no such data", HttpServletResponse.SC_UNAUTHORIZED, "未登录");

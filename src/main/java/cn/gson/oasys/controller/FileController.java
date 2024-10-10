@@ -40,7 +40,7 @@ public class FileController {
     private FileDao fileDao;
 
     // 保存文件
-    @RequestMapping(value = "/save",method = RequestMethod.POST)
+    @RequestMapping(value = "/save", method = RequestMethod.POST)
     @ApiOperation(value = "上传文件")
     public UtilResultSet saveFile(MultipartFile file, Long nowPath, File.model model, HttpServletRequest request) throws ServiceException {
         try {
@@ -50,9 +50,9 @@ public class FileController {
         }
     }
 
-    @RequestMapping(value = "/list",method = RequestMethod.POST)
+    @RequestMapping(value = "/list", method = RequestMethod.POST)
     @ApiOperation(value = "文件列表")
-    public UtilResultSet fileList(Long nowPath,String type) {
+    public UtilResultSet fileList(Long nowPath, String type) {
         try {
             FileListVo result = fileService.fileList(nowPath, type);
             return UtilResultSet.success(result);
@@ -61,7 +61,7 @@ public class FileController {
         }
     }
 
-    @RequestMapping(value = "/reDrop",method = RequestMethod.POST)
+    @RequestMapping(value = "/reDrop", method = RequestMethod.POST)
     @ApiOperation(value = "回收站文件还原")
     public UtilResultSet reDrop(String fileIds) {
         if (fileService.reDrop(fileIds)) {
@@ -73,9 +73,10 @@ public class FileController {
 
     /**
      * 下载文件
+     *
      * @param response
      */
-    @RequestMapping(value = "download",method = RequestMethod.GET)
+    @RequestMapping(value = "download", method = RequestMethod.GET)
     @ApiOperation(value = "下载文件")
     public void downFile(HttpServletResponse response, Long fileId) {
         try {
@@ -83,12 +84,13 @@ public class FileController {
             java.io.File file = fileService.getFile(filelist.getFilePath());
             response.setContentLength(filelist.getSize().intValue());
             response.setContentType(filelist.getContentType());
-            response.setHeader("Content-Disposition","attachment;filename=" + new String(filelist.getFileName().getBytes(StandardCharsets.UTF_8), "ISO8859-1"));
+            response.setHeader("Content-Disposition", "attachment;filename=" + new String(filelist.getFileName().getBytes(StandardCharsets.UTF_8), "ISO8859-1"));
             writefile(response, file);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
     /**
      * 写文件 方法
      */
@@ -105,7 +107,7 @@ public class FileController {
             IOUtils.write(data, sos);
         } catch (IOException e) {
             e.printStackTrace();
-        } finally{
+        } finally {
             try {
                 sos.close();
                 aa.close();
@@ -116,7 +118,7 @@ public class FileController {
     }
 
     // 删除文件到回收站
-    @RequestMapping(value = "/drop",method = RequestMethod.POST)
+    @RequestMapping(value = "/drop", method = RequestMethod.POST)
     @ApiOperation(value = "移动文件到回收站")
     public UtilResultSet drop(String fileId) {
         if (fileService.drop(fileId)) {
@@ -127,19 +129,19 @@ public class FileController {
     }
 
 
-    @RequestMapping(value = "/makeFolder",method = RequestMethod.POST)
+    @RequestMapping(value = "/makeFolder", method = RequestMethod.POST)
     @ApiOperation(value = "创建文件夹")
-    public UtilResultSet makeFolder(Long nowPath,String name) {
+    public UtilResultSet makeFolder(Long nowPath, String name) {
         try {
-            fileService.makeFolder(nowPath,name);
+            fileService.makeFolder(nowPath, name);
             return UtilResultSet.success("创建文件夹成功");
-        }catch (Exception e) {
+        } catch (Exception e) {
             return UtilResultSet.bad_request(e.getMessage());
         }
     }
 
     // 彻底删除文件
-    @RequestMapping(value = "/delete",method = RequestMethod.POST)
+    @RequestMapping(value = "/delete", method = RequestMethod.POST)
     @ApiOperation(value = "彻底删除文件")
     public UtilResultSet delete(String fileId) {
         if (fileService.delete(fileId)) {
@@ -150,9 +152,9 @@ public class FileController {
     }
 
     // 重命名文件
-    @RequestMapping(value = "/rename",method = RequestMethod.POST)
+    @RequestMapping(value = "/rename", method = RequestMethod.POST)
     @ApiOperation(value = "重命名文件")
-    public UtilResultSet rename(String fileId,String newName) {
+    public UtilResultSet rename(String fileId, String newName) {
         if (fileService.rename(fileId, newName)) {
             return UtilResultSet.success("文件重命名成功");
         } else {
@@ -161,9 +163,9 @@ public class FileController {
     }
 
     // 移动文件
-    @RequestMapping(value = "/move",method = RequestMethod.POST)
+    @RequestMapping(value = "/move", method = RequestMethod.POST)
     @ApiOperation(value = "移动文件")
-    public UtilResultSet moveFile(String fileId,Long newFatherId) {
+    public UtilResultSet moveFile(String fileId, Long newFatherId) {
         if (fileService.moveFile(fileId, newFatherId)) {
             return UtilResultSet.success("文件移动成功");
         } else {
@@ -172,18 +174,18 @@ public class FileController {
     }
 
     // 分享文件
-    @RequestMapping(value = "/share",method = RequestMethod.POST)
+    @RequestMapping(value = "/share", method = RequestMethod.POST)
     @ApiOperation(value = "分享文件")
-    public UtilResultSet shareFile(String fileId,String sharePerson) {
+    public UtilResultSet shareFile(String fileId, String sharePerson) {
         try {
             return UtilResultSet.success("文件分享成功");
-        }catch (Exception e){
-            return UtilResultSet.bad_request("文件分享失败:"+e.getMessage());
+        } catch (Exception e) {
+            return UtilResultSet.bad_request("文件分享失败:" + e.getMessage());
         }
     }
 
     //文件预览
-    @RequestMapping(value = "/preview",method = RequestMethod.GET)
+    @RequestMapping(value = "/preview", method = RequestMethod.GET)
     @ApiOperation(value = "文件预览")
     public ResponseEntity<InputStreamResource> preview(Long fileId) throws IOException {
         File filelist = fileDao.selectByPrimaryKey(fileId);

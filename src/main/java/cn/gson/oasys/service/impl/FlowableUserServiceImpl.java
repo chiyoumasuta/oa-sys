@@ -12,25 +12,28 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.util.Arrays;
 
+/**
+ * Flowable Identity 用户管理系统封装接口
+ * 弃用
+ */
 @Service
 public class FlowableUserServiceImpl implements FlowableUserService {
 
     @Resource
     private IdentityService identityService;
 
-    //维护用户
     @Override
     public void createUser(String name) {
-//        ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
-//        // 通过 IdentityService 完成相关的用户和组的管理
-//        IdentityService identityService = processEngine.getIdentityService();
-//
-//        org.flowable.idm.api.User user = null;
-//        for (int i = 1; i <= 3; i++) {
-//            user = identityService.newUser(name);
-//            user.setFirstName(name);
-//            identityService.saveUser(user);
-//        }
+        ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
+        // 通过 IdentityService 完成相关的用户和组的管理
+        IdentityService identityService = processEngine.getIdentityService();
+
+        org.flowable.idm.api.User user = null;
+        for (int i = 1; i <= 3; i++) {
+            user = identityService.newUser(name);
+            user.setFirstName(name);
+            identityService.saveUser(user);
+        }
     }
 
     @Test
@@ -44,9 +47,8 @@ public class FlowableUserServiceImpl implements FlowableUserService {
         Assertions.assertEquals(2, result3);
     }
 
-    //维护用户组
     @Override
-    public void createGroup(String groupName,String name,String type) {
+    public void createGroup(String groupName, String name, String type) {
         ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
         // 通过 IdentityService 完成相关的用户和组的管理
         IdentityService identityService = processEngine.getIdentityService();
@@ -57,10 +59,8 @@ public class FlowableUserServiceImpl implements FlowableUserService {
 
     }
 
-
-    //用户和用户组关联
     @Override
-    public void userGroup(String userId,String groupName) {
+    public void userGroup(String userId, String groupName) {
         ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
         IdentityService identityService = processEngine.getIdentityService();
         Group group = identityService.createGroupQuery().groupId(groupName).singleResult();

@@ -44,9 +44,9 @@ public class LeaveApplication {
     private String ccPerson;
     @Column(name = "created_at", columnDefinition = "TIMESTAMP COMMENT '发起时间'")
     private Date createdAt;
-    @Column(name = "stats",columnDefinition = "审核状态")
+    @Column(name = "stats", columnDefinition = "审核状态")
     private String stats;
-    @Column(name = "process_instance_id",columnDefinition = "流程实例化id")
+    @Column(name = "process_instance_id", columnDefinition = "流程实例化id")
     private String processInstanceId;
     @Transient
     protected String initiatorName;

@@ -40,5 +40,5 @@ public class User {
     @Transient
     private String deptName;
     @Transient
-    private boolean isManager=false;
+    private boolean isManager = false;
 }

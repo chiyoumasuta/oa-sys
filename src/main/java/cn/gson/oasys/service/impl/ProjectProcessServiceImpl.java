@@ -43,25 +43,23 @@ public class ProjectProcessServiceImpl implements ProjectProcessService {
     private FlowableService flowableService;
 
     @Override
-    public boolean createProject(ProjectProcess projectProcess,String deployId,String dataJson) {
+    public boolean createProject(ProjectProcess projectProcess, String deployId, String dataJson) {
         User user = UserTokenHolder.getUser();
-//        List<org.flowable.idm.api.User> users = identityService.createUserQuery().list();
-//        org.flowable.idm.api.User user1 = users.stream().filter(it -> it.getDisplayName().equals(user.getUserName())).collect(Collectors.toList()).get(0);
         projectProcess.setCreateUser(user.getUserName());
         projectProcess.setCreateTime(new Date());
-        if (projectProcessDao.insert(projectProcess)>0){
+        if (projectProcessDao.insert(projectProcess) > 0) {
             // 设置发起人
             identityService.setAuthenticatedUserId(String.valueOf(user.getId()));
             // 根据流程 ID 启动流程
 
-            Map<String,Object> variables = new HashMap<>();
+            Map<String, Object> variables = new HashMap<>();
             // 设置assignee的取值
-            variables.put("assignee0","张三");
-            variables.put("assignee1","李四");
-            variables.put("assignee2","王五");
-            variables.put("assignee3","赵财务");
+            variables.put("assignee0", "张三");
+            variables.put("assignee1", "李四");
+            variables.put("assignee2", "王五");
+            variables.put("assignee3", "赵财务");
             // 启动流程实例，第一个参数是流程定义的id
-            ProcessInstance processInstance = runtimeService.startProcessInstanceById("project_process:4:12504", String.valueOf(projectProcess.getId()),variables);
+            ProcessInstance processInstance = runtimeService.startProcessInstanceById("project_process:4:12504", String.valueOf(projectProcess.getId()), variables);
             // 输出相关的流程实例信息
             System.out.println("流程定义的ID：" + processInstance.getProcessDefinitionId());
             System.out.println("流程实例的ID：" + processInstance.getId());
@@ -79,7 +77,7 @@ public class ProjectProcessServiceImpl implements ProjectProcessService {
             example.createCriteria().andLike("name", "%" + name + "%");
         }
         com.github.pagehelper.Page<ProjectProcess> pageInfo = (com.github.pagehelper.Page) projectProcessDao.selectByExample(example);
-        return new Page<>(pageNo,pageSize,pageInfo.getTotal(),pageInfo.getResult());
+        return new Page<>(pageNo, pageSize, pageInfo.getTotal(), pageInfo.getResult());
     }
 
     @Override
@@ -118,7 +116,7 @@ public class ProjectProcessServiceImpl implements ProjectProcessService {
             allPerson.addAll(config.getDepartment());
             config.setAllPerson(allPerson.stream().distinct().collect(Collectors.toList()));
             return config;
-        }catch (Exception e) {
+        } catch (Exception e) {
             System.out.println(e.getMessage());
             throw new ServiceException("获取配置信息失败");
         }
@@ -126,14 +124,15 @@ public class ProjectProcessServiceImpl implements ProjectProcessService {
 
     /**
      * 审核
-     * @param taskId 任务节点 Id
+     *
+     * @param taskId         任务节点 Id
      * @param projectProcess 业务数据
-     * @param nextReviewer 下一个审核人节点，审核人参数
-     * @param fileId 上传文件id
-     * @param presentation 报告
+     * @param nextReviewer   下一个审核人节点，审核人参数
+     * @param fileId         上传文件id
+     * @param presentation   报告
      * @return
      */
-    public Boolean taskByAssignee(String taskId,ProjectProcess projectProcess,String nextReviewer,Long fileId,String presentation) {
+    public Boolean taskByAssignee(String taskId, ProjectProcess projectProcess, String nextReviewer, Long fileId, String presentation) {
         User user = UserTokenHolder.getUser();
         //获取旧的业务数据
         ProjectProcess oldBusinessData = projectProcessDao.selectByPrimaryKey(projectProcess.getId());
@@ -143,19 +142,19 @@ public class ProjectProcessServiceImpl implements ProjectProcessService {
         map.put("reviewer", nextReviewer);
 
         //判断当前流程状态做出相应 处理
-        switch (oldBusinessData.getStats()){
+        switch (oldBusinessData.getStats()) {
             case FOLLOW_UP:
-                map.put("pass",oldBusinessData.isPass());
+                map.put("pass", oldBusinessData.isPass());
                 break;
             case WON_BID:
-                map.put("development",oldBusinessData.isNeedDevelopment());
+                map.put("development", oldBusinessData.isNeedDevelopment());
                 break;
             case APPROVED:
-                map.put("approved",oldBusinessData.isApproved());
+                map.put("approved", oldBusinessData.isApproved());
                 break;
         }
 
-        flowableService.setVariables(taskId,map);
+        flowableService.setVariables(taskId, map);
 
         // 根据任务节点 Id，获取流程实例 Id
         String processInstanceId = flowableService.getTaskInfo(taskId);

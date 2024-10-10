@@ -10,12 +10,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.annotation.Resource;
+
 @RestController
 @RequestMapping("/app")
 @Api(tags = "flowable汉化保留接口")
 public class FlowableStencilSetResource {
 
-    @Autowired
+    @Resource
     protected ObjectMapper objectMapper;
 
     @RequestMapping(value = "/rest/stencil-sets/editor", method = RequestMethod.GET, produces = "application/json")

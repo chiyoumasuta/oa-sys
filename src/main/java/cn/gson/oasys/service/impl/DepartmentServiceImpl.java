@@ -32,7 +32,7 @@ public class DepartmentServiceImpl implements DepartmentService {
 
     @Override
     public boolean saveDepartment(Department department) {
-        if (departmentDao.insert(department)>0){
+        if (departmentDao.insert(department) > 0) {
             SysConfig sysConfig = new SysConfig();
             sysConfig.setName(department.getName());
             sysConfigService.saveOrUpdate(sysConfig);
@@ -44,17 +44,17 @@ public class DepartmentServiceImpl implements DepartmentService {
     @Override
     public boolean deleteDepartment(Long id) {
         Example example = new Example(User.class);
-        example.createCriteria().andLike("deptId", "%"+id+"%");
+        example.createCriteria().andLike("deptId", "%" + id + "%");
         List<User> users = userDao.selectByExample(example);
         if (!users.isEmpty()) {
             throw new ServiceException("当前部门存在职员，不允许删除");
         }
-        return departmentDao.deleteByPrimaryKey(id)>0;
+        return departmentDao.deleteByPrimaryKey(id) > 0;
     }
 
     @Override
     public boolean updateDepartment(Department department) {
-        return departmentDao.updateByPrimaryKeySelective(department)>0;
+        return departmentDao.updateByPrimaryKeySelective(department) > 0;
     }
 
     @Override
@@ -79,7 +79,7 @@ public class DepartmentServiceImpl implements DepartmentService {
     }
 
     @Override
-    public boolean setDept(Long deptId,String users) {
+    public boolean setDept(Long deptId, String users) {
         Department department = departmentDao.selectByPrimaryKey(deptId);
         if (department == null) {
             throw new ServiceException("部门错误");
@@ -89,7 +89,7 @@ public class DepartmentServiceImpl implements DepartmentService {
         }
         for (User user : userService.findDetailByIds(Arrays.asList(users.split(",")).stream().map(Long::valueOf).collect(Collectors.toList()))) {
             Set<String> userDept = new HashSet<>();
-            if (user.getDeptId()!=null) {
+            if (user.getDeptId() != null) {
                 userDept.addAll(Arrays.asList(user.getDeptId().split(",")));
             }
             userDept.add(String.valueOf(department.getId()));
@@ -111,7 +111,7 @@ public class DepartmentServiceImpl implements DepartmentService {
         if (department == null) {
             throw new ServiceException("未找到部门");
         }
-        String dept = Arrays.stream(user.getDeptId().split(",")).filter(it->!it.equals(String.valueOf(deptId))).collect(Collectors.joining(","));
+        String dept = Arrays.stream(user.getDeptId().split(",")).filter(it -> !it.equals(String.valueOf(deptId))).collect(Collectors.joining(","));
         user.setDeptId(dept);
         return userDao.updateByPrimaryKeySelective(user) > 0;
     }

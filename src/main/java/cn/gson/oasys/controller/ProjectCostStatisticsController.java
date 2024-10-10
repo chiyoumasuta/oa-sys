@@ -20,15 +20,15 @@ public class ProjectCostStatisticsController {
     @Resource
     private ProjectCostStatisticsService projectCostStatisticsService;
 
-    @RequestMapping(value = "/countByProject",method = RequestMethod.POST)
+    @RequestMapping(value = "/countByProject", method = RequestMethod.POST)
     @ApiOperation("根据项目费用统计")
-    public UtilResultSet countByProject(Date startDate, Date endDate, String project, String user){
+    public UtilResultSet countByProject(Date startDate, Date endDate, String project, String user) {
         return UtilResultSet.success(projectCostStatisticsService.countByProject(startDate, endDate, project, user));
     }
 
-    @RequestMapping(value = "/countByUser",method = RequestMethod.POST)
+    @RequestMapping(value = "/countByUser", method = RequestMethod.POST)
     @ApiOperation("根据用户统计")
-    public UtilResultSet countByUser(Date startDate, Date endDate, Long userId){
+    public UtilResultSet countByUser(Date startDate, Date endDate, Long userId) {
         return UtilResultSet.success(projectCostStatisticsService.countByUser(startDate, endDate, userId));
     }
 }

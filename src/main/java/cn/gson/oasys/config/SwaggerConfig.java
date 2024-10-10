@@ -19,7 +19,7 @@ import java.util.List;
 @Configuration
 @EnableSwagger2
 public class SwaggerConfig {
- 
+
     @Bean
     public Docket createRestApi() {
 //        return new Docket(DocumentationType.SWAGGER_2).apiInfo(apiInfo()).select()
@@ -29,21 +29,18 @@ public class SwaggerConfig {
         return new Docket(DocumentationType.SWAGGER_2).apiInfo(apiInfo()).select()
                 .apis(RequestHandlerSelectors.basePackage("cn.gson.oasys.controller")).paths(PathSelectors.any())
                 .build().globalOperationParameters(setHeaderToken());
- 
+
     }
- 
+
     private ApiInfo apiInfo() {
         return new ApiInfoBuilder().title("OA-System").description("OA系统接口").termsOfServiceUrl("")
                 .version("1.0").build();
     }
- 
+
     /**
-     * @param
-     * @Description: 设置swagger文档中全局参数
-     * @Date: 2020/9/11 10:15
-     * @return: java.util.List<springfox.documentation.service.Parameter>
+     * 设置swagger文档中全局参数
      */
- 
+
     private List<springfox.documentation.service.Parameter> setHeaderToken() {
         List<Parameter> pars = new ArrayList<>();
         ParameterBuilder userId = new ParameterBuilder();

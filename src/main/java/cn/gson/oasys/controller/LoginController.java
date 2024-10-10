@@ -43,8 +43,8 @@ public class LoginController {
 
     private final Pattern pattern = Pattern.compile("^(?![A-Z]*$)(?![a-z]*$)(?![0-9]*$)(?![^a-zA-Z0-9]*$)\\S{12,20}$");
 
-    @RequestMapping(value = "/check" )
-    @ApiOperation(value="检查用户是否登录")
+    @RequestMapping(value = "/check")
+    @ApiOperation(value = "检查用户是否登录")
     public UtilResultSet check(HttpServletRequest req) {
         Object user = req.getSession().getAttribute("user");
         if (user == null) {
@@ -56,7 +56,7 @@ public class LoginController {
     @RequestMapping(value = "/web/login")
     @ApiOperation(value = "登录接口")
     public UtilResultSet login(String phone, String password, HttpServletRequest req) {
-        if (phone==null||password==null) {
+        if (phone == null || password == null) {
             throw new ServiceException("未输入账号或密码");
         }
         User currentUser = userService.verifyAndGetUser(phone, password);
@@ -123,10 +123,10 @@ public class LoginController {
         }
         String deptName = "";
         AtomicBoolean isMannger = new AtomicBoolean(false);
-        if (user.getDeptId()!=null){
-            deptName = Arrays.stream(user.getDeptId().split(",")).filter(Objects::nonNull).map(d->{
+        if (user.getDeptId() != null) {
+            deptName = Arrays.stream(user.getDeptId().split(",")).filter(Objects::nonNull).map(d -> {
                 Department departmentById = departmentService.findDepartmentById(d).get(0);
-                if (departmentById!=null&&departmentById.getManagerId().equals(user.getId())) isMannger.set(true);
+                if (departmentById != null && departmentById.getManagerId().equals(user.getId())) isMannger.set(true);
                 return departmentById.getName();
             }).collect(Collectors.joining(","));
         }

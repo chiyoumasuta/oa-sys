@@ -23,7 +23,7 @@ public class ReimbursementController {
     /**
      * 修改数据
      */
-    @RequestMapping(value = "/update",method = RequestMethod.POST)
+    @RequestMapping(value = "/update", method = RequestMethod.POST)
     @ApiOperation(value = "修改主数据")
     public UtilResultSet update(Reimbursement reimbursement) {
         reimbursementService.update(reimbursement);
@@ -33,7 +33,7 @@ public class ReimbursementController {
     /**
      * 修改明细表数据
      */
-    @RequestMapping(value = "/updateItem",method = RequestMethod.POST)
+    @RequestMapping(value = "/updateItem", method = RequestMethod.POST)
     @ApiOperation(value = "修改明细表数据")
     public UtilResultSet updateItem(ReimbursementItem reimbursementItem) {
         reimbursementService.updateItem(reimbursementItem);

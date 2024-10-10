@@ -141,14 +141,24 @@ public class FlowableServiceImpl implements FlowableService {
         // 避免懒加载问题，将需要的字段包装到 DTO 中
         return taskList.stream().filter(it -> it.getProcessDefinitionId().contains(type))
                 .map(task -> {
-                    TaskDTO taskDTO = new TaskDTO(task.getId(), task.getName(),
+
+                    // 根据任务获取流程实例
+                    ProcessInstance processInstance = runtimeService.createProcessInstanceQuery()
+                            .processInstanceId(task.getProcessInstanceId())
+                            .singleResult();
+
+                    // 业务键获取
+                    Long businessKey = Long.valueOf(processInstance.getBusinessKey());
+
+                    TaskDTO taskDTO = new TaskDTO(
+                            task.getId(),
+                            task.getName(),
                             task.getTaskDefinitionKey(),
                             task.getExecutionId(),
-                            task.getProcessInstanceId()
+                            task.getProcessInstanceId(),
+                            businessKey
                     );
-                    // 从数据库中获取与流程实例ID关联的业务数据
-                    // 根据任务获取流程实例
-                    ProcessInstance processInstance = runtimeService.createProcessInstanceQuery().processInstanceId(task.getProcessInstanceId()).singleResult();
+
                     // 获取流程实例中的业务键
                     String processDefinitionKey = processInstance.getProcessDefinitionKey();
                     switch (processDefinitionKey) {
@@ -161,7 +171,8 @@ public class FlowableServiceImpl implements FlowableService {
                             // 将业务数据封装到DTO中
                             taskDTO.setBusinessData(leaveApplication);
                         case "reimbursement_process":
-                            Reimbursement info = reimbursementService.getInfo(Long.valueOf(processInstance.getBusinessKey()));
+                            Reimbursement info = reimbursementService.getInfo(businessKey);
+                            // 将业务数据封装到DTO中
                             taskDTO.setBusinessData(info);
                     }
                     return taskDTO;

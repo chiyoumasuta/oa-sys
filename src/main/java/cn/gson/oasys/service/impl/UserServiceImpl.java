@@ -47,13 +47,13 @@ public class UserServiceImpl implements UserService {
             criteria.andLike("phone", "%" + phone + "%");
         }
         com.github.pagehelper.Page<User> pageInfo = (com.github.pagehelper.Page<User>) userDao.selectByExample(example);
-        List<User> lists = pageInfo.getResult().stream().peek(it->{
+        List<User> lists = pageInfo.getResult().stream().peek(it -> {
             String deptName = "";
             AtomicBoolean isMannger = new AtomicBoolean(false);
-            if (it.getDeptId()!=null){
-                deptName = Arrays.stream(it.getDeptId().split(",")).filter(Objects::nonNull).map(d->{
+            if (it.getDeptId() != null) {
+                deptName = Arrays.stream(it.getDeptId().split(",")).filter(Objects::nonNull).map(d -> {
                     Department departmentById = departmentService.findDepartmentById(d).get(0);
-                    if (departmentById!=null&&departmentById.getManagerId().equals(it.getId())) isMannger.set(true);
+                    if (departmentById != null && departmentById.getManagerId().equals(it.getId())) isMannger.set(true);
                     return departmentById.getName();
                 }).collect(Collectors.joining(","));
             }
@@ -88,8 +88,6 @@ public class UserServiceImpl implements UserService {
             }
             user.setPassword(defaultUserPwd);
             userDao.insert(user);
-            //维护流程系统用户
-//            flowableUserService.createUser(user.getUserName());
         } else {
             userDao.updateByPrimaryKeySelective(user);
         }
@@ -148,7 +146,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public User verifyAndGetUser(String phone, String passWord) {
         Example example = new Example(User.class);
-        if (phone==null){
+        if (phone == null) {
             throw new ServiceException("请输入手机号");
         }
         example.createCriteria().andEqualTo("phone", phone).andEqualTo("del", false);
@@ -272,7 +270,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<User> findAllByDeptId(Long deptId) {
         Example example = new Example(User.class);
-        example.createCriteria().andLike("deptId", "%"+deptId+"%");
+        example.createCriteria().andLike("deptId", "%" + deptId + "%");
         return userDao.selectByExample(example);
     }
 

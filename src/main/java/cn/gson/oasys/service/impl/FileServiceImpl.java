@@ -1,12 +1,11 @@
 package cn.gson.oasys.service.impl;
 
 import cn.gson.oasys.dao.FileDao;
-import cn.gson.oasys.dao.UserDao;
 import cn.gson.oasys.entity.Department;
 import cn.gson.oasys.entity.File;
 import cn.gson.oasys.entity.FileAuditRecord;
 import cn.gson.oasys.entity.User;
-import cn.gson.oasys.exception.ServiceException;
+import cn.gson.oasys.support.exception.ServiceException;
 import cn.gson.oasys.service.DepartmentService;
 import cn.gson.oasys.service.FileAuditRecordService;
 import cn.gson.oasys.service.FileService;
@@ -24,7 +23,6 @@ import java.io.*;
 import java.rmi.ServerException;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service
 public class FileServiceImpl implements FileService {
@@ -56,27 +54,29 @@ public class FileServiceImpl implements FileService {
         java.io.File targetFile = new java.io.File(savepath, newFileName);
         file.transferTo(targetFile);
 
-        File filelist = new File();
+        File fileDb = new File();
         String filename = file.getOriginalFilename();
         if (File.model.CLOUD.equals(model)) {
             Example example = new Example(File.class);
             example.createCriteria().andEqualTo("fileName", filename).andEqualTo("father", nowPath == null ? 0 : nowPath).andEqualTo("userId", user.getId());
             List<File> files = flDao.selectByExample(example);
             if (!files.isEmpty()) throw new ServiceException("文件名重复");
+        }else if (File.model.REIMBURSEMENT.equals(model)) {
+            fileDb.setFileInTrash(true);
         }
 
-        filelist.setFileName(filename);
-        filelist.setFilePath(targetFile.getAbsolutePath().replace("\\", "/").replace(this.rootPath, ""));
-        filelist.setType(type);
-        filelist.setModel(model == null ? File.model.CLOUD : model);
-        filelist.setFather(nowPath == null ? 0 : nowPath);
-        filelist.setSize(file.getSize());
-        filelist.setUploadTime(new Date());
-        filelist.setContentType(file.getContentType());
-        filelist.setUserId(user.getId());
-        flDao.insert(filelist);
+        fileDb.setFileName(filename);
+        fileDb.setFilePath(targetFile.getAbsolutePath().replace("\\", "/").replace(this.rootPath, ""));
+        fileDb.setType(type);
+        fileDb.setModel(model == null ? File.model.CLOUD : model);
+        fileDb.setFather(nowPath == null ? 0 : nowPath);
+        fileDb.setSize(file.getSize());
+        fileDb.setUploadTime(new Date());
+        fileDb.setContentType(file.getContentType());
+        fileDb.setUserId(user.getId());
+        flDao.insert(fileDb);
 
-        return filelist.getFileId();
+        return fileDb.getFileId();
     }
 
     @Override
@@ -150,7 +150,28 @@ public class FileServiceImpl implements FileService {
                 result.setFile(byUserIdAndFather.stream().filter(File::isShare).collect(Collectors.toList()));
                 break;
             case "所有文件夹":
-                result.setFile(byUserIdAndFather.stream().filter(it -> !it.isShare() && "folder".equals(it.getType())).collect(Collectors.toList()));
+                List<File> collect = byUserIdAndFather.stream().filter(it -> !it.isShare() && "folder".equals(it.getType())).collect(Collectors.toList());
+
+//                Map<Long, File> fileMap = new HashMap<>();
+//                List<File> roots = new ArrayList<>();
+//
+//                // Populate the map
+//                for (File file : collect) {
+//                    fileMap.put(file.getFileId(), file);
+//                }
+//
+//                // Build the tree
+//                for (File file : collect) {
+//                    Long parentId = file.getFather();
+//                    if (parentId == null || !fileMap.containsKey(parentId)) {
+//                        roots.add(file); // No parent, so it's a root
+//                    } else {
+//                        File parent = fileMap.get(parentId);
+//                        parent.getFiles().add(file);
+//                    }
+//                }
+//                result.setFile(roots);
+                result.setFile(collect);
                 break;
         }
         if (nowPath != null) {
@@ -312,5 +333,16 @@ public class FileServiceImpl implements FileService {
      */
     public java.io.File getFile(String filepath) {
         return new java.io.File(this.rootPath, filepath);
+    }
+
+    /**
+     * @param ids
+     * @return
+     */
+    @Override
+    public List<File> findByIds(List<Long> ids) {
+        Example example = new Example(File.class);
+        example.createCriteria().andIn("fileId", ids);
+        return flDao.selectByExample(example);
     }
 }

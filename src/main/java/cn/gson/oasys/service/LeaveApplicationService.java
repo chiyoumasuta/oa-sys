@@ -10,7 +10,7 @@ public interface LeaveApplicationService {
      * @param result
      * @return
      */
-    boolean audit(String id,String result);
+    boolean audit(Long id,String result);
 
     /**
      * 通过processInstanceId获取业务数据代码

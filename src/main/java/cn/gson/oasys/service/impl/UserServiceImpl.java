@@ -3,7 +3,7 @@ package cn.gson.oasys.service.impl;
 import cn.gson.oasys.dao.UserDao;
 import cn.gson.oasys.entity.Department;
 import cn.gson.oasys.entity.User;
-import cn.gson.oasys.exception.ServiceException;
+import cn.gson.oasys.support.exception.ServiceException;
 import cn.gson.oasys.service.DepartmentService;
 import cn.gson.oasys.service.FlowableUserService;
 import cn.gson.oasys.service.UserService;
@@ -52,10 +52,12 @@ public class UserServiceImpl implements UserService {
             AtomicBoolean isMannger = new AtomicBoolean(false);
             if (it.getDeptId() != null) {
                 deptName = Arrays.stream(it.getDeptId().split(",")).filter(Objects::nonNull).map(d -> {
-                    Department departmentById = departmentService.findDepartmentById(d).get(0);
-                    if (departmentById != null && departmentById.getManagerId().equals(it.getId())) isMannger.set(true);
-                    return departmentById.getName();
-                }).collect(Collectors.joining(","));
+                    if (!d.isEmpty()){
+                        Department departmentById = departmentService.findDepartmentById(d).get(0);
+                        if (departmentById != null && departmentById.getManagerId().equals(it.getId())) isMannger.set(true);
+                        return departmentById.getName();
+                    } return null;
+                }).filter(Objects::nonNull).collect(Collectors.joining(","));
             }
             it.setDeptName(deptName);
             it.setManager(isMannger.get());

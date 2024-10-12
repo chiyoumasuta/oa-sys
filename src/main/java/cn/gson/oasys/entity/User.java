@@ -11,7 +11,7 @@ import java.util.Date;
 @Data
 public class User {
     @Id
-    @GeneratedValue(generator = "JDBC")
+    @GeneratedValue(generator = "JDBC",strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
     @Column

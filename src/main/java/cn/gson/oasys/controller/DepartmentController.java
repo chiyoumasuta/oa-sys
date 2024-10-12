@@ -1,7 +1,7 @@
 package cn.gson.oasys.controller;
 
 import cn.gson.oasys.entity.Department;
-import cn.gson.oasys.exception.ServiceException;
+import cn.gson.oasys.support.exception.ServiceException;
 import cn.gson.oasys.service.DepartmentService;
 import cn.gson.oasys.support.UtilResultSet;
 import cn.gson.oasys.vo.DepartmentVo;

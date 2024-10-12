@@ -1,4 +1,4 @@
-package cn.gson.oasys.exception;
+package cn.gson.oasys.support.exception;
 
 public class ServiceException extends RuntimeException{
     public ServiceException(){}

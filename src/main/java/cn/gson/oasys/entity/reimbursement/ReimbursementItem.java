@@ -1,18 +1,18 @@
 package cn.gson.oasys.entity.reimbursement;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 @Entity
 @Table(name = "reimbursement_item")
 @Data
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ReimbursementItem {
     @Id
     @Column(name = "id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column(name = "reimbursement_id", columnDefinition = "主表")
     private Long reimbursementId;

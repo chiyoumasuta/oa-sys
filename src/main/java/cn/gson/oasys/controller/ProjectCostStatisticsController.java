@@ -28,7 +28,8 @@ public class ProjectCostStatisticsController {
 
     @RequestMapping(value = "/countByUser", method = RequestMethod.POST)
     @ApiOperation("根据用户统计")
-    public UtilResultSet countByUser(Date startDate, Date endDate, Long userId) {
-        return UtilResultSet.success(projectCostStatisticsService.countByUser(startDate, endDate, userId));
+    public UtilResultSet countByUser(Date startDate, Date endDate, Long userId ,String project) {
+        return UtilResultSet.success(projectCostStatisticsService.countByUser(startDate, endDate, userId,project));
     }
+
 }

@@ -69,7 +69,7 @@ public class FlowableServiceImpl implements FlowableService {
         Task task = taskService.createTaskQuery().taskId(taskId).singleResult();
         String assignee = task.getAssignee();
         User user = UserTokenHolder.getUser();
-        if (!assignee.equals(user.getLoginName())) {
+        if (!assignee.equals(user.getUserName())) {
             return false;
         }
         Map<String, Object> resultDataMap = new HashMap<>();
@@ -77,11 +77,17 @@ public class FlowableServiceImpl implements FlowableService {
             resultDataMap.put("outcome", result);
         }
         taskService.complete(task.getId(), resultDataMap);
+        ProcessInstance processInstance = runtimeService.createProcessInstanceQuery()
+                .processInstanceId(task.getProcessInstanceId())
+                .singleResult();
+
+        // 业务键获取
+        Long businessKey = Long.valueOf(processInstance.getBusinessKey());
         switch (task.getProcessDefinitionId().split(":")[0]) {
             case "leave":
-                return leaveApplicationService.audit(task.getProcessInstanceId(), result);
+                return leaveApplicationService.audit(businessKey, result);
             case "reimbursement_process":
-                return reimbursementService.audit(task.getProcessInstanceId(), result);
+                return reimbursementService.audit(businessKey, result);
             default:
                 break;
         }
@@ -90,10 +96,6 @@ public class FlowableServiceImpl implements FlowableService {
 
     @Override
     public boolean start(String deployId, String dateJson, String type) {
-        User user = UserTokenHolder.getUser();
-        // 设置发起人
-        identityService.setAuthenticatedUserId(String.valueOf(user.getId()));
-        // 根据流程 ID 启动流程
         switch (type) {
             case "project_process":
                 //项目标准化流程接口
@@ -125,23 +127,14 @@ public class FlowableServiceImpl implements FlowableService {
         User user = UserTokenHolder.getUser();
 
         // 根据 searchType 进行不同类型的查询
-        if ("1".equals(searchType)) {
-            // 查询待审核的任务，假设待审核任务与你用户相关的逻辑处理
-            taskList = taskService.createTaskQuery()
-                    .active()
-                    .taskCandidateOrAssigned(String.valueOf(user.getId()))
-                    .list();
-        } else {
-            // 查询全部流程任务
-            taskList = taskService.createTaskQuery()
-                    .active()
-                    .list();
-        }
+
+        taskList = taskService.createTaskQuery()
+                .active()
+                .list();
 
         // 避免懒加载问题，将需要的字段包装到 DTO 中
         return taskList.stream().filter(it -> it.getProcessDefinitionId().contains(type))
                 .map(task -> {
-
                     // 根据任务获取流程实例
                     ProcessInstance processInstance = runtimeService.createProcessInstanceQuery()
                             .processInstanceId(task.getProcessInstanceId())
@@ -171,12 +164,12 @@ public class FlowableServiceImpl implements FlowableService {
                             // 将业务数据封装到DTO中
                             taskDTO.setBusinessData(leaveApplication);
                         case "reimbursement_process":
-                            Reimbursement info = reimbursementService.getInfo(businessKey);
+                            Reimbursement info = reimbursementService.getInfo(businessKey,searchType);
                             // 将业务数据封装到DTO中
                             taskDTO.setBusinessData(info);
                     }
                     return taskDTO;
-                }).collect(Collectors.toList());
+                }).filter(t->t.getBusinessData()!=null).collect(Collectors.toList());
     }
 
     @Override

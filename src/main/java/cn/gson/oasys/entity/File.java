@@ -1,6 +1,7 @@
 package cn.gson.oasys.entity;
 
 import java.util.Date;
+import java.util.List;
 
 import javax.persistence.*;
 
@@ -42,6 +43,8 @@ public class File {
     private boolean fileInTrash;
     @Column(name = "user_id", columnDefinition = "所属用户")
     private Long userId;
+    @Transient
+    private List<File> files;
 
     //临时数据
     @Transient

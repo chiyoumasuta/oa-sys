@@ -4,7 +4,7 @@ import cn.gson.oasys.dao.FileAuditRecordDao;
 import cn.gson.oasys.dao.FileDao;
 import cn.gson.oasys.entity.File;
 import cn.gson.oasys.entity.FileAuditRecord;
-import cn.gson.oasys.exception.ServiceException;
+import cn.gson.oasys.support.exception.ServiceException;
 import cn.gson.oasys.service.FileAuditRecordService;
 import cn.gson.oasys.support.Page;
 import cn.gson.oasys.support.UserTokenHolder;

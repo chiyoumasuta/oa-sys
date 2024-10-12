@@ -5,7 +5,7 @@ import cn.gson.oasys.dao.UserDao;
 import cn.gson.oasys.entity.Department;
 import cn.gson.oasys.entity.User;
 import cn.gson.oasys.entity.config.SysConfig;
-import cn.gson.oasys.exception.ServiceException;
+import cn.gson.oasys.support.exception.ServiceException;
 import cn.gson.oasys.service.DepartmentService;
 import cn.gson.oasys.service.SysConfigService;
 import cn.gson.oasys.service.UserService;

@@ -55,8 +55,11 @@ public class ProjectCostStatisticsServiceImpl implements ProjectCostStatisticsSe
             if (startDate != null) {
                 criteria.andGreaterThan("startTime", startDate).andLessThan("entTime", endDate);
             }
-            List<Reimbursement> reimbursements = reimbursementDao.selectByExample(reiExample);
+            List<Reimbursement> reimbursements = reimbursementDao.selectByExample(reiExample).stream()
+                    .filter(it->it.getStatus().equals(Reimbursement.Status.APPROVED))
+                    .collect(Collectors.toList());
             reiExample.clear();
+            if (reimbursements.isEmpty()) return vo;
 
             List<Long> ids = reimbursements.stream().map(Reimbursement::getId).collect(Collectors.toList());
             reiItemExample.createCriteria().andIn("reimbursementId", ids);
@@ -93,7 +96,6 @@ public class ProjectCostStatisticsServiceImpl implements ProjectCostStatisticsSe
                 List<ReimbursementItem> collect = reimbursementItems.stream().filter(it -> it.getType().equals(t.getName())).collect(Collectors.toList());
                 if (!collect.isEmpty()) {
                     double sum = collect.stream().mapToDouble(ReimbursementItem::getCost).sum();
-                    // 检查键是否存在，如果不存在则设置默认值为 0.0，然后再相加
                     statistics.put(t.getName(), statistics.getOrDefault(t.getName(), 0.0) + sum);
                 }
             });
@@ -103,7 +105,7 @@ public class ProjectCostStatisticsServiceImpl implements ProjectCostStatisticsSe
             Map<String, Double> detailByUser = new HashMap<>();
             reimbursements.stream().filter(it -> !it.getType().equals(Reimbursement.ExpenseType.IMPLEMENTATION_FEE)).forEach(r -> {
                 for (ReimbursementItem reimbursementItem : reimbursementItems.stream().filter(it -> it.getReimbursementId().equals(r.getId())).collect(Collectors.toList())) {
-                    detailByUser.put(r.getSubmitUserName(), statistics.getOrDefault(r.getSubmitUserName(), 0.0) + reimbursementItem.getCost());
+                    detailByUser.put(r.getSubmitUserName(), detailByUser.getOrDefault(r.getSubmitUserName(), 0.0) + reimbursementItem.getCost());
                 }
             });
             vo.setDetailsByUser(detailByUser);
@@ -123,26 +125,34 @@ public class ProjectCostStatisticsServiceImpl implements ProjectCostStatisticsSe
      * @param userId    用户id
      */
     @Override
-    public Map<String, Map<String, Double>> countByUser(Date startDate, Date endDate, Long userId) {
+    public Map<String, Map<String, Double>> countByUser(Date startDate, Date endDate, Long userId,String project) {
         //获取报销类型列表
         List<User> list = userService.page(null, null, 1, 9999).getList();
         Map<String, Map<String, Double>> result = new HashMap<>();
 
         List<Reimbursement> reimbursements = reimbursementDao.selectAll();
+        if (project!=null){
+            reimbursements = reimbursements.stream().filter(it->it.getProject().equals(project)).collect(Collectors.toList());
+        }
         Example example = new Example(ReimbursementItem.class);
 
+        List<Reimbursement> finalReimbursements = reimbursements;
         list.forEach(it -> {
             Map<String, Double> detail = new HashMap<>();
-            List<Long> collect = reimbursements.stream().filter(r -> r.getSubmitUser().equals(it.getId())).map(Reimbursement::getId).collect(Collectors.toList());
-            example.createCriteria().andIn("reimbursementId", collect);
-            List<ReimbursementItem> reimbursementItems = reimbursementItemDao.selectByExample(example).stream().filter(r -> r.getCost() != null).collect(Collectors.toList());
-            example.clear();
-
-            if (!reimbursementItems.isEmpty()) {
-                reimbursementItems.forEach(t -> detail.put(t.getType(), detail.getOrDefault(t.getType(), 0.0) + t.getCost()));
-                double totalCost = detail.values().stream().mapToDouble(Double::doubleValue).sum();
-                detail.put("总费用", totalCost);
-                result.put(it.getUserName(), detail);
+            List<Long> collect = finalReimbursements.stream().filter(r -> r.getSubmitUser().equals(it.getId())).map(Reimbursement::getId).collect(Collectors.toList());
+            if (!collect.isEmpty()){
+                example.createCriteria().andIn("reimbursementId", collect);
+                List<ReimbursementItem> reimbursementItems = reimbursementItemDao.selectByExample(example);
+                example.clear();
+                if (!reimbursementItems.isEmpty()){
+                    reimbursementItems = reimbursementItems.stream().filter(r -> r.getCost() != null).collect(Collectors.toList());
+                    if (!reimbursementItems.isEmpty()) {
+                        reimbursementItems.forEach(t -> detail.put(t.getType(), detail.getOrDefault(t.getType(), 0.0) + t.getCost()));
+                        double totalCost = detail.values().stream().mapToDouble(Double::doubleValue).sum();
+                        detail.put("总费用", totalCost);
+                        result.put(it.getUserName(), detail);
+                    }
+                }
             }
         });
 
@@ -157,4 +167,5 @@ public class ProjectCostStatisticsServiceImpl implements ProjectCostStatisticsSe
 
         return sortedMap;
     }
+
 }

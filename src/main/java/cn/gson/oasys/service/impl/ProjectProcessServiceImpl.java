@@ -5,7 +5,7 @@ import cn.gson.oasys.entity.config.ProjectProcessConfig;
 import cn.gson.oasys.entity.config.SysConfig;
 import cn.gson.oasys.entity.User;
 import cn.gson.oasys.entity.ProjectProcess;
-import cn.gson.oasys.exception.ServiceException;
+import cn.gson.oasys.support.exception.ServiceException;
 import cn.gson.oasys.service.FlowableService;
 import cn.gson.oasys.service.ProjectProcessService;
 import cn.gson.oasys.service.SysConfigService;

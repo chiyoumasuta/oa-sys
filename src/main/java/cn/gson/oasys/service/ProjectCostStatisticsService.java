@@ -19,5 +19,5 @@ public interface ProjectCostStatisticsService {
     /**
      * 更具用户名返回费用统计结果
      */
-    Map<String,Map<String,Double>> countByUser(Date startDate, Date endDate, Long userId);
+    Map<String,Map<String,Double>> countByUser(Date startDate, Date endDate, Long userId,String project);
 }

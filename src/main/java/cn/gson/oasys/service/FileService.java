@@ -5,6 +5,7 @@ import cn.gson.oasys.vo.FileListVo;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 
 public interface FileService {
     /**
@@ -57,4 +58,6 @@ public interface FileService {
      * @return
      */
     java.io.File getFile(String filepath);
+
+    List<File> findByIds(List<Long> ids);
 }

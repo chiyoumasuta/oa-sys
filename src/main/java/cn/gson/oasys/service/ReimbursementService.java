@@ -23,12 +23,12 @@ public interface ReimbursementService {
     /**
      * 获取业务代码信息
      */
-    Reimbursement getInfo(Long id);
+    Reimbursement getInfo(Long id,String searchType);
 
     /**
      * 审核接口
      */
-     boolean audit(String id, String result);
+     boolean audit(Long id, String result);
 
     /**
      * 修改数据

@@ -16,6 +16,7 @@ import java.util.List;
 public class Pps {
     @Id
     @Column(name = "id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column(name = "project_name", columnDefinition = "项目名称")
     private String projectName;

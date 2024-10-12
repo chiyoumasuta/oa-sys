@@ -7,17 +7,14 @@ import cn.gson.oasys.entity.ReiType;
 import cn.gson.oasys.entity.config.SysConfig;
 import cn.gson.oasys.entity.reimbursement.Reimbursement;
 import cn.gson.oasys.entity.reimbursement.ReimbursementItem;
-import cn.gson.oasys.exception.ServiceException;
-import cn.gson.oasys.service.DepartmentService;
+import cn.gson.oasys.support.exception.ServiceException;
 import cn.gson.oasys.service.SysConfigService;
 import cn.gson.oasys.vo.SysConfigListVo;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tk.mybatis.mapper.entity.Example;
 
 import javax.annotation.Resource;
-import javax.sql.rowset.serial.SerialException;
 import java.util.*;
 import java.util.stream.Collectors;
 

@@ -22,7 +22,7 @@ public class LeaveApplicationServiceImpl implements LeaveApplicationService {
      * @return
      */
     @Override
-    public boolean audit(String id, String result) {
+    public boolean audit(Long id, String result) {
         LeaveApplication leaveApplication = leaveApplicationDao.selectByPrimaryKey(id);
         leaveApplication.setStats(result);
         boolean b = leaveApplicationDao.updateByPrimaryKey(leaveApplication) > 0;

@@ -1,6 +1,8 @@
 package cn.gson.oasys.entity.reimbursement;
 
+import cn.gson.oasys.entity.File;
 import cn.gson.oasys.entity.ProjectProcess;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
 import javax.persistence.*;
@@ -13,9 +15,11 @@ import java.util.List;
 @Entity
 @Table(name = "reimbursement")
 @Data
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Reimbursement {
     @Id
     @Column(name = "id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(name = "department", columnDefinition = "部门")
@@ -72,6 +76,8 @@ public class Reimbursement {
     private String statusName;
     @Transient
     private List<ReimbursementItem> details;
+    @Transient
+    private List<File> fileList;
 
     public enum Status {
         MANAGER("部门负责人审核", 1),
@@ -122,19 +128,19 @@ public class Reimbursement {
     }
 
     public String getTypeName() {
-        return type.getName();
+        return this.type.getName();
     }
 
-    public void setTypeName(String typeName) {
-        this.typeName = type.getName();
+    public void setTypeName() {
+        this.typeName = this.type.getName();
     }
 
     public String getStatusName() {
-        return status.getName();
+        return this.status.getName();
     }
 
-    public void setStatusName(String statusName) {
-        this.statusName = status.getName();
+    public void setStatusName() {
+        this.statusName = this.status.getName();
     }
 
     public Double getDuration() {

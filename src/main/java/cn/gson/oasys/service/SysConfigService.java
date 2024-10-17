@@ -2,6 +2,7 @@ package cn.gson.oasys.service;
 
 import cn.gson.oasys.entity.Project;
 import cn.gson.oasys.entity.ReiType;
+import cn.gson.oasys.entity.User;
 import cn.gson.oasys.entity.config.SysConfig;
 import cn.gson.oasys.vo.SysConfigListVo;
 
@@ -61,4 +62,9 @@ public interface SysConfigService {
      * 增加/修改报销明细类型列表
      */
     boolean saveOrUpdate(ReiType reiType);
+
+    /**
+     * 获取审核人配置
+     */
+    User getApproveByDept(String dept);
 }

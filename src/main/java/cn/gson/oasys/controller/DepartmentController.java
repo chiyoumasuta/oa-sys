@@ -1,6 +1,7 @@
 package cn.gson.oasys.controller;
 
 import cn.gson.oasys.entity.Department;
+import cn.gson.oasys.service.UserDeptRoleService;
 import cn.gson.oasys.support.exception.ServiceException;
 import cn.gson.oasys.service.DepartmentService;
 import cn.gson.oasys.support.UtilResultSet;
@@ -19,6 +20,8 @@ public class DepartmentController {
 
     @Resource
     private DepartmentService departmentService;
+    @Resource
+    private UserDeptRoleService userDeptRoleService;
 
     @RequestMapping(value = "/save", method = RequestMethod.POST)
     @ApiOperation("新增部门")
@@ -51,7 +54,7 @@ public class DepartmentController {
         }
     }
 
-    @RequestMapping(value = "/find/{id}", method = RequestMethod.POST)
+    @RequestMapping(value = "/find", method = RequestMethod.POST)
     @ApiOperation("通过id查询部门信息")
     public UtilResultSet findDepartmentById(String id) {
         List<Department> department = departmentService.findDepartmentById(id);
@@ -76,9 +79,9 @@ public class DepartmentController {
     // 设置部门下的用户
     @RequestMapping(value = "/setDept", method = RequestMethod.POST)
     @ApiOperation("设置部门用户")
-    public UtilResultSet setDept(Long deptId, String users) {
+    public UtilResultSet setDept(Long deptId, String users, String role) {
         try {
-            if (departmentService.setDept(deptId, users)) {
+            if (departmentService.setDept(deptId, users, role)) {
                 return UtilResultSet.success("用户部门设置成功");
             } else {
                 return UtilResultSet.bad_request("用户部门设置失败");
@@ -95,5 +98,14 @@ public class DepartmentController {
             return UtilResultSet.success("删除成功");
         }
         return UtilResultSet.bad_request("删除失败");
+    }
+
+    @RequestMapping(value = "/updateUserRole", method = RequestMethod.POST)
+    @ApiOperation("修改职员职位")
+    public UtilResultSet updateUserRole(Long deptId, Long userId, String role) {
+        if (userDeptRoleService.updateUserRole(deptId, userId, role)) {
+            return UtilResultSet.success("修改成功");
+        }
+        return UtilResultSet.bad_request("修改失败");
     }
 }

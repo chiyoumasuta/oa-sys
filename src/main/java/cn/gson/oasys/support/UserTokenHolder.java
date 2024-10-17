@@ -116,6 +116,7 @@ public class UserTokenHolder {
     public static User getUser() {
         User user = null;
         String token = getRequest().getHeader("token");
+//        System.out.println("token-----"+token);
         if (token != null) {
             user = JwtUtil.verifyToken(token);
         }

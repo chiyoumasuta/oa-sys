@@ -2,9 +2,12 @@ package cn.gson.oasys.service.impl;
 
 import cn.gson.oasys.dao.DepartmentDao;
 import cn.gson.oasys.dao.UserDao;
+import cn.gson.oasys.dao.UserDeptRoleDao;
 import cn.gson.oasys.entity.Department;
 import cn.gson.oasys.entity.User;
+import cn.gson.oasys.entity.UserDeptRole;
 import cn.gson.oasys.entity.config.SysConfig;
+import cn.gson.oasys.service.UserDeptRoleService;
 import cn.gson.oasys.support.exception.ServiceException;
 import cn.gson.oasys.service.DepartmentService;
 import cn.gson.oasys.service.SysConfigService;
@@ -29,6 +32,10 @@ public class DepartmentServiceImpl implements DepartmentService {
     private UserDao userDao;
     @Resource
     private SysConfigService sysConfigService;
+    @Resource
+    private UserDeptRoleDao userDeptRoleDao;
+    @Resource
+    private UserDeptRoleService userDeptRoleService;
 
     @Override
     public boolean saveDepartment(Department department) {
@@ -43,9 +50,7 @@ public class DepartmentServiceImpl implements DepartmentService {
 
     @Override
     public boolean deleteDepartment(Long id) {
-        Example example = new Example(User.class);
-        example.createCriteria().andLike("deptId", "%" + id + "%");
-        List<User> users = userDao.selectByExample(example);
+        List<User> users = userDeptRoleService.findByDepartmentId(id);
         if (!users.isEmpty()) {
             throw new ServiceException("当前部门存在职员，不允许删除");
         }
@@ -70,16 +75,16 @@ public class DepartmentServiceImpl implements DepartmentService {
         departmentDao.selectAll().forEach(department -> {
             DepartmentVo departmentVo = new DepartmentVo();
             BeanUtils.copyProperties(department, departmentVo);
-            List<User> allByDeptId = userService.findAllByDeptId(department.getId());
+            List<User> allByDeptId = userDeptRoleService.findByDepartmentId(department.getId());
             departmentVo.setUsers(allByDeptId);
-            departmentVo.setManager(userService.findById(department.getManagerId()));
+            departmentVo.setManager(null);
             departmentVos.add(departmentVo);
         });
         return departmentVos;
     }
 
     @Override
-    public boolean setDept(Long deptId, String users) {
+    public boolean setDept(Long deptId, String users, String role) {
         Department department = departmentDao.selectByPrimaryKey(deptId);
         if (department == null) {
             throw new ServiceException("部门错误");
@@ -87,14 +92,12 @@ public class DepartmentServiceImpl implements DepartmentService {
         if (users == null) {
             throw new ServiceException("请选择用户");
         }
-        for (User user : userService.findDetailByIds(Arrays.asList(users.split(",")).stream().map(Long::valueOf).collect(Collectors.toList()))) {
-            Set<String> userDept = new HashSet<>();
-            if (user.getDeptId() != null) {
-                userDept.addAll(Arrays.asList(user.getDeptId().split(",")));
-            }
-            userDept.add(String.valueOf(department.getId()));
-            user.setDeptId(String.join(",", userDept));
-            if (userDao.updateByPrimaryKeySelective(user) <= 0) {
+        for (User user : userService.findDetailByIds(Arrays.stream(users.split(",")).map(Long::valueOf).collect(Collectors.toList()))) {
+            UserDeptRole userDeptRole = new UserDeptRole();
+            userDeptRole.setDepartmentId(deptId);
+            userDeptRole.setUserId(user.getId());
+            userDeptRole.setRole(role);
+            if (userDeptRoleDao.insert(userDeptRole) <= 0) {
                 throw new ServiceException("用户部门设置失败");
             }
         }
@@ -111,9 +114,8 @@ public class DepartmentServiceImpl implements DepartmentService {
         if (department == null) {
             throw new ServiceException("未找到部门");
         }
-        String dept = Arrays.stream(user.getDeptId().split(",")).filter(it -> !it.equals(String.valueOf(deptId))).collect(Collectors.joining(","));
-        user.setDeptId(dept);
-        return userDao.updateByPrimaryKeySelective(user) > 0;
+        Example example = new Example(UserDeptRole.class);
+        example.createCriteria().andEqualTo("departmentId", department.getId()).andEqualTo("userId", user.getId());
+        return userDeptRoleDao.deleteByExample(example) > 0;
     }
-
 }

@@ -39,7 +39,7 @@ public class JwtFilter implements Filter {
         final String token = request.getHeader("token");
 
         String requestURI = request.getRequestURI();
-        if (requestURI.equals("/") || endpoints.stream().noneMatch(requestURI::contains) || requestURI.equals("/web/login") || requestURI.split("/").length > 2) {
+        if (requestURI.equals("/") || endpoints.stream().noneMatch(requestURI::contains) || Arrays.asList("/logout","/web/login").contains(requestURI) || requestURI.split("/").length > 2) {
             chain.doFilter(req, res);
         } else {
             if (token == null) {

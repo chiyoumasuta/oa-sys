@@ -1,18 +1,15 @@
 package cn.gson.oasys.service.impl;
 
 import cn.gson.oasys.dao.FileDao;
-import cn.gson.oasys.entity.Department;
+import cn.gson.oasys.dao.UserDeptRoleDao;
+import cn.gson.oasys.entity.*;
 import cn.gson.oasys.entity.File;
-import cn.gson.oasys.entity.FileAuditRecord;
-import cn.gson.oasys.entity.User;
+import cn.gson.oasys.service.*;
 import cn.gson.oasys.support.exception.ServiceException;
-import cn.gson.oasys.service.DepartmentService;
-import cn.gson.oasys.service.FileAuditRecordService;
-import cn.gson.oasys.service.FileService;
-import cn.gson.oasys.service.UserService;
 import cn.gson.oasys.support.UserTokenHolder;
 import cn.gson.oasys.vo.FileListVo;
 import org.apache.commons.io.FilenameUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -37,6 +34,11 @@ public class FileServiceImpl implements FileService {
     private DepartmentService departmentService;
     @Resource
     private UserService userService;
+    @Resource
+    private UserDeptRoleService userDeptRoleService;
+    @Autowired
+    private UserDeptRoleDao userDeptRoleDao;
+
 
     @Override
     public Long saveFile(MultipartFile file, Long nowPath, File.model model) throws IllegalStateException, IOException {
@@ -272,52 +274,45 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public boolean shareFile(String fileId, String sharePerson) {
-        User user = UserTokenHolder.getUser();
+        User user = userService.findById(UserTokenHolder.getUser().getId());
         Example example = new Example(File.class);
         example.createCriteria().andIn("fileId", Arrays.asList(fileId.split(",")));
-        boolean needAudit;
-        List<Department> departmentById;
-        if (user.getDeptId() != null) {
-            departmentById = departmentService.findDepartmentById(user.getDeptId());
-            if (user.getDeptId() != null) {
-                if (!departmentById.isEmpty()) {
-                    List<Department> departmentStream = departmentById.stream().filter(it -> it.getManagerId().equals(user.getId())).collect(Collectors.toList());
-                    if (!departmentStream.isEmpty()) {
-                        needAudit = false;
-                    } else {
-                        needAudit = true;
-                    }
-                } else {
-                    needAudit = true;
-                }
-            } else {
-                needAudit = true;
-            }
-        } else {
-            departmentById = new ArrayList<>();
-            needAudit = true;
-        }
-
+        List<UserDeptRole> userDeptRoles;
+        userDeptRoles = userDeptRoleService.findItByUserId(user.getId());
 
         flDao.selectByExample(example).forEach(it -> {
             File file = flDao.selectByPrimaryKey(fileId);
-            file.setStatus(needAudit ? 1 : 0);
             if (it.isShare()) throw new ServiceException(it.getFileName() + "已分享");
-            if (!needAudit || file.isShare() || user.isManager()) {
+            if (file.isShare() || user.isManager()) {
+                file.setStatus(0);
                 if (sharePerson == null) {
                     throw new ServiceException("请选择分享人");
                 }
                 file.setShare(true);
                 file.setSharePeople((file.getSharePeople() == null ? "" : file.getSharePeople() + ",") + sharePerson);
             } else {
+                file.setStatus(1);
                 FileAuditRecord fileAuditRecord = new FileAuditRecord();
                 fileAuditRecord.setFileId(file.getFileId());
                 fileAuditRecord.setSubmitTime(new Date());
                 fileAuditRecord.setFileName(file.getFileName());
                 fileAuditRecord.setSubmitUserName(user.getUserName());
                 fileAuditRecord.setSubmitUserId(user.getId());
-                fileAuditRecord.setPersonInCharge(departmentById.isEmpty() ? 1L : userService.findById(departmentById.get(0).getManagerId()).getId());
-                fileAuditRecord.setPersonInChargeName(departmentById.isEmpty() ? "admin" : userService.findById(departmentById.get(0).getManagerId()).getLoginName());
+                User personInCharge;
+                if (userDeptRoles.isEmpty()){
+                    personInCharge = userService.findById(1L);
+                }else {
+                    List<User> userList = userDeptRoleService.findByDepartmentId(userDeptRoles.get(0).getDepartmentId())
+                            .stream()
+                            .filter(u -> u.getRole() != null && !u.getRole().equals("专员")).collect(Collectors.toList());
+                    if (userList.isEmpty()){
+                        personInCharge = userService.findById(1L);
+                    }else {
+                        personInCharge = userList.get(0);
+                    }
+                }
+                fileAuditRecord.setPersonInCharge(personInCharge.getId());
+                fileAuditRecord.setPersonInChargeName(personInCharge.getUserName());
                 fileAuditRecordService.saveFileAuditRecord(fileAuditRecord);
                 flDao.updateByPrimaryKeySelective(file);
             }
@@ -325,20 +320,10 @@ public class FileServiceImpl implements FileService {
         return true;
     }
 
-    /**
-     * 得到文件
-     *
-     * @param filepath
-     * @return
-     */
     public java.io.File getFile(String filepath) {
         return new java.io.File(this.rootPath, filepath);
     }
 
-    /**
-     * @param ids
-     * @return
-     */
     @Override
     public List<File> findByIds(List<Long> ids) {
         Example example = new Example(File.class);

@@ -1,24 +1,30 @@
 package cn.gson.oasys.service.impl;
 
 import cn.gson.oasys.dao.UserDao;
+import cn.gson.oasys.dao.UserDeptRoleDao;
 import cn.gson.oasys.entity.Department;
 import cn.gson.oasys.entity.User;
+import cn.gson.oasys.entity.UserDeptRole;
+import cn.gson.oasys.service.UserDeptRoleService;
 import cn.gson.oasys.support.exception.ServiceException;
 import cn.gson.oasys.service.DepartmentService;
 import cn.gson.oasys.service.FlowableUserService;
 import cn.gson.oasys.service.UserService;
 import cn.gson.oasys.support.Page;
+import cn.gson.oasys.support.exception.UnknownAccountException;
 import com.github.pagehelper.PageHelper;
 import org.apache.commons.lang.StringUtils;
 import org.flowable.engine.IdentityService;
 import org.flowable.engine.ProcessEngine;
 import org.flowable.engine.ProcessEngines;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import tk.mybatis.mapper.entity.Example;
 
 import javax.annotation.Resource;
+import javax.persistence.Transient;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -33,6 +39,10 @@ public class UserServiceImpl implements UserService {
     private DepartmentService departmentService;
     @Resource
     private FlowableUserService flowableUserService;
+    @Resource
+    private UserDeptRoleService userDeptRoleService;
+    @Autowired
+    private UserDeptRoleDao userDeptRoleDao;
 
     @Override
     public Page<User> page(String name, String phone, int pageNo, int pageSize) {
@@ -50,14 +60,17 @@ public class UserServiceImpl implements UserService {
         List<User> lists = pageInfo.getResult().stream().peek(it -> {
             String deptName = "";
             AtomicBoolean isMannger = new AtomicBoolean(false);
-            if (it.getDeptId() != null) {
-                deptName = Arrays.stream(it.getDeptId().split(",")).filter(Objects::nonNull).map(d -> {
-                    if (!d.isEmpty()){
-                        Department departmentById = departmentService.findDepartmentById(d).get(0);
-                        if (departmentById != null && departmentById.getManagerId().equals(it.getId())) isMannger.set(true);
-                        return departmentById.getName();
-                    } return null;
-                }).filter(Objects::nonNull).collect(Collectors.joining(","));
+            List<UserDeptRole> itByUserId = userDeptRoleService.findItByUserId(it.getId());
+            if (itByUserId.isEmpty()) {
+                deptName = "";
+            }else {
+                deptName = itByUserId.stream().map(d -> {
+                    Department departmentById = departmentService.findDepartmentById(String.valueOf(d.getDepartmentId())).get(0);
+                    if (!d.getRole().equals("专员")) isMannger.set(true);
+                    return departmentById.getName();
+                }).collect(Collectors.joining(","));
+
+                it.setDeptId(itByUserId.stream().map(UserDeptRole::getDepartmentId).map(Object::toString).collect(Collectors.joining(",")));
             }
             it.setDeptName(deptName);
             it.setManager(isMannger.get());
@@ -95,25 +108,9 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    /**
-     * 维护用户
-     */
-    @Test
-    public void createUser() {
-        ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
-        // 通过 IdentityService 完成相关的用户和组的管理
-        IdentityService identityService = processEngine.getIdentityService();
-        org.flowable.idm.api.User user;
-        for (User u : userDao.selectAll()) {
-            user = identityService.newUser(u.getUserName());
-            user.setFirstName(u.getUserName());
-            user.setEmail(u.getUserName());
-            identityService.saveUser(user);
-        }
-    }
-
 
     @Override
+    @Transient
     public void del(Long id) {
         if (id == 1L) {
             throw new ServiceException("超级管理员拥有所有权限，不允许操作");
@@ -122,12 +119,11 @@ public class UserServiceImpl implements UserService {
         if (oldUser == null) {
             throw new ServiceException("当前操作用户不存在");
         }
-//        User currentUser = UserTokenHolder.getUser();
-//        if (oldUser.getId().equals(currentUser.getId())) {
-//            throw new ServiceException("不允许操作自己");
-//        }
         oldUser.setDel(true);
         oldUser.setPhone(oldUser.getPhone() + "[delete]");
+        Example example = new Example(UserDeptRole.class);
+        example.createCriteria().andEqualTo("userId", oldUser.getId());
+        userDeptRoleDao.deleteByExample(example);
         userDao.updateByPrimaryKeySelective(oldUser);
     }
 
@@ -145,6 +141,7 @@ public class UserServiceImpl implements UserService {
         return user;
     }
 
+
     @Override
     public User verifyAndGetUser(String phone, String passWord) {
         Example example = new Example(User.class);
@@ -158,6 +155,7 @@ public class UserServiceImpl implements UserService {
         userDao.updateByPrimaryKeySelective(user);
         return user;
     }
+
 
     @Override
     public boolean resetPwd(Long id) {
@@ -217,26 +215,6 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User getPermsByUser(User user, Integer clientType) {
-//        List<SysRole> sysRoles = sysUserRoleService.getRoles(user);
-//        if (null != sysRoles) {
-//            user.setRoles(sysRoles.stream().map(it -> {
-//                SysRole sysRole = new SysRole();
-//                sysRole.setId(it.getId());
-//                sysRole.setRoleName(it.getRoleName());
-//                sysRole.setRoleKey(it.getRoleKey());
-//                return sysRole;
-//            }).collect(Collectors.toList()));
-//        }
-//        List<SysMenu> menus = sysMenuService.getMenuTreeByUser(user, clientType);
-//        user.setMenus(sysMenuService.buildMenus(menus));
-//        user.setPermissions(sysRoleMenuService.getMenuPermsByUser(user, null));
-//        user.setPassword(null);
-        return user;
-//        return null;
-    }
-
-    @Override
     public User findByToken(String token) {
         Example example = new Example(User.class);
         example.createCriteria().andEqualTo("token", token);
@@ -266,7 +244,26 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User findById(Long userId) {
-        return userDao.selectByPrimaryKey(userId);
+        User user = userDao.selectByPrimaryKey(userId);
+        if (user == null) {
+            throw new UnknownAccountException();
+        }
+        String deptName;
+        AtomicBoolean isMannger = new AtomicBoolean(false);
+        List<UserDeptRole> itByUserId = userDeptRoleService.findItByUserId(user.getId());
+        if (itByUserId.isEmpty()) {
+            deptName = "";
+        }else {
+            deptName = itByUserId.stream().map(d -> {
+                Department departmentById = departmentService.findDepartmentById(String.valueOf(d.getDepartmentId())).get(0);
+                if (!d.getRole().equals("专员")) isMannger.set(true);
+                return departmentById.getName();
+            }).collect(Collectors.joining(","));
+            user.setDeptId(itByUserId.stream().map(UserDeptRole::getDepartmentId).map(Object::toString).collect(Collectors.joining(",")));
+        }
+        user.setDeptName(deptName);
+        user.setManager(isMannger.get());
+        return user;
     }
 
     @Override

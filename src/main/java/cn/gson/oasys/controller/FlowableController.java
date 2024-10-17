@@ -126,8 +126,8 @@ public class FlowableController {
 
     @RequestMapping(value = "/deleteProcess", method = RequestMethod.POST)
     @ApiOperation(value = "中止流程")
-    public UtilResultSet deleteProcess(String processId) {
-        flowableService.deleteProcess(processId);
+    public UtilResultSet deleteProcess(String taskId) {
+        flowableService.deleteProcess(taskId);
         return UtilResultSet.success("终止成功");
     }
 
@@ -171,18 +171,18 @@ public class FlowableController {
         return UtilResultSet.success(base64Img);
     }
 
-    @RequestMapping(value = "/getTaskProcessDiagram", method = RequestMethod.POST)
+    @RequestMapping(value = "/getTaskProcessDiagram", method = RequestMethod.GET)
     @ApiOperation(value = "根据实例化id获取流程图实例（标明执行情况）")
     public void getTaskProcessDiagram(String taskId, HttpServletResponse httpServletResponse) {
         flowableService.getTaskProcessDiagram(taskId, httpServletResponse);
     }
 
     @RequestMapping(value = "/getHistoryList", method = RequestMethod.POST)
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "processInstanceId", value = "实例化流程id", required = true, dataType = "String")
-    })
     @ApiOperation(value = "查看当前实例化流程审批历史")
-    public UtilResultSet getHistoryList(String processInstanceId) {
+    public UtilResultSet getHistoryList(String taskId) {
+        // 根据任务 ID 获取流程实例 ID
+        Task task = taskService.createTaskQuery().taskId(taskId).singleResult();
+        String processInstanceId = task.getProcessInstanceId();
         List<HistoricActivityInstance> historyList = flowableService.getHistoryList(processInstanceId);
         if (historyList.isEmpty()) {
             return UtilResultSet.bad_request("当前流程无审批记录");

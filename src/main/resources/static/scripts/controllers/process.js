@@ -147,7 +147,7 @@ angular.module('flowableModeler')
     $scope.deploy = function() {
       if ($scope.model.process) {
           var modelId = $scope.model.process.id;
-          $http.post('/flowable/deploy?modelId=' + modelId)
+          $http.post('/api/flowable/deploy?modelId=' + modelId)
               .then(function(response) {
               // 部署成功后重定向到#/processes
                   $location.path("/processes");

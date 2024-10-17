@@ -3,16 +3,16 @@ package cn.gson.oasys.service.impl;
 import cn.gson.oasys.dao.*;
 import cn.gson.oasys.entity.Department;
 import cn.gson.oasys.entity.User;
+import cn.gson.oasys.entity.config.SysConfig;
 import cn.gson.oasys.entity.reimbursement.*;
-import cn.gson.oasys.service.FileService;
+import cn.gson.oasys.service.*;
+import cn.gson.oasys.support.JacksonUtil;
 import cn.gson.oasys.support.exception.ServiceException;
-import cn.gson.oasys.service.DepartmentService;
-import cn.gson.oasys.service.ReimbursementService;
-import cn.gson.oasys.service.UserService;
 import cn.gson.oasys.support.Page;
 import cn.gson.oasys.support.UserTokenHolder;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.github.pagehelper.PageHelper;
 import org.flowable.engine.RuntimeService;
 import org.flowable.engine.runtime.ProcessInstance;
@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import tk.mybatis.mapper.entity.Example;
 
 import javax.annotation.Resource;
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -38,9 +39,16 @@ public class ReimbursementServiceImpl implements ReimbursementService {
     private DepartmentService departmentService;
     @Resource
     private FileService fileService;
+    @Resource
+    private UserDeptRoleService userDeptRoleService;
+    @Resource
+    private SysConfigService sysConfigService;
+    @Resource
+    private UserDao userDao;
 
     @Override
-    public Page<Reimbursement> getList(int pageSize, int pageNo, Date startDate, Date endDate, String project) {
+    public Page<Reimbursement> page(int pageSize, int pageNo, Date startDate, Date endDate, String project,int searchType) {
+        User user = UserTokenHolder.getUser();
         PageHelper.startPage(pageNo, pageSize);
         Example example = new Example(Reimbursement.class);
         Example.Criteria criteria = example.createCriteria();
@@ -50,14 +58,26 @@ public class ReimbursementServiceImpl implements ReimbursementService {
         if (startDate != null) {
             criteria.andEqualTo("startTime", startDate).andEqualTo("endTime", endDate);
         }
+        if (searchType==0){
+            criteria.andEqualTo("submitUser",user.getId());
+        }else if(Arrays.asList("阮永薇", "熊蓉蓉","程鸿博").contains(user.getUserName())){
+            criteria.andNotEqualTo("submitUser",user.getId());
+        }
+        criteria.andIn("status",Arrays.asList(Reimbursement.Status.APPROVED,Reimbursement.Status.REJECTED));
         com.github.pagehelper.Page<Reimbursement> data = (com.github.pagehelper.Page<Reimbursement>) reimbursementDao.selectByExample(example);
-        return new Page<>(pageNo, pageSize, data.getTotal(), data.getResult());
+        List<Reimbursement> result = data.getResult().stream().peek(it -> {
+            Example example1 = new Example(ReimbursementItem.class);
+            example1.createCriteria().andEqualTo("reimbursementId", it.getId());
+            it.setDetails(reimbursementItemDao.selectByExample(example1));
+        }).collect(Collectors.toList());
+        return new Page<>(pageNo, pageSize, data.getTotal(), result);
     }
 
     @Override
     public boolean start(String deployId, String dataJson) {
         Long dataKey;
         User user = UserTokenHolder.getUser();
+        user = userService.findById(user.getId());
         List<String> dataList = Arrays.asList(dataJson.split("&"));
 
         Reimbursement reimbursement = JSONObject.toJavaObject(JSONObject.parseObject(dataList.get(0)), Reimbursement.class);
@@ -75,20 +95,22 @@ public class ReimbursementServiceImpl implements ReimbursementService {
         } else throw new ServiceException("未找到部门");
         reimbursement.setDepartmentName(department.getName());
 
+        User userApprover = sysConfigService.getApproveByDept(reimbursement.getDepartmentName());
+
         //设置审核人
-        if (!user.isManager()) {
-            User manager = userService.findById(department.getManagerId());
-            reimbursement.setApprover(manager.getId());
-            reimbursement.setApproverName(manager.getUserName());
-            reimbursement.setStatus(Reimbursement.Status.MANAGER);
+        if (!userApprover.getUserName().equals(user.getUserName())) {
+            try {
+                reimbursement.setApprover(userApprover.getId());
+                reimbursement.setApproverName(userApprover.getUserName());
+                reimbursement.setStatus(Reimbursement.Status.MANAGER);
+            }catch (Exception e){
+                throw new ServiceException("当前用户所在部门无负责人");
+            }
         } else reimbursement.setStatus(Reimbursement.Status.ACCOUNTING);
 
         //将附件从回收站移除
         fileService.reDrop(reimbursement.getAttachmentId());
-
-
-        int insert = reimbursementDao.insert(reimbursement);
-
+        reimbursementDao.insert(reimbursement);
         dataKey = reimbursement.getId();
 
         List<ReimbursementItem> reimbursementItems = JSONArray.parseArray(dataList.get(1), ReimbursementItem.class);
@@ -103,9 +125,12 @@ public class ReimbursementServiceImpl implements ReimbursementService {
         reimbursement.setReimbursementAmount(cost[0]==0.0? reimbursement.getReimbursementAmount():cost[0]);
         Map<String, Object> variables = new HashMap<>();
         //是否为主管（跳过主管审核流程）
-        variables.put("isManager", user.isManager());
-        //不是主管设置审核人
-        variables.put("manager", userService.findById(department.getManagerId()).getUserName());
+        if (!userApprover.getUserName().equals(user.getUserName())){
+            variables.put("isManager", false);
+            //不是主管设置审核人
+            variables.put("manager", reimbursement.getApproverName());
+        }else variables.put("isManager", true);
+        reimbursementDao.updateByPrimaryKey(reimbursement);
         ProcessInstance processInstance = runtimeService.startProcessInstanceById(deployId, String.valueOf(dataKey), variables);
         processInstance.getProcessInstanceId();
         return true;
@@ -114,12 +139,6 @@ public class ReimbursementServiceImpl implements ReimbursementService {
     @Override
     public Reimbursement getInfo(Long id,String searchType) {
         User user = UserTokenHolder.getUser();
-        if ("1".equals(searchType)) {
-            // 查询待审核的任务，假设待审核任务与你用户相关的逻辑处理
-
-        } else {
-            // 查询全部流程任务
-        }
         Reimbursement reimbursement = reimbursementDao.selectByPrimaryKey(id);
         Example exampleItem = new Example(ReimbursementItem.class);
         exampleItem.createCriteria().andEqualTo("reimbursementId", id);
@@ -148,15 +167,19 @@ public class ReimbursementServiceImpl implements ReimbursementService {
                 break;
             case ACCOUNTING:
                 status = Reimbursement.Status.getNextStatus(status);
-
-                Example example = new Example(ReimbursementItem.class);
-                example.createCriteria().andEqualTo("reimbursementId", id);
-                final Double[] cost = {0.0};
-                reimbursementItemDao.selectByExample(example).forEach(reimbursementItem -> {
-                        cost[0] = cost[0] +reimbursementItem.getCost();
-                });
-                reimbursement.setActualAmount(cost[0]);
-                reimbursement.setAccountingTime(new Date());
+                if (!reimbursement.getType().equals(Reimbursement.ExpenseType.IMPLEMENTATION_FEE)){
+                    Example example = new Example(ReimbursementItem.class);
+                    example.createCriteria().andEqualTo("reimbursementId", id);
+                    final Double[] cost = {0.0};
+                    List<ReimbursementItem> reimbursementItems = reimbursementItemDao.selectByExample(example);
+                    if (!reimbursementItems.isEmpty()){
+                        reimbursementItems.forEach(reimbursementItem -> cost[0] = cost[0] +reimbursementItem.getCost());
+                    }
+                    reimbursement.setActualAmount(cost[0]);
+                    reimbursement.setAccountingTime(new Date());
+                }else {
+                    reimbursement.setActualAmount(reimbursement.getReimbursementAmount());
+                }
                 break;
             case GENERAL:
                 status = Reimbursement.Status.getNextStatus(status);
@@ -164,7 +187,7 @@ public class ReimbursementServiceImpl implements ReimbursementService {
                 break;
         }
         reimbursement.setStatus(status);
-        return false;
+        return reimbursementDao.updateByPrimaryKeySelective(reimbursement) > 0;
     }
 
     @Override

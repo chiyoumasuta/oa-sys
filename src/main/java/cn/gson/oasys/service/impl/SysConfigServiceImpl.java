@@ -4,17 +4,22 @@ import cn.gson.oasys.dao.*;
 import cn.gson.oasys.entity.Department;
 import cn.gson.oasys.entity.Project;
 import cn.gson.oasys.entity.ReiType;
+import cn.gson.oasys.entity.User;
 import cn.gson.oasys.entity.config.SysConfig;
 import cn.gson.oasys.entity.reimbursement.Reimbursement;
 import cn.gson.oasys.entity.reimbursement.ReimbursementItem;
+import cn.gson.oasys.support.JacksonUtil;
 import cn.gson.oasys.support.exception.ServiceException;
 import cn.gson.oasys.service.SysConfigService;
 import cn.gson.oasys.vo.SysConfigListVo;
+import com.fasterxml.jackson.databind.JsonNode;
+import org.junit.jupiter.api.Test;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tk.mybatis.mapper.entity.Example;
 
 import javax.annotation.Resource;
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -33,6 +38,8 @@ public class SysConfigServiceImpl implements SysConfigService {
     private ReimbursementItemDao reimbursementItemDao;
     @Resource
     private ReimbursementDao reimbursementDao;
+    @Resource
+    private UserDao userDao;
 
     @Override
     public boolean saveOrUpdate(SysConfig sysConfig) {
@@ -156,6 +163,22 @@ public class SysConfigServiceImpl implements SysConfigService {
             }
             return reiTypeDao.updateByPrimaryKeySelective(reiType) > 0;
         }
+    }
+
+    @Override
+    public User getApproveByDept(String dept) {
+        User userApprover;
+        SysConfig sysConfig = getSysConfig(dept);
+        try {
+            JsonNode jsonNode = JacksonUtil.jsonStringToJsonNode(sysConfig.getValue());
+            String approver = jsonNode.get("approver").asText();
+            Example example = new Example(User.class);
+            example.createCriteria().andEqualTo("userName", approver.split("%")[1]);
+            userApprover = userDao.selectByExample(example).get(0);
+        } catch (Exception e) {
+            throw new ServiceException("获取审核人信息错误");
+        }
+        return userApprover;
     }
 
 }

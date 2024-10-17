@@ -18,19 +18,14 @@ public class User {
     private String loginName;
     @Column
     private String userName;
-    @JsonIgnore
     @Column
     private String password;
     @Column
     private String phone;
     @Column
-    private String role;
-    @Column
     private String token;//token
     @Column
     private Date loginAt;//最后登录时间
-    @Column
-    private String deptId;//部门id
     @Column
     private String posts;//职位
     @Column
@@ -38,7 +33,11 @@ public class User {
     @Column
     private boolean del;//是否删除
     @Transient
+    private String deptId;//部门id
+    @Transient
     private String deptName;
     @Transient
     private boolean isManager = false;
+    @Transient
+    private String role;
 }

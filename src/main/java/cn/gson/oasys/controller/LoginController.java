@@ -2,6 +2,8 @@ package cn.gson.oasys.controller;
 
 import cn.gson.oasys.entity.Department;
 import cn.gson.oasys.entity.User;
+import cn.gson.oasys.entity.UserDeptRole;
+import cn.gson.oasys.service.UserDeptRoleService;
 import cn.gson.oasys.support.exception.ServiceException;
 import cn.gson.oasys.support.exception.UnknownAccountException;
 import cn.gson.oasys.service.DepartmentService;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
@@ -32,6 +35,8 @@ public class LoginController {
     private UserService userService;
     @Resource
     private DepartmentService departmentService;
+    @Resource
+    private UserDeptRoleService userDeptRoleService;
 
     @Value("${user.password}")
     private String resetPassword;
@@ -56,7 +61,6 @@ public class LoginController {
         }
         User currentUser = userService.verifyAndGetUser(phone, password);
         if (currentUser != null) {
-            currentUser = userService.getPermsByUser(currentUser, -1);
             UserTokenHolder.setUser(currentUser);
             String token = JwtUtil.createToken(currentUser);
             return UtilResultSet.success(token);
@@ -116,17 +120,6 @@ public class LoginController {
         if (user == null) {
             throw new UnknownAccountException();
         }
-        String deptName = "";
-        AtomicBoolean isMannger = new AtomicBoolean(false);
-        if (user.getDeptId() != null) {
-            deptName = Arrays.stream(user.getDeptId().split(",")).filter(Objects::nonNull).map(d -> {
-                Department departmentById = departmentService.findDepartmentById(d).get(0);
-                if (departmentById != null && departmentById.getManagerId().equals(user.getId())) isMannger.set(true);
-                return departmentById.getName();
-            }).collect(Collectors.joining(","));
-        }
-        user.setDeptName(deptName);
-        user.setManager(isMannger.get());
-        return UtilResultSet.success(user);
+        return UtilResultSet.success(userService.findById(user.getId()));
     }
 }

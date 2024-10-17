@@ -35,7 +35,7 @@ public interface DepartmentService {
     /**
      * 设置用户部门
      */
-    boolean setDept(Long deptId,String users);
+    boolean setDept(Long deptId,String users,String role);
 
     /**
      * 删除部门用户

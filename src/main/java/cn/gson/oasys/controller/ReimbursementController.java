@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
+import java.util.Date;
 
 @RestController
 @RequestMapping("/reimbursement")
@@ -19,6 +20,12 @@ public class ReimbursementController {
 
     @Resource
     private ReimbursementService reimbursementService;
+
+    @RequestMapping(value = "/page",method = RequestMethod.POST)
+    @ApiOperation(value = "分页查询 seachType:0:查询自己发起的流程 ")
+    public UtilResultSet page(int pageSize, int pageNo, Date startDate, Date endDate, String project, int searchType){
+        return UtilResultSet.success(reimbursementService.page(pageSize,pageNo,startDate,endDate,project,searchType));
+    }
 
     /**
      * 修改数据

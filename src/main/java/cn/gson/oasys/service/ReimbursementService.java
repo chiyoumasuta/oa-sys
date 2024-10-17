@@ -1,19 +1,17 @@
 package cn.gson.oasys.service;
 
-import cn.gson.oasys.entity.LeaveApplication;
 import cn.gson.oasys.entity.reimbursement.Reimbursement;
 import cn.gson.oasys.entity.reimbursement.ReimbursementItem;
 import cn.gson.oasys.support.Page;
 
 import java.util.Date;
-import java.util.List;
 
 
 public interface ReimbursementService {
     /**
      * 获取报销数据列表
      */
-    Page<Reimbursement> getList(int pageSize, int pageNo, Date startDate, Date endDate, String project);
+    Page<Reimbursement> page(int pageSize, int pageNo, Date startDate, Date endDate, String project,int searchType);
 
     /**
      * 实例化项目

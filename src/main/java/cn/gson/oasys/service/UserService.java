@@ -96,17 +96,6 @@ public interface UserService {
     User findByLoginName(String loginName);
 
     /**
-     * 查询用户的对应权限 并封装返回
-     *
-     * @param user
-     * @param clientType 客户端类型 -1为pc -2为app  0为全部
-     * @return org.gcm.fiber.bean.User
-     * @author 不愿透露
-     * @date 2022/8/16 16:51
-     */
-    User getPermsByUser(User user, Integer clientType);
-
-    /**
      * 通过token查询用户
      *
      * @param token

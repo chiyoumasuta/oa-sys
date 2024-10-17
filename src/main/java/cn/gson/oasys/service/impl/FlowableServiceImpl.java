@@ -2,11 +2,13 @@ package cn.gson.oasys.service.impl;
 
 import cn.gson.oasys.dao.LeaveApplicationDao;
 import cn.gson.oasys.dao.ProjectProcessDao;
+import cn.gson.oasys.dao.ReimbursementDao;
 import cn.gson.oasys.entity.LeaveApplication;
 import cn.gson.oasys.entity.User;
 import cn.gson.oasys.entity.reimbursement.Reimbursement;
 import cn.gson.oasys.service.*;
 import cn.gson.oasys.support.UserTokenHolder;
+import cn.gson.oasys.support.exception.ServiceException;
 import cn.gson.oasys.vo.TaskDTO;
 import com.alibaba.fastjson.JSONObject;
 import org.apache.commons.codec.binary.Base64;
@@ -25,10 +27,12 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.*;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,8 +40,6 @@ public class FlowableServiceImpl implements FlowableService {
 
     @Resource
     private LeaveApplicationService leaveApplicationService;
-    @Resource
-    private IdentityService identityService;
     @Resource
     private LeaveApplicationDao leaveApplicationDao;
     @Resource
@@ -63,12 +65,17 @@ public class FlowableServiceImpl implements FlowableService {
     private HistoryService historyService;
     @Resource
     private ProjectProcessDao projectProcessDao;
+    @Resource
+    private ReimbursementDao reimbursementDao;
 
     @Override
     public boolean audit(String taskId, String result) {
         Task task = taskService.createTaskQuery().taskId(taskId).singleResult();
         String assignee = task.getAssignee();
         User user = UserTokenHolder.getUser();
+        if (assignee==null){
+            throw new ServiceException("流程数据错误 审核人不存在");
+        }
         if (!assignee.equals(user.getUserName())) {
             return false;
         }
@@ -76,13 +83,13 @@ public class FlowableServiceImpl implements FlowableService {
         if (result != null) {
             resultDataMap.put("outcome", result);
         }
-        taskService.complete(task.getId(), resultDataMap);
         ProcessInstance processInstance = runtimeService.createProcessInstanceQuery()
                 .processInstanceId(task.getProcessInstanceId())
                 .singleResult();
+        Long businessKey = Long.valueOf(processInstance.getBusinessKey());
+        taskService.complete(task.getId(), resultDataMap);
 
         // 业务键获取
-        Long businessKey = Long.valueOf(processInstance.getBusinessKey());
         switch (task.getProcessDefinitionId().split(":")[0]) {
             case "leave":
                 return leaveApplicationService.audit(businessKey, result);
@@ -124,7 +131,6 @@ public class FlowableServiceImpl implements FlowableService {
     @Override
     public List<TaskDTO> getInstantiateList(String searchType, String type) {
         List<Task> taskList;
-        User user = UserTokenHolder.getUser();
 
         // 根据 searchType 进行不同类型的查询
 
@@ -164,12 +170,12 @@ public class FlowableServiceImpl implements FlowableService {
                             // 将业务数据封装到DTO中
                             taskDTO.setBusinessData(leaveApplication);
                         case "reimbursement_process":
-                            Reimbursement info = reimbursementService.getInfo(businessKey,searchType);
+                            Reimbursement info = reimbursementService.getInfo(businessKey, searchType);
                             // 将业务数据封装到DTO中
                             taskDTO.setBusinessData(info);
                     }
                     return taskDTO;
-                }).filter(t->t.getBusinessData()!=null).collect(Collectors.toList());
+                }).filter(t -> t.getBusinessData() != null).collect(Collectors.toList());
     }
 
     @Override
@@ -200,7 +206,7 @@ public class FlowableServiceImpl implements FlowableService {
 
     @Override
     public void task(String taskId) {
-        Boolean isSuspended = taskService.createTaskQuery().taskId(taskId).singleResult().isSuspended();
+        boolean isSuspended = taskService.createTaskQuery().taskId(taskId).singleResult().isSuspended();
         if (isSuspended) {
             return;
         }
@@ -228,8 +234,34 @@ public class FlowableServiceImpl implements FlowableService {
     }
 
     @Override
-    public void deleteProcess(String processId) {
-        runtimeService.deleteProcessInstance(processId, "中止流程");
+    public void deleteProcess(String taskId) {
+        try {
+            Task task = taskService.createTaskQuery().taskId(taskId).singleResult();
+            User user = UserTokenHolder.getUser();
+            String assignee = task.getAssignee();
+            ProcessInstance processInstance = runtimeService.createProcessInstanceQuery()
+                    .processInstanceId(task.getProcessInstanceId())
+                    .singleResult();
+            String businessKey = processInstance.getBusinessKey();
+            switch (task.getProcessDefinitionId().split(":")[0]) {
+                case "leave":
+                    break;
+                case "reimbursement_process":
+                    Reimbursement info = reimbursementService.getInfo(Long.valueOf(businessKey), null);
+                    if (user.getUserName().equals(assignee)||user.getUserName().equals(info.getSubmitUserName())) {
+                        info.setStatus(Reimbursement.Status.REJECTED);
+                        reimbursementDao.updateByPrimaryKeySelective(info);
+                    }else {
+                        throw new ServiceException("当前用户不可驳回");
+                    }
+                    break;
+                default:
+                    break;
+            }
+            runtimeService.deleteProcessInstance(task.getProcessInstanceId(), "中止流程");
+        }catch (Exception e) {
+            throw new ServiceException("驳回失败");
+        }
     }
 
     @Override
@@ -263,7 +295,6 @@ public class FlowableServiceImpl implements FlowableService {
             data.put("taskId", task.getId());
             // 流程定义名称
             data.put("processInstanceName", processInstance.getProcessDefinitionName());
-            //zb TODO 获取业务数据
             switch (type) {
                 case "项目管理":
                     data.put("businessData", projectProcessDao.selectByPrimaryKey(Long.valueOf(processInstance.getBusinessKey())));
@@ -348,68 +379,6 @@ public class FlowableServiceImpl implements FlowableService {
     }
 
     @Override
-    public void getProcessDiagram(String processInstanceId, HttpServletResponse httpServletResponse) {
-        // 流程定义 ID
-        String processDefinitionId;
-
-        // 查看完成的进程中是否存在此进程
-        long count = historyService.createHistoricProcessInstanceQuery().finished().processInstanceId(processInstanceId).count();
-        if (count > 0) {
-            // 如果流程已经结束，则得到结束节点
-            HistoricProcessInstance pi = historyService.createHistoricProcessInstanceQuery().processInstanceId(processInstanceId).singleResult();
-
-            processDefinitionId = pi.getProcessDefinitionId();
-        } else {// 如果流程没有结束，则取当前活动节点
-            // 根据流程实例ID获得当前处于活动状态的ActivityId合集
-            ProcessInstance pi = runtimeService.createProcessInstanceQuery().processInstanceId(processInstanceId).singleResult();
-            processDefinitionId = pi.getProcessDefinitionId();
-        }
-        List<String> highLightedActivitis = new ArrayList<>();
-
-        // 获得活动的节点
-        List<HistoricActivityInstance> highLightedActivitList = historyService.createHistoricActivityInstanceQuery().processInstanceId(processInstanceId).orderByHistoricActivityInstanceStartTime().asc().list();
-
-        for (HistoricActivityInstance tempActivity : highLightedActivitList) {
-            String activityId = tempActivity.getActivityId();
-            highLightedActivitis.add(activityId);
-        }
-
-        List<String> flows = new ArrayList<>();
-        // 获取流程图
-        BpmnModel bpmnModel = repositoryService.getBpmnModel(processDefinitionId);
-        ProcessEngineConfiguration processEngineConfig = processEngine.getProcessEngineConfiguration();
-
-        ProcessDiagramGenerator diagramGenerator = processEngineConfig.getProcessDiagramGenerator();
-        InputStream in = diagramGenerator.generateDiagram(bpmnModel, "bmp", highLightedActivitis, flows, processEngineConfig.getActivityFontName(),
-                processEngineConfig.getLabelFontName(), processEngineConfig.getAnnotationFontName(), processEngineConfig.getClassLoader(), 1.0, true);
-//        ByteArrayOutputStream output = new ByteArrayOutputStream();
-//        byte[] buffer = new byte[1024*4];
-//        int n;
-//        while (-1 != (n = in.read(buffer))) {
-//            output.write(buffer, 0, n);
-//        }
-//        byte[] imgData = output.toByteArray();
-//        output.close();
-//        in.close();
-//
-//        return imgData;
-        OutputStream out = null;
-        byte[] buf = new byte[1024];
-        int legth;
-        try {
-            out = httpServletResponse.getOutputStream();
-            while ((legth = in.read(buf)) != -1) {
-                out.write(buf, 0, legth);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            IOUtils.closeQuietly(out);
-            IOUtils.closeQuietly(in);
-        }
-    }
-
-    @Override
     public void getTaskProcessDiagram(String taskId, HttpServletResponse httpServletResponse) {
 
         // 根据任务 ID 获取流程实例 ID
@@ -467,29 +436,40 @@ public class FlowableServiceImpl implements FlowableService {
         }
     }
 
-    @Override
-    public String getFlowDiagram(String processDefinedId) throws IOException {
+    public String getFlowDiagram(String processDefinedId) {
         List<String> flows = new ArrayList<>();
-        //获取流程图
-        BpmnModel bpmnModel = repositoryService.getBpmnModel(processDefinedId);
+        RepositoryService repositoryService = processEngine.getRepositoryService();
         ProcessEngineConfiguration processEngineConfig = processEngine.getProcessEngineConfiguration();
-
         ProcessDiagramGenerator diagramGenerator = processEngineConfig.getProcessDiagramGenerator();
-        InputStream in = diagramGenerator.generateDiagram(
-                bpmnModel, "bmp", new ArrayList<>(), flows,
-                processEngineConfig.getActivityFontName(),
-                processEngineConfig.getLabelFontName(),
-                processEngineConfig.getAnnotationFontName(),
-                processEngineConfig.getClassLoader(),
-                1.0, true);
-        // in.available()返回文件的字节长度
-        byte[] buf = new byte[in.available()];
-        // 将文件中的内容读入到数组中
-        in.read(buf);
-        // 进行Base64编码处理
-        String base64Img = new String(Base64.encodeBase64(buf));
-        in.close();
-        return base64Img;
+
+        try {
+            BpmnModel bpmnModel = repositoryService.getBpmnModel(processDefinedId);
+            InputStream in = diagramGenerator.generateDiagram(
+                    bpmnModel, "bmp", new ArrayList<>(), flows,
+                    processEngineConfig.getActivityFontName(),
+                    processEngineConfig.getLabelFontName(),
+                    processEngineConfig.getAnnotationFontName(),
+                    processEngineConfig.getClassLoader(),
+                    1.0, true);
+
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            byte[] buf = new byte[1024];
+            int n;
+            while ((n = in.read(buf)) != -1) {
+                out.write(buf, 0, n);
+            }
+
+            String base64Img = new String(Base64.encodeBase64(out.toByteArray()));
+
+            in.close();
+            out.close();
+
+            return base64Img;
+        } catch (IOException e) {
+            Logger.getLogger(getClass().getName()).severe("错误信息: " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
     }
 
     @Override

@@ -70,14 +70,14 @@ public class ProjectCostStatisticsServiceImpl implements ProjectCostStatisticsSe
             }
 
             //总费用
-            Double totalCoat = reimbursements.stream().mapToDouble(Reimbursement::getActualAmount).sum();
+            Double totalCoat = reimbursements.stream().mapToDouble(it-> it.getActualAmount()==null?it.getReimbursementAmount():it.getActualAmount()).sum();
             vo.setTotalCost(totalCoat);
 
             //项目实施费用统计
             if (!vo.getProjectName().equals("日常开支")) {
                 List<Reimbursement> collect = reimbursements.stream().filter(it -> it.getType().equals(Reimbursement.ExpenseType.IMPLEMENTATION_FEE)).collect(Collectors.toList());
                 if (!collect.isEmpty()) {
-                    Double implementation = collect.stream().mapToDouble(Reimbursement::getActualAmount).sum();
+                    Double implementation = collect.stream().mapToDouble(Reimbursement::getReimbursementAmount).sum();
                     String participantsUser = reimbursementItems.stream().filter(it -> {
                         List<Long> id = collect.stream().map(Reimbursement::getId).collect(Collectors.toList());
                         return id.contains(it.getReimbursementId());
@@ -93,7 +93,7 @@ public class ProjectCostStatisticsServiceImpl implements ProjectCostStatisticsSe
             //差旅费分类统计/日常开支分类统计
             Map<String, Double> statistics = new HashMap<>();
             reiTypeList.forEach(t -> {
-                List<ReimbursementItem> collect = reimbursementItems.stream().filter(it -> it.getType().equals(t.getName())).collect(Collectors.toList());
+                List<ReimbursementItem> collect = reimbursementItems.stream().filter(it -> it.getType()!=null&&it.getType().equals(t.getName())).collect(Collectors.toList());
                 if (!collect.isEmpty()) {
                     double sum = collect.stream().mapToDouble(ReimbursementItem::getCost).sum();
                     statistics.put(t.getName(), statistics.getOrDefault(t.getName(), 0.0) + sum);
@@ -132,7 +132,7 @@ public class ProjectCostStatisticsServiceImpl implements ProjectCostStatisticsSe
 
         List<Reimbursement> reimbursements = reimbursementDao.selectAll();
         if (project!=null){
-            reimbursements = reimbursements.stream().filter(it->it.getProject().equals(project)).collect(Collectors.toList());
+            reimbursements = reimbursements.stream().filter(it->it.getProject().equals(project)&&it.getStatus().equals(Reimbursement.Status.APPROVED)).collect(Collectors.toList());
         }
         Example example = new Example(ReimbursementItem.class);
 

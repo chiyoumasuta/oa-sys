@@ -78,9 +78,8 @@ public interface FlowableService {
 
     /**
      * 中止流程
-     * @param processId 流程实例的 ID
      */
-    void deleteProcess(String processId);
+    void deleteProcess(String taskId);
 
     /**
      * 获取当前正在运行的流程实例的业务 ID 列表
@@ -123,13 +122,6 @@ public interface FlowableService {
      * @return 流程实例 ID
      */
     String getTaskInfo(String taskId);
-
-    /**
-     * 根据流程实例 ID 获取任务的流程进度图
-     * @param processInstanceId 流程实例的 ID
-     * @param httpServletResponse 响应对象，用于输出流程图
-     */
-    void getProcessDiagram(String processInstanceId, HttpServletResponse httpServletResponse);
 
     /**
      * 根据任务 ID 获取任务的流程进度图

@@ -9,5 +9,5 @@ import java.util.List;
 @Data
 public class DepartmentVo extends Department {
     private List<User> users;
-    private User manager;
+    private List<User> manager;
 }

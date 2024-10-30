@@ -94,8 +94,7 @@ public class UserServiceImpl implements UserService {
             throw new ServiceException("超级管理员拥有所有权限，不允许操作");
         }
 
-//        user.setDeptId(String.valueOf(deptId));
-        user.setPassword("Xiongbo99");
+        user.setPassword(defaultUserPwd);
         User oldPhone = findByPhone(user.getPhone());
         if (user.getId() == null) {
             if (oldPhone != null) {

@@ -28,7 +28,6 @@ public class UtilResultSet extends JSONObject {
 
     public static UtilResultSet success(Object list) {
         return new UtilResultSet(ResultStatus.SUCCESS,list);
-
     }
     public static UtilResultSet register_fail() {
         return new UtilResultSet(ResultStatus.REGISTER_FAIL);

@@ -1,6 +1,7 @@
 package cn.gson.oasys.support;
 
 import cn.gson.oasys.entity.User;
+import cn.gson.oasys.support.exception.UnknownAccountException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestAttributes;
@@ -114,22 +115,25 @@ public class UserTokenHolder {
     }
 
     public static User getUser() {
-        User user = null;
-        String token = getRequest().getHeader("token");
-//        System.out.println("token-----"+token);
-        if (token != null) {
-            user = JwtUtil.verifyToken(token);
-        }
-        if (user == null) {
-            if ("dev".equals(active)) {
-                //非正式环境
-                user = new User();
-                user.setId(1L);
-                user.setUserName("admin");
-                user.setPhone("123456");
+        try {
+            User user = null;
+            String token = getRequest().getHeader("token");
+            if (token != null) {
+                user = JwtUtil.verifyToken(token);
             }
+            if (user == null) {
+                if ("dev".equals(active)) {
+                    //非正式环境
+                    user = new User();
+                    user.setId(1L);
+                    user.setUserName("admin");
+                    user.setPhone("123456");
+                }
+            }
+            return user;
+        }catch (Exception e) {
+            throw new UnknownAccountException();
         }
-        return user;
     }
 
     /**

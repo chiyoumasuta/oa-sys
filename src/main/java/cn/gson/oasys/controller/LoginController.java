@@ -33,10 +33,6 @@ public class LoginController {
 
     @Autowired
     private UserService userService;
-    @Resource
-    private DepartmentService departmentService;
-    @Resource
-    private UserDeptRoleService userDeptRoleService;
 
     @Value("${user.password}")
     private String resetPassword;
@@ -115,7 +111,7 @@ public class LoginController {
 
     @RequestMapping(value = "/userInfo")
     @ApiOperation(value = "获取登录用户信息")
-    public Object userInfo(HttpServletRequest req) {
+    public Object userInfo() {
         User user = UserTokenHolder.getUser();
         if (user == null) {
             throw new UnknownAccountException();

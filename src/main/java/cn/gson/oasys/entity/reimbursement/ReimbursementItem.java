@@ -18,11 +18,13 @@ public class ReimbursementItem {
     private Long reimbursementId;
     @Column(name = "index_id", columnDefinition = "序号")
     private Integer index;
-    @Column(name = "type", columnDefinition = "项目名称(出差,日常)")
+    @Column(name = "type", columnDefinition = "报销项目名称(出差,日常)")
     private String type;
-    @Column(name = "cost", columnDefinition = "费用占比(出差,日常)")
+    @Column(name = "cost", columnDefinition = "报销费用(出差,日常)")
     private Double cost;
-    @Column(name = "participants", columnDefinition = "参与人(施工)")
+    @Column(name = "project", columnDefinition = "所属项目")
+    private String project;
+    @Column(name = "participants", columnDefinition = "参与人(施工,出差)")
     private String participants;
     @Column(name = "days", columnDefinition = "参与天数(施工)")
     private String days;

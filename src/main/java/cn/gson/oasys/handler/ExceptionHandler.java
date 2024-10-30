@@ -6,6 +6,7 @@ import cn.gson.oasys.support.exception.ServiceException;
 import cn.gson.oasys.support.exception.UnknownAccountException;
 import cn.gson.oasys.support.UtilResultSet;
 import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -18,6 +19,8 @@ import java.nio.charset.StandardCharsets;
 /**
  * 异常拦截器
  */
+
+@Component
 @ControllerAdvice
 @ResponseBody
 public class ExceptionHandler {
@@ -46,7 +49,7 @@ public class ExceptionHandler {
     @org.springframework.web.bind.annotation.ExceptionHandler(UnknownAccountException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public UtilResultSet handlerRTUErrorException(UnknownAccountException errorException) {
-        return UtilResultSet.success(errorException.getLocalizedMessage());
+        return UtilResultSet.not_login(errorException.getLocalizedMessage());
     }
 
     @org.springframework.web.bind.annotation.ExceptionHandler(ServiceException.class)

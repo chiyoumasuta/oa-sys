@@ -14,18 +14,11 @@ import java.util.Map;
 public class ProjectCostStatisticsVo {
     private String projectName; //项目名称
     private Double totalCost; //总费用
-    private Double  implementation; //项目实施费用统计
-    private String implementationName; //项目实施参与人
+    private Double implementation; //项目实施费用统计
+    private Double implementationDay; //项目实施总天数
+    private Map<String,Double> implementationDetail; //项目参与人和参与天数明细
     private Map<String,Double> statistics; //差旅费分类统计
-    private Map<String,Double> detailsByUser; //按报销人统计
+    private Map<String,Map<String,Double>> detailsByUser; //按报销人统计
     private List<ReimbursementItem> costDetails; //详细费用
-
-    @Data
-    public static class detail{
-        private String userName; //报销人
-        private String type; //报销类型
-        private String info; //详细信息
-        private Double cost; //费用
-        private Date createTime; //创建时间
-    }
+    private List<ProjectCostStatisticsVo> childrenList;
 }

@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 public class ReimbursementServiceImpl implements ReimbursementService {
 
     @Resource
-    private ReimbursementDao reimbursementDao; //工单
+    private ReimbursementDao reimbursementDao;
     @Resource
     private ReimbursementItemDao reimbursementItemDao;
     @Resource
@@ -40,14 +40,10 @@ public class ReimbursementServiceImpl implements ReimbursementService {
     @Resource
     private FileService fileService;
     @Resource
-    private UserDeptRoleService userDeptRoleService;
-    @Resource
     private SysConfigService sysConfigService;
-    @Resource
-    private UserDao userDao;
 
     @Override
-    public Page<Reimbursement> page(int pageSize, int pageNo, Date startDate, Date endDate, String project,int searchType) {
+    public Page<Reimbursement> page(int pageSize, int pageNo, Date startDate, Date endDate, String project, int searchType) {
         User user = UserTokenHolder.getUser();
         PageHelper.startPage(pageNo, pageSize);
         Example example = new Example(Reimbursement.class);
@@ -58,12 +54,12 @@ public class ReimbursementServiceImpl implements ReimbursementService {
         if (startDate != null) {
             criteria.andEqualTo("startTime", startDate).andEqualTo("endTime", endDate);
         }
-        if (searchType==0){
-            criteria.andEqualTo("submitUser",user.getId());
-        }else if(Arrays.asList("阮永薇", "熊蓉蓉","程鸿博").contains(user.getUserName())){
-            criteria.andNotEqualTo("submitUser",user.getId());
+        if (searchType == 0) {
+            criteria.andEqualTo("submitUser", user.getId());
+        } else if (Arrays.asList("阮永薇", "熊蓉蓉", "程鸿博").contains(user.getUserName())) {
+            criteria.andNotEqualTo("submitUser", user.getId());
         }
-        criteria.andIn("status",Arrays.asList(Reimbursement.Status.APPROVED,Reimbursement.Status.REJECTED));
+        criteria.andIn("status", Arrays.asList(Reimbursement.Status.APPROVED, Reimbursement.Status.REJECTED));
         com.github.pagehelper.Page<Reimbursement> data = (com.github.pagehelper.Page<Reimbursement>) reimbursementDao.selectByExample(example);
         List<Reimbursement> result = data.getResult().stream().peek(it -> {
             Example example1 = new Example(ReimbursementItem.class);
@@ -81,6 +77,10 @@ public class ReimbursementServiceImpl implements ReimbursementService {
         List<String> dataList = Arrays.asList(dataJson.split("&"));
 
         Reimbursement reimbursement = JSONObject.toJavaObject(JSONObject.parseObject(dataList.get(0)), Reimbursement.class);
+
+        if (reimbursement.getProject()==null){
+            reimbursement.setProject("其他");
+        }
 
         //设置提交人
         reimbursement.setSubmitUser(user.getId());
@@ -103,7 +103,7 @@ public class ReimbursementServiceImpl implements ReimbursementService {
                 reimbursement.setApprover(userApprover.getId());
                 reimbursement.setApproverName(userApprover.getUserName());
                 reimbursement.setStatus(Reimbursement.Status.MANAGER);
-            }catch (Exception e){
+            } catch (Exception e) {
                 throw new ServiceException("当前用户所在部门无负责人");
             }
         } else reimbursement.setStatus(Reimbursement.Status.ACCOUNTING);
@@ -117,19 +117,20 @@ public class ReimbursementServiceImpl implements ReimbursementService {
         final Double[] cost = {0.0};
         reimbursementItems.forEach(reimbursementItem -> {
             reimbursementItem.setReimbursementId(dataKey);
+            reimbursementItem.setProject(reimbursementItem.getProject()==null?reimbursement.getProject():reimbursementItem.getProject());
             reimbursementItemDao.insert(reimbursementItem);
-            if (reimbursementItem.getCost()!=null) {
-                cost [0] = cost[0] +reimbursementItem.getCost();
+            if (reimbursementItem.getCost() != null) {
+                cost[0] = cost[0] + reimbursementItem.getCost();
             }
         });
-        reimbursement.setReimbursementAmount(cost[0]==0.0? reimbursement.getReimbursementAmount():cost[0]);
+        reimbursement.setReimbursementAmount(cost[0] == 0.0 ? reimbursement.getReimbursementAmount() : cost[0]);
         Map<String, Object> variables = new HashMap<>();
         //是否为主管（跳过主管审核流程）
-        if (!userApprover.getUserName().equals(user.getUserName())){
+        if (!userApprover.getUserName().equals(user.getUserName())) {
             variables.put("isManager", false);
             //不是主管设置审核人
             variables.put("manager", reimbursement.getApproverName());
-        }else variables.put("isManager", true);
+        } else variables.put("isManager", true);
         reimbursementDao.updateByPrimaryKey(reimbursement);
         ProcessInstance processInstance = runtimeService.startProcessInstanceById(deployId, String.valueOf(dataKey), variables);
         processInstance.getProcessInstanceId();
@@ -137,7 +138,7 @@ public class ReimbursementServiceImpl implements ReimbursementService {
     }
 
     @Override
-    public Reimbursement getInfo(Long id,String searchType) {
+    public Reimbursement getInfo(Long id, String searchType) {
         User user = UserTokenHolder.getUser();
         Reimbursement reimbursement = reimbursementDao.selectByPrimaryKey(id);
         Example exampleItem = new Example(ReimbursementItem.class);
@@ -147,11 +148,11 @@ public class ReimbursementServiceImpl implements ReimbursementService {
         reimbursement.setFileList(fileService.findByIds(Arrays.stream(reimbursement.getAttachmentId().split(",")).filter(Objects::nonNull).map(Long::valueOf).collect(Collectors.toList())));
         if (searchType != null && (
                 (searchType.equals("1") && !reimbursement.getSubmitUser().equals(user.getId()))
-                || (searchType.equals("0") && (!Arrays.asList("阮永薇", "熊蓉蓉").contains(user.getUserName()) || (reimbursement.getApprover() != null && !reimbursement.getApprover().equals(user.getId()))))
-                )
+                        || (searchType.equals("0") && (!Arrays.asList("阮永薇", "熊蓉蓉").contains(user.getUserName()) || (reimbursement.getApprover() != null && !reimbursement.getApprover().equals(user.getId()))))
+        )
         ) {
             return null;
-        }else {
+        } else {
             return reimbursement;
         }
     }
@@ -167,17 +168,17 @@ public class ReimbursementServiceImpl implements ReimbursementService {
                 break;
             case ACCOUNTING:
                 status = Reimbursement.Status.getNextStatus(status);
-                if (!reimbursement.getType().equals(Reimbursement.ExpenseType.IMPLEMENTATION_FEE)){
+                if (!reimbursement.getType().equals(Reimbursement.ExpenseType.IMPLEMENTATION_FEE)) {
                     Example example = new Example(ReimbursementItem.class);
                     example.createCriteria().andEqualTo("reimbursementId", id);
                     final Double[] cost = {0.0};
                     List<ReimbursementItem> reimbursementItems = reimbursementItemDao.selectByExample(example);
-                    if (!reimbursementItems.isEmpty()){
-                        reimbursementItems.forEach(reimbursementItem -> cost[0] = cost[0] +reimbursementItem.getCost());
+                    if (!reimbursementItems.isEmpty()) {
+                        reimbursementItems.forEach(reimbursementItem -> cost[0] = cost[0] + reimbursementItem.getCost());
                     }
-                    reimbursement.setActualAmount(cost[0]);
+                    reimbursement.setActualAmount(cost[0]==0.0?reimbursement.getReimbursementAmount():cost[0]);
                     reimbursement.setAccountingTime(new Date());
-                }else {
+                } else {
                     reimbursement.setActualAmount(reimbursement.getReimbursementAmount());
                 }
                 break;

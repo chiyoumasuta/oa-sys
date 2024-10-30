@@ -24,7 +24,7 @@ import tk.mybatis.spring.annotation.MapperScan;
 @SpringBootApplication(exclude={SecurityAutoConfiguration.class, SecurityFilterAutoConfiguration.class})
 @EnableTransactionManagement
 @EnableScheduling
-@MapperScan("cn.gson.oasys**.dao")
+@MapperScan("cn.gson.oasys.dao")
 public class OasysApplication extends SpringBootServletInitializer {
 	@Override
 	protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {

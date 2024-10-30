@@ -91,7 +91,24 @@ public class SysConfigServiceImpl implements SysConfigService {
      */
     @Override
     public List<Project> getProjectList() {
-        return projectDao.selectAll();
+        List<Project> flatList = projectDao.selectAll();
+        Map<Long, Project> ProjectMap = new HashMap<>();
+        List<Project> roots = new ArrayList<>();
+        // Populate the map
+        for (Project Project : flatList) {
+            ProjectMap.put(Project.getId(), Project);
+        }
+        // Build the tree
+        for (Project Project : flatList) {
+            Long parentId = Project.getFather();
+            if (parentId == null || !ProjectMap.containsKey(parentId)) {
+                roots.add(Project); // No parent, so it's a root
+            } else {
+                Project parent = ProjectMap.get(parentId);
+                parent.getChildrenList().add(Project);
+            }
+        }
+        return roots;
     }
 
     @Override
@@ -102,6 +119,12 @@ public class SysConfigServiceImpl implements SysConfigService {
     @Override
     @Transactional
     public boolean saveOrUpdate(Project project) {
+        if (!(project.getFather() == null || project.getFather() == 0)) {
+            Project father = projectDao.selectByPrimaryKey(project.getFather());
+            if (father == null) {
+                throw new ServiceException("父类不存在");
+            }
+        }
         if (project.getId() == null) {
             Example example = new Example(Project.class);
             example.createCriteria().andEqualTo("name", project.getName());

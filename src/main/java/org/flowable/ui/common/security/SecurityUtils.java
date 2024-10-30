@@ -1,4 +1,3 @@
-
 package org.flowable.ui.common.security;
 
 import org.flowable.idm.api.User;
@@ -10,9 +9,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Utility class for Spring Security.
- */
 public class SecurityUtils {
 
     private static User assumeUser;
@@ -20,9 +16,6 @@ public class SecurityUtils {
     private SecurityUtils() {
     }
 
-    /**
-     * Get the login of the current user.
-     */
     public static String getCurrentUserId() {
         User user = getCurrentUserObject();
         if (user != null) {
@@ -31,9 +24,6 @@ public class SecurityUtils {
         return null;
     }
 
-    /**
-     * @return the {@link User} object associated with the current logged in user.
-     */
     public static User getCurrentUserObject() {
         if (assumeUser != null) {
             return assumeUser;

@@ -27,6 +27,7 @@ public class JwtFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
+        List<String> exclude = Arrays.asList("/logout", "/web/login");
         final HttpServletRequest request = (HttpServletRequest) req;
         final HttpServletResponse response = (HttpServletResponse) res;
         // 调用方法获取 oa.gc.controller 下所有接口
@@ -39,18 +40,25 @@ public class JwtFilter implements Filter {
         final String token = request.getHeader("token");
 
         String requestURI = request.getRequestURI();
-        if (requestURI.equals("/") || endpoints.stream().noneMatch(requestURI::contains) || Arrays.asList("/logout","/web/login").contains(requestURI) || requestURI.split("/").length > 2) {
+        if (requestURI.equals("/") || endpoints.stream().noneMatch(requestURI::contains) || exclude.contains(requestURI) || requestURI.split("/").length > 2) {
             chain.doFilter(req, res);
         } else {
             if (token == null) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                writeJsonResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "no such data", HttpServletResponse.SC_UNAUTHORIZED, "未登录");
+                writeJsonResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "未携带token", HttpServletResponse.SC_UNAUTHORIZED, "未携带token");
                 return;
             }
-            User userData = JwtUtil.verifyToken(token);
+            User userData;
+            try {
+                userData = JwtUtil.verifyToken(token);
+            }catch (Exception e){
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                writeJsonResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "登录失效", HttpServletResponse.SC_UNAUTHORIZED, "登录失效");
+                return;
+            }
             if (userData == null) {
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                writeJsonResponse(response, HttpServletResponse.SC_FORBIDDEN, "no such data", HttpServletResponse.SC_FORBIDDEN, "token解析错误");
+                writeJsonResponse(response, HttpServletResponse.SC_FORBIDDEN, "token解析错误", HttpServletResponse.SC_FORBIDDEN, "token解析错误");
                 return;
             }
             Long id = userData.getId();

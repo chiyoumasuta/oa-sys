@@ -26,6 +26,8 @@ public class ReimbursementItem {
     private String project;
     @Column(name = "participants", columnDefinition = "参与人(施工,出差)")
     private String participants;
+    @Column(name = "dept",columnDefinition = "部门")
+    private String dept;
     @Column(name = "days", columnDefinition = "参与天数(施工)")
     private String days;
     @Column(name = "remark", columnDefinition = "备注")

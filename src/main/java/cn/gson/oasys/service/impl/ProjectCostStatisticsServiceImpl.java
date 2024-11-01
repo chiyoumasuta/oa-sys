@@ -11,6 +11,7 @@ import cn.gson.oasys.service.ProjectCostStatisticsService;
 import cn.gson.oasys.service.SysConfigService;
 import cn.gson.oasys.service.UserService;
 import cn.gson.oasys.vo.ProjectCostStatisticsVo;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Service;
 import tk.mybatis.mapper.entity.Example;
 
@@ -45,8 +46,8 @@ public class ProjectCostStatisticsServiceImpl implements ProjectCostStatisticsSe
 
         Example reiExample = new Example(Reimbursement.class);
         Example reiItemExample = new Example(ReimbursementItem.class);
-        reiExample.createCriteria().andEqualTo("status",Reimbursement.Status.APPROVED);
-        if (startDate!=null){
+        reiExample.createCriteria().andEqualTo("status", Reimbursement.Status.APPROVED);
+        if (startDate != null) {
             Example.Criteria criteria = reiExample.createCriteria();
             criteria.andGreaterThan("startTime", startDate).andLessThan("entTime", endDate).andNotEqualTo("status", Reimbursement.Status.APPROVED);
             reiExample.and(criteria);
@@ -161,8 +162,8 @@ public class ProjectCostStatisticsServiceImpl implements ProjectCostStatisticsSe
 
         Example reiExample = new Example(Reimbursement.class);
         Example reiItemExample = new Example(ReimbursementItem.class);
-        reiExample.createCriteria().andEqualTo("status",Reimbursement.Status.APPROVED);
-        if (startDate!=null){
+        reiExample.createCriteria().andEqualTo("status", Reimbursement.Status.APPROVED);
+        if (startDate != null) {
             Example.Criteria criteria = reiExample.createCriteria();
             criteria.andGreaterThan("startTime", startDate).andLessThan("entTime", endDate);
             reiExample.and(criteria);
@@ -174,7 +175,7 @@ public class ProjectCostStatisticsServiceImpl implements ProjectCostStatisticsSe
 
         list.forEach(it -> {
             List<ReimbursementItem> reimbursementItemsList = reimbursementItems.get(it.getUserName());
-            Map<String,Double> detail = new HashMap<>();
+            Map<String, Double> detail = new HashMap<>();
             if (!reimbursementItemsList.isEmpty()) {
                 reimbursementItemsList = reimbursementItemsList.stream().filter(r -> r.getCost() != null).collect(Collectors.toList());
                 if (!reimbursementItemsList.isEmpty()) {
@@ -196,6 +197,36 @@ public class ProjectCostStatisticsServiceImpl implements ProjectCostStatisticsSe
         }
 
         return sortedMap;
+    }
+
+    @Override
+    public Map<String, Map<String, Double>> countByDept(Date startDate, Date endDate, String project) {
+        Example reimbursementExample = new Example(Reimbursement.class);
+        Example.Criteria criteria = reimbursementExample.createCriteria();
+        reimbursementExample.createCriteria().andEqualTo("status", Reimbursement.Status.APPROVED).andNotEqualTo("type", Reimbursement.ExpenseType.IMPLEMENTATION_FEE);
+        if (StringUtils.isNotBlank(project)) {
+            criteria.andEqualTo("project", project);
+        }
+        if (startDate != null) {
+            criteria.andGreaterThan("startTime", startDate).andLessThan("entTime", endDate);
+        }
+        reimbursementExample.and(criteria);
+        List<Reimbursement> reimbursements = reimbursementDao.selectByExample(reimbursementExample);
+        List<Long> collect = reimbursements.stream().map(Reimbursement::getId).collect(Collectors.toList());
+        Example reimbursementItemExample = new Example(ReimbursementItem.class);
+        reimbursementItemExample.createCriteria().andIn("reimbursementId", collect);
+
+        Map<String, Map<String, Double>> resultMap = new HashMap<>();
+        reimbursementItemDao.selectByExample(reimbursementItemExample).stream().filter(it -> it.getCost() != null && it.getDept() != null).forEach(it -> {
+            Map<String, Double> detail = resultMap.getOrDefault(it.getDept(), new HashMap<>());
+            detail.put(it.getDept(), detail.getOrDefault(it.getType(), 0.0) + it.getCost());
+            resultMap.put(it.getDept(), detail);
+        });
+        for (Map.Entry<String, Map<String, Double>> entry : resultMap.entrySet()) {
+            double totalCost = entry.getValue().values().stream().mapToDouble(Double::doubleValue).sum();
+            entry.getValue().put("总计", totalCost);
+        }
+        return Collections.emptyMap();
     }
 
 }

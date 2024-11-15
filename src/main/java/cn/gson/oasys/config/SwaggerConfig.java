@@ -22,13 +22,13 @@ public class SwaggerConfig {
 
     @Bean
     public Docket createRestApi() {
-//        return new Docket(DocumentationType.SWAGGER_2).apiInfo(apiInfo()).select()
-//                .apis(RequestHandlerSelectors.basePackage("cn.gson.oasys.controller")).paths(PathSelectors.any())
-//                .build().globalOperationParameters(setHeaderToken()).pathMapping("/api");
-
         return new Docket(DocumentationType.SWAGGER_2).apiInfo(apiInfo()).select()
                 .apis(RequestHandlerSelectors.basePackage("cn.gson.oasys.controller")).paths(PathSelectors.any())
-                .build().globalOperationParameters(setHeaderToken());
+                .build().globalOperationParameters(setHeaderToken()).pathMapping("/api");
+
+//        return new Docket(DocumentationType.SWAGGER_2).apiInfo(apiInfo()).select()
+//                .apis(RequestHandlerSelectors.basePackage("cn.gson.oasys.controller")).paths(PathSelectors.any())
+//                .build().globalOperationParameters(setHeaderToken());
 
     }
 

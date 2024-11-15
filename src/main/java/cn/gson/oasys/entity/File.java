@@ -53,7 +53,7 @@ public class File {
     //文件类型
     public enum model {
         CLOUD("云盘"),
-        REIMBURSEMENT("报销文件");
+        REIMBURSEMENT("附件");
 
         private final String text;
 

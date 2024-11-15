@@ -15,15 +15,15 @@ public interface ProjectCostStatisticsService {
     /**
      * 根据项目返回费用统计结果
      */
-    List<ProjectCostStatisticsVo> countByProject(Date startDate, Date endDate, String project, String user);
+    List<ProjectCostStatisticsVo> countByProject(Date startDate, Date endDate, String project);
 
     /**
      * 根据用户名返回费用统计结果
      */
-    Map<String,Map<String,Double>> countByUser(Date startDate, Date endDate, Long userId,String project);
+    Map<String, Map<String, Double>> countByUser(Date startDate, Date endDate, Long userId, String project);
 
     /**
      * 根据部门分类
      */
-    Map<String,Map<String,Double>> countByDept(Date startDate, Date endDate, String project);
+    Map<String, Map<String, Double>> countByDept(Date startDate, Date endDate, String project);
 }

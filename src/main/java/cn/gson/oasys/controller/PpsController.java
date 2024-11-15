@@ -70,4 +70,10 @@ public class PpsController {
     public UtilResultSet getItemList(Long ppsId) {
         return UtilResultSet.success(ppsService.findByPpsId(ppsId));
     }
+
+    @RequestMapping(value = "/updateFile", method = RequestMethod.POST)
+    @ApiOperation(value = "上传方案/报告")
+    public UtilResultSet getItemList(Long ppsItemId,Long fiberId,int type) {
+        return UtilResultSet.success(ppsService.updateFile(ppsItemId,fiberId,type));
+    }
 }

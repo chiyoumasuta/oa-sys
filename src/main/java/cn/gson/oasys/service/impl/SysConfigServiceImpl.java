@@ -69,9 +69,6 @@ public class SysConfigServiceImpl implements SysConfigService {
         return sysConfigs;
     }
 
-    /**
-     * @return 封装好的列表
-     */
     @Override
     public List<SysConfigListVo> getSysConfigByList(String name) {
         List<SysConfigListVo> result = new ArrayList<>();
@@ -86,9 +83,6 @@ public class SysConfigServiceImpl implements SysConfigService {
         } else return Collections.emptyList();
     }
 
-    /**
-     * 获取项目列表
-     */
     @Override
     public List<Project> getProjectList() {
         List<Project> flatList = projectDao.selectAll();
@@ -105,7 +99,7 @@ public class SysConfigServiceImpl implements SysConfigService {
                 roots.add(Project); // No parent, so it's a root
             } else {
                 Project parent = ProjectMap.get(parentId);
-                parent.getChildrenList().add(Project);
+                parent.getChildren().add(Project);
             }
         }
         return roots;
@@ -138,13 +132,21 @@ public class SysConfigServiceImpl implements SysConfigService {
             if (old == null) {
                 throw new ServiceException("id错误");
             }
-            Example reiExample = new Example(Reimbursement.class);
-            reiExample.createCriteria().andEqualTo("project", old.getName());
-            for (Reimbursement reimbursement : reimbursementDao.selectByExample(reiExample)) {
-                reimbursement.setProject(project.getName());
-                reimbursementDao.updateByPrimaryKeySelective(reimbursement);
-            }
-            return projectDao.updateByPrimaryKeySelective(project) > 0;
+            if (projectDao.updateByPrimaryKeySelective(project) > 0){
+                Example reiExample = new Example(Reimbursement.class);
+                reiExample.createCriteria().andEqualTo("project", old.getName());
+                for (Reimbursement reimbursement : reimbursementDao.selectByExample(reiExample)) {
+                    reimbursement.setProject(project.getName());
+                    reimbursementDao.updateByPrimaryKeySelective(reimbursement);
+                }
+                Example reiItemExample = new Example(ReimbursementItem.class);
+                reiItemExample.createCriteria().andEqualTo("project", old.getName());
+                for (ReimbursementItem reimbursementItem : reimbursementItemDao.selectByExample(reiItemExample)) {
+                    reimbursementItem.setProject(project.getName());
+                    reimbursementItemDao.updateByPrimaryKeySelective(reimbursementItem);
+                }
+                return true;
+            } else return false;
         }
     }
 

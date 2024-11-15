@@ -38,4 +38,9 @@ public interface PpsService {
      * 查询进度详情列表
      */
     List<PpsItem> findByPpsId(Long id);
+
+    /**
+     * 上传方案/报告
+     */
+    boolean updateFile(Long id,Long fileId,int type);
 }

@@ -27,4 +27,12 @@ public class PpsItem {
     private Date createTime;
     @Column(name = "info", columnDefinition = "进度描述")
     private String info;
+    @Column(name = "scheme",columnDefinition = "方案文件")
+    private Long scheme;
+    @Column(name = "report",columnDefinition = "报告")
+    private Long report;
+    @Transient
+    private File schemeFile;
+    @Transient
+    private File reportFile;
 }

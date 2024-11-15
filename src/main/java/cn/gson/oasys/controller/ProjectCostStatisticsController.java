@@ -20,16 +20,18 @@ public class ProjectCostStatisticsController {
     @Resource
     private ProjectCostStatisticsService projectCostStatisticsService;
 
-    @RequestMapping(value = "/countByProject", method = RequestMethod.POST)
-    @ApiOperation("根据项目费用统计")
-    public UtilResultSet countByProject(Date startDate, Date endDate, String project, String user) {
-        return UtilResultSet.success(projectCostStatisticsService.countByProject(startDate, endDate, project, user));
+    @RequestMapping(value = "/group", method = RequestMethod.POST)
+    @ApiOperation(value = "分类费用统计", notes = "group：项目(project)、职员(user)、部门(dept)")
+    public UtilResultSet countByProject(Date startDate, Date endDate, String project, Long userId, String group) {
+        switch (group) {
+            case "project":
+                return UtilResultSet.success(projectCostStatisticsService.countByProject(startDate, endDate, project));
+            case "user":
+                return UtilResultSet.success(projectCostStatisticsService.countByUser(startDate, endDate, userId, project));
+            case "dept":
+                return UtilResultSet.success(projectCostStatisticsService.countByDept(startDate, endDate, project));
+            default:
+                return UtilResultSet.bad_request("参数错误");
+        }
     }
-
-    @RequestMapping(value = "/countByUser", method = RequestMethod.POST)
-    @ApiOperation("根据用户统计")
-    public UtilResultSet countByUser(Date startDate, Date endDate, Long userId ,String project) {
-        return UtilResultSet.success(projectCostStatisticsService.countByUser(startDate, endDate, userId,project));
-    }
-
 }

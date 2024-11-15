@@ -223,9 +223,7 @@ public class FileServiceImpl implements FileService {
             File fileList = flDao.selectByPrimaryKey(fileId);
             java.io.File file = new java.io.File(this.rootPath, fileList.getFilePath());
             if (file.exists() && file.isFile()) {
-                System.out.println("现在删除" + fileList.getFileName() + "数据库存档>>>>>>>>>");
                 flDao.delete(fileList);
-                System.out.println("现在删除" + fileList.getFileName() + "本地文件>>>>>>>>>");
                 file.delete();
             }
             flDao.delete(fileList);

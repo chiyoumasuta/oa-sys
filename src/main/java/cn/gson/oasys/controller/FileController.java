@@ -177,6 +177,7 @@ public class FileController {
     @ApiOperation(value = "分享文件")
     public UtilResultSet shareFile(String fileId, String sharePerson) {
         try {
+            fileService.shareFile(fileId, sharePerson);
             return UtilResultSet.success("文件分享成功");
         } catch (Exception e) {
             return UtilResultSet.bad_request("文件分享失败:" + e.getMessage());

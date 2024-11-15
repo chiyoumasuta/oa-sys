@@ -3,24 +3,21 @@ package cn.gson.oasys.service.impl;
 import cn.gson.oasys.dao.*;
 import cn.gson.oasys.entity.Department;
 import cn.gson.oasys.entity.User;
-import cn.gson.oasys.entity.config.SysConfig;
 import cn.gson.oasys.entity.reimbursement.*;
 import cn.gson.oasys.service.*;
-import cn.gson.oasys.support.JacksonUtil;
 import cn.gson.oasys.support.exception.ServiceException;
 import cn.gson.oasys.support.Page;
 import cn.gson.oasys.support.UserTokenHolder;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.github.pagehelper.PageHelper;
 import org.flowable.engine.RuntimeService;
 import org.flowable.engine.runtime.ProcessInstance;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import tk.mybatis.mapper.entity.Example;
 
 import javax.annotation.Resource;
-import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -55,9 +52,11 @@ public class ReimbursementServiceImpl implements ReimbursementService {
             criteria.andEqualTo("startTime", startDate).andEqualTo("endTime", endDate);
         }
         if (searchType == 0) {
+            if (!Arrays.asList("阮咏薇", "熊蓉蓉", "程鸿博").contains(user.getUserName())) {
+                criteria.andEqualTo("approver",user.getId());
+            }
+        } else{
             criteria.andEqualTo("submitUser", user.getId());
-        } else if (Arrays.asList("阮永薇", "熊蓉蓉", "程鸿博").contains(user.getUserName())) {
-            criteria.andNotEqualTo("submitUser", user.getId());
         }
         criteria.andIn("status", Arrays.asList(Reimbursement.Status.APPROVED, Reimbursement.Status.REJECTED));
         com.github.pagehelper.Page<Reimbursement> data = (com.github.pagehelper.Page<Reimbursement>) reimbursementDao.selectByExample(example);
@@ -70,6 +69,7 @@ public class ReimbursementServiceImpl implements ReimbursementService {
     }
 
     @Override
+    @Transactional
     public boolean start(String deployId, String dataJson) {
         Long dataKey;
         User user = UserTokenHolder.getUser();
@@ -109,7 +109,7 @@ public class ReimbursementServiceImpl implements ReimbursementService {
         } else reimbursement.setStatus(Reimbursement.Status.ACCOUNTING);
 
         //将附件从回收站移除
-        fileService.reDrop(reimbursement.getAttachmentId());
+//        fileService.reDrop(reimbursement.getAttachmentId());
         reimbursementDao.insert(reimbursement);
         dataKey = reimbursement.getId();
 
@@ -118,6 +118,9 @@ public class ReimbursementServiceImpl implements ReimbursementService {
         reimbursementItems.forEach(reimbursementItem -> {
             reimbursementItem.setReimbursementId(dataKey);
             reimbursementItem.setProject(reimbursementItem.getProject()==null?reimbursement.getProject():reimbursementItem.getProject());
+            User byId = userService.findById(Long.valueOf(reimbursementItem.getParticipants()));
+            if (byId==null) throw new ServiceException("参与人错误");
+            reimbursementItem.setParticipantsName(byId.getUserName());
             reimbursementItemDao.insert(reimbursementItem);
             if (reimbursementItem.getCost() != null) {
                 cost[0] = cost[0] + reimbursementItem.getCost();
@@ -144,11 +147,12 @@ public class ReimbursementServiceImpl implements ReimbursementService {
         Example exampleItem = new Example(ReimbursementItem.class);
         exampleItem.createCriteria().andEqualTo("reimbursementId", id);
         List<ReimbursementItem> reimbursementTravel = reimbursementItemDao.selectByExample(exampleItem);
+
         reimbursement.setDetails(reimbursementTravel);
-        reimbursement.setFileList(fileService.findByIds(Arrays.stream(reimbursement.getAttachmentId().split(",")).filter(Objects::nonNull).map(Long::valueOf).collect(Collectors.toList())));
+//        reimbursement.setFileList(fileService.findByIds(Arrays.stream(reimbursement.getAttachmentId().split(",")).filter(Objects::nonNull).map(Long::valueOf).collect(Collectors.toList())));
         if (searchType != null && (
                 (searchType.equals("1") && !reimbursement.getSubmitUser().equals(user.getId()))
-                        || (searchType.equals("0") && (!Arrays.asList("阮永薇", "熊蓉蓉").contains(user.getUserName()) || (reimbursement.getApprover() != null && !reimbursement.getApprover().equals(user.getId()))))
+                        || (searchType.equals("0") && (!Arrays.asList("阮咏薇", "熊蓉蓉").contains(user.getUserName()) || (reimbursement.getApprover() != null && !reimbursement.getApprover().equals(user.getId()))))
         )
         ) {
             return null;

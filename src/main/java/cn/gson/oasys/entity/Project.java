@@ -27,5 +27,5 @@ public class Project {
     @Column(name = "father", columnDefinition = "父类项目id")
     private Long father;
     @Transient
-    private List<Project> childrenList = new ArrayList<>();
+    private List<Project> children = new ArrayList<>();
 }

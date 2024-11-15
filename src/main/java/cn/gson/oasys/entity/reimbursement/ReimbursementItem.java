@@ -2,6 +2,7 @@ package cn.gson.oasys.entity.reimbursement;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
+import org.springframework.stereotype.Repository;
 
 import javax.persistence.*;
 
@@ -24,12 +25,14 @@ public class ReimbursementItem {
     private Double cost;
     @Column(name = "project", columnDefinition = "所属项目")
     private String project;
-    @Column(name = "participants", columnDefinition = "参与人(施工,出差)")
+    @Column(name = "participants", columnDefinition = "参与人(施工,出差)id")
     private String participants;
+    @Column(name = "participants_name", columnDefinition = "参与人(施工,出差)用户名")
+    private String participantsName;
     @Column(name = "dept",columnDefinition = "部门")
     private String dept;
     @Column(name = "days", columnDefinition = "参与天数(施工)")
-    private String days;
+    private Double days;
     @Column(name = "remark", columnDefinition = "备注")
     private String remark;
 }

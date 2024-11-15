@@ -32,7 +32,7 @@ public class ProjectCostStatisticsServiceImpl implements ProjectCostStatisticsSe
     private UserService userService;
 
     @Override
-    public List<ProjectCostStatisticsVo> countByProject(Date startDate, Date endDate, String project, String user) {
+    public List<ProjectCostStatisticsVo> countByProject(Date startDate, Date endDate, String project) {
 
         //项目列表
         List<Project> projectList = sysConfigService.getProjectList();
@@ -58,22 +58,25 @@ public class ProjectCostStatisticsServiceImpl implements ProjectCostStatisticsSe
         Map<String, List<ReimbursementItem>> reimbursementItems = reimbursementItemDao.selectByExample(reiItemExample).stream().collect(Collectors.groupingBy(ReimbursementItem::getProject));
 
         List<ProjectCostStatisticsVo> result = new ArrayList<>();
-        projectList.stream().filter(p -> !p.getChildrenList().isEmpty()).forEach(p -> {
+        projectList.stream().filter(p -> !p.getChildren().isEmpty()).forEach(p -> {
             ProjectCostStatisticsVo father = new ProjectCostStatisticsVo();
-            List<Project> childrenList = p.getChildrenList();
+            List<Project> childrenList = p.getChildren();
             List<ProjectCostStatisticsVo> childrenVoList = new ArrayList<>();
             childrenList.forEach(c -> {
                 ProjectCostStatisticsVo vo = new ProjectCostStatisticsVo();
-                vo.setProjectName(p.getName());
+                vo.setProjectName(c.getName());
                 List<ReimbursementItem> detail = reimbursementItems.get(c.getName());
                 //总费用
-                double sum = detail.stream().filter(it -> it.getCost() != null).mapToDouble(ReimbursementItem::getCost).sum();
+                double sum = 0.0;
+                if (detail != null) {
+                    sum = detail.stream().filter(it -> it.getCost() != null).mapToDouble(ReimbursementItem::getCost).sum();
+                }
                 final double[] implementation = {0.0};
                 double sum1 = reimbursements.stream()
                         .filter(it -> it.getType().equals(Reimbursement.ExpenseType.IMPLEMENTATION_FEE) && it.getProject().equals(p.getName()))
                         .mapToDouble(it -> {
                             implementation[0] = implementation[0] + it.getDuration();
-                            return it.getActualAmount();
+                            return it.getReimbursementAmount();
                         }).sum();
                 vo.setTotalCost(sum + sum1);
                 //项目实施费用统计
@@ -82,24 +85,30 @@ public class ProjectCostStatisticsServiceImpl implements ProjectCostStatisticsSe
                 vo.setImplementation(implementation[0]);
                 //项目参与人和天数明细
                 Map<String, Double> implementationDetail = new HashMap<>();
-                detail.stream().filter(it -> it.getDays() != null).forEach(it -> {
-                    implementationDetail.put(it.getProject(), implementationDetail.getOrDefault(it.getProject(), 0.0) + it.getCost());
-                });
+                if (detail != null) {
+                    detail.stream().filter(it -> it.getDays() != null).forEach(it -> {
+                        implementationDetail.put(it.getProject(), implementationDetail.getOrDefault(it.getProject(), 0.0) + it.getDays());
+                    });
+                }
                 vo.setImplementationDetail(implementationDetail);
                 //差旅费分类统计
                 Map<String, Double> statistics = new HashMap<>();
                 Map<String, Map<String, Double>> detailsByUser = new HashMap<>();
-                detail.stream().filter(it -> it.getCost() != null).forEach(it -> {
-                    statistics.put(it.getType(), statistics.getOrDefault(it.getType(), 0.0) + it.getCost());
-                    Map<String, Double> userDetail = detailsByUser.getOrDefault(it.getParticipants(), new HashMap<>());
-                    userDetail.put(it.getType(), userDetail.getOrDefault(it.getType(), 0.0) + it.getCost());
-                    detailsByUser.put(it.getParticipants(), userDetail);
-                });
+                if (detail != null) {
+                    detail.stream().filter(it -> it.getCost() != null).forEach(it -> {
+                        statistics.put(it.getType(), statistics.getOrDefault(it.getType(), 0.0) + it.getCost());
+                        Map<String, Double> userDetail = detailsByUser.getOrDefault(it.getParticipantsName(), new HashMap<>());
+                        userDetail.put(it.getType(), userDetail.getOrDefault(it.getType(), 0.0) + it.getCost());
+                        detailsByUser.put(it.getParticipantsName(), userDetail);
+                    });
+                }
                 vo.setStatistics(statistics);
                 //按报销人明细
                 vo.setDetailsByUser(detailsByUser);
                 //费用明细
-                vo.setCostDetails(detail.stream().filter(it -> it.getCost() != null).collect(Collectors.toList()));
+                if (detail != null) {
+                    vo.setCostDetails(detail.stream().filter(it -> it.getCost() != null).collect(Collectors.toList()));
+                } else vo.setCostDetails(null);
                 childrenVoList.add(vo);
             });
             father.setChildrenList(childrenVoList);
@@ -137,11 +146,6 @@ public class ProjectCostStatisticsServiceImpl implements ProjectCostStatisticsSe
             }));
             //按报销人统计
             father.setDetailsByUser(combinedDetailsByUser);
-            // 设置父项目的详细费用
-//            List<ReimbursementItem> combinedCostDetails = childrenVoList.stream()
-//                    .flatMap(vo -> vo.getCostDetails().stream())
-//                    .collect(Collectors.toList());
-//            father.setCostDetails(combinedCostDetails);
             result.add(father);
         });
         return result;
@@ -174,9 +178,9 @@ public class ProjectCostStatisticsServiceImpl implements ProjectCostStatisticsSe
         Map<String, List<ReimbursementItem>> reimbursementItems = reimbursementItemDao.selectByExample(reiItemExample).stream().collect(Collectors.groupingBy(ReimbursementItem::getParticipants));
 
         list.forEach(it -> {
-            List<ReimbursementItem> reimbursementItemsList = reimbursementItems.get(it.getUserName());
+            List<ReimbursementItem> reimbursementItemsList = reimbursementItems.get(String.valueOf(it.getId()));
             Map<String, Double> detail = new HashMap<>();
-            if (!reimbursementItemsList.isEmpty()) {
+            if (reimbursementItemsList != null) {
                 reimbursementItemsList = reimbursementItemsList.stream().filter(r -> r.getCost() != null).collect(Collectors.toList());
                 if (!reimbursementItemsList.isEmpty()) {
                     reimbursementItemsList.forEach(t -> detail.put(t.getType(), detail.getOrDefault(t.getType(), 0.0) + t.getCost()));
@@ -187,16 +191,7 @@ public class ProjectCostStatisticsServiceImpl implements ProjectCostStatisticsSe
             }
         });
 
-        // 将结果按照总费用降序排序
-        List<Map.Entry<String, Map<String, Double>>> sortedResult = result.entrySet().stream().sorted(Map.Entry.comparingByValue(Comparator.comparingDouble(m -> -m.get("总费用")))).collect(Collectors.toList());
-
-        // 将排序后的结果放入新的Map中
-        Map<String, Map<String, Double>> sortedMap = new LinkedHashMap<>();
-        for (Map.Entry<String, Map<String, Double>> entry : sortedResult) {
-            sortedMap.put(entry.getKey(), result.get(entry.getKey()));
-        }
-
-        return sortedMap;
+        return result;
     }
 
     @Override
@@ -217,16 +212,20 @@ public class ProjectCostStatisticsServiceImpl implements ProjectCostStatisticsSe
         reimbursementItemExample.createCriteria().andIn("reimbursementId", collect);
 
         Map<String, Map<String, Double>> resultMap = new HashMap<>();
-        reimbursementItemDao.selectByExample(reimbursementItemExample).stream().filter(it -> it.getCost() != null && it.getDept() != null).forEach(it -> {
-            Map<String, Double> detail = resultMap.getOrDefault(it.getDept(), new HashMap<>());
-            detail.put(it.getDept(), detail.getOrDefault(it.getType(), 0.0) + it.getCost());
-            resultMap.put(it.getDept(), detail);
-        });
-        for (Map.Entry<String, Map<String, Double>> entry : resultMap.entrySet()) {
-            double totalCost = entry.getValue().values().stream().mapToDouble(Double::doubleValue).sum();
-            entry.getValue().put("总计", totalCost);
-        }
-        return Collections.emptyMap();
+        Map<String, Double> totalCostMap = new HashMap<>();
+
+        reimbursementItemDao.selectByExample(reimbursementItemExample)
+                .stream()
+                .filter(it -> it.getCost() != null && it.getDept() != null)
+                .forEach(it -> {
+                    Map<String, Double> detail = resultMap.computeIfAbsent(it.getDept(), k -> new HashMap<>());
+                    detail.put(it.getType(), detail.getOrDefault(it.getType(), 0.0) + it.getCost());
+                    totalCostMap.put(it.getDept(), totalCostMap.getOrDefault(it.getDept(), 0.0) + it.getCost());
+                });
+
+        resultMap.forEach((key, value) -> value.put("总费用", totalCostMap.get(key)));
+
+        return resultMap;
     }
 
 }

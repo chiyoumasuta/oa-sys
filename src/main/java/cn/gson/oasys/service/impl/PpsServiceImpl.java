@@ -6,16 +6,20 @@ import cn.gson.oasys.entity.Pps;
 import cn.gson.oasys.entity.PpsItem;
 import cn.gson.oasys.entity.User;
 import cn.gson.oasys.service.DepartmentService;
+import cn.gson.oasys.service.FileService;
 import cn.gson.oasys.service.PpsService;
 import cn.gson.oasys.service.UserService;
 import cn.gson.oasys.support.Page;
 import cn.gson.oasys.support.UserTokenHolder;
+import cn.gson.oasys.support.exception.ServiceException;
 import com.github.pagehelper.PageHelper;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Service;
 import tk.mybatis.mapper.entity.Example;
 
 import javax.annotation.Resource;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -31,6 +35,8 @@ public class PpsServiceImpl implements PpsService {
     private DepartmentService departmentService;
     @Resource
     private UserService userService;
+    @Resource
+    private FileService fileService;
 
     /**
      * 分页查询
@@ -127,6 +133,39 @@ public class PpsServiceImpl implements PpsService {
     public List<PpsItem> findByPpsId(Long id) {
         Example example = new Example(PpsItem.class);
         example.createCriteria().andEqualTo("ppsId", id);
-        return ppsItemDao.selectByExample(example);
+        List<PpsItem> ppsItems = ppsItemDao.selectByExample(example);
+        if (!ppsItems.isEmpty()) {
+            return ppsItems.stream().map(it->{
+                if (it.getScheme()!=null){
+                    it.setSchemeFile(fileService.findByIds(Collections.singletonList(it.getScheme())).get(0));
+                }
+                if(it.getReport()!=null){
+                    it.setReportFile(fileService.findByIds(Collections.singletonList(it.getReport())).get(0));
+                }
+                return it;
+            }).collect(Collectors.toList());
+        }else return Collections.emptyList();
+    }
+
+    /**
+     * 上传方案/报告
+     *
+     * @param id
+     * @param fileId
+     * @param type
+     */
+    @Override
+    public boolean updateFile(Long id, Long fileId, int type) {
+        PpsItem ppsItem = ppsItemDao.selectByPrimaryKey(id);
+        if (ppsItem == null) {
+            throw new ServiceException("找不到明细");
+        }
+        switch (type){
+            case 0:
+                ppsItem.setScheme(fileId);
+            case 1:
+                ppsItem.setReport(fileId);
+        }
+        return ppsItemDao.updateByPrimaryKeySelective(ppsItem) > 0;
     }
 }

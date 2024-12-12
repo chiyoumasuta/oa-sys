@@ -1,5 +1,6 @@
 package cn.gson.oasys.service;
 
+import cn.gson.oasys.vo.CostVo;
 import cn.gson.oasys.vo.ProjectCostStatisticsVo;
 import javafx.beans.binding.DoubleExpression;
 
@@ -26,4 +27,10 @@ public interface ProjectCostStatisticsService {
      * 根据部门分类
      */
     Map<String, Map<String, Double>> countByDept(Date startDate, Date endDate, String project);
+
+    /**
+     * 导出
+     */
+    List<CostVo> getCostVoList(Date startDate, Date endDate, String project,String type);
+
 }

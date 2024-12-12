@@ -29,8 +29,6 @@ public class FileServiceImpl implements FileService {
     @Resource
     private FileDao flDao;
     @Resource
-    private FileAuditRecordService fileAuditRecordService;
-    @Resource
     private DepartmentService departmentService;
     @Resource
     private UserService userService;
@@ -142,17 +140,11 @@ public class FileServiceImpl implements FileService {
                         .filter(it -> it.getModel().equals(File.model.REIMBURSEMENT) && it.getUserId().equals(userId))
                         .collect(Collectors.toList()));
                 break;
-            case "待审核":
-                result.setFile(byUserIdAndFather.stream()
-                        .filter(it -> (it.getStatus() == 1 || it.getStatus() == 2 || it.getStatus() == 3) && it.getUserId().equals(userId) && it.getModel().equals(File.model.CLOUD))
-                        .collect(Collectors.toList())
-                );
-                break;
             case "共享文件夹":
                 result.setFile(byUserIdAndFather.stream().filter(File::isShare).collect(Collectors.toList()));
                 break;
             case "所有文件夹":
-                List<File> collect = byUserIdAndFather.stream().filter(it -> !it.isShare() && "folder".equals(it.getType())).collect(Collectors.toList());
+                List<File> collect = byUserIdAndFather.stream().filter(it ->"folder".equals(it.getType()) && !it.isFileInTrash()&&it.getUserId().equals(UserTokenHolder.getUser().getId())).collect(Collectors.toList());
 
 //                Map<Long, File> fileMap = new HashMap<>();
 //                List<File> roots = new ArrayList<>();
@@ -191,7 +183,11 @@ public class FileServiceImpl implements FileService {
     public boolean drop(String fileIds) {
         for (Long fileId : Arrays.stream(fileIds.split(",")).filter(Objects::nonNull).map(Long::valueOf).collect(Collectors.toList())) {
             File file = flDao.selectByPrimaryKey(fileId);
-            file.setFileInTrash(true);
+            if (file.isFileInTrash()){
+                return delete(String.valueOf(file.getFileId()));
+            }else {
+                file.setFileInTrash(true);
+            }
             file.setShare(false);
             flDao.updateByPrimaryKeySelective(file);
             if ("folder".equals(file.getType())) {
@@ -272,48 +268,17 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public boolean shareFile(String fileId, String sharePerson) {
-        User user = userService.findById(UserTokenHolder.getUser().getId());
         Example example = new Example(File.class);
         example.createCriteria().andIn("fileId", Arrays.asList(fileId.split(",")));
-        List<UserDeptRole> userDeptRoles;
-        userDeptRoles = userDeptRoleService.findItByUserId(user.getId());
-
+        example.createCriteria().andIn("fileId", Arrays.asList(fileId.split(",")));
         flDao.selectByExample(example).forEach(it -> {
             File file = flDao.selectByPrimaryKey(fileId);
-            if (it.isShare()) throw new ServiceException(it.getFileName() + "已分享");
-            if (file.isShare() || user.isManager()) {
-                file.setStatus(0);
-                if (sharePerson == null) {
-                    throw new ServiceException("请选择分享人");
-                }
-                file.setShare(true);
-                file.setSharePeople((file.getSharePeople() == null ? "" : file.getSharePeople() + ",") + sharePerson);
-            } else {
-                file.setStatus(1);
-                FileAuditRecord fileAuditRecord = new FileAuditRecord();
-                fileAuditRecord.setFileId(file.getFileId());
-                fileAuditRecord.setSubmitTime(new Date());
-                fileAuditRecord.setFileName(file.getFileName());
-                fileAuditRecord.setSubmitUserName(user.getUserName());
-                fileAuditRecord.setSubmitUserId(user.getId());
-                User personInCharge;
-                if (userDeptRoles.isEmpty()){
-                    personInCharge = userService.findById(1L);
-                }else {
-                    List<User> userList = userDeptRoleService.findByDepartmentId(userDeptRoles.get(0).getDepartmentId())
-                            .stream()
-                            .filter(u -> u.getRole() != null && !u.getRole().equals("专员")).collect(Collectors.toList());
-                    if (userList.isEmpty()){
-                        personInCharge = userService.findById(1L);
-                    }else {
-                        personInCharge = userList.get(0);
-                    }
-                }
-                fileAuditRecord.setPersonInCharge(personInCharge.getId());
-                fileAuditRecord.setPersonInChargeName(personInCharge.getUserName());
-                fileAuditRecordService.saveFileAuditRecord(fileAuditRecord);
-                flDao.updateByPrimaryKeySelective(file);
+            if (sharePerson == null) {
+                throw new ServiceException("请选择分享人");
             }
+            file.setShare(true);
+            file.setSharePeople((file.getSharePeople() == null ? "" : file.getSharePeople() + ",") + sharePerson);
+            flDao.updateByPrimaryKeySelective(file);
         });
         return true;
     }

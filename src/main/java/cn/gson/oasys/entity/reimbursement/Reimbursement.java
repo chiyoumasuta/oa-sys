@@ -6,6 +6,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
 import javax.persistence.*;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.List;
 
@@ -114,7 +117,8 @@ public class Reimbursement {
     public enum ExpenseType {
         TRAVEL_EXPENSES("差旅费"),
         IMPLEMENTATION_FEE("实施费"),
-        DAILY_EXPENSES("日常开支");
+        DAILY_EXPENSES("日常开支"),
+        AMORTIZATION("摊销费用");
 
         private final String name;
 
@@ -152,19 +156,25 @@ public class Reimbursement {
     }
 
     public double calculateLeaveDays() {
-        // 将开始时间和结束时间转为毫秒
-        long startMillis = startTime.getTime();
-        long endMillis = endTime.getTime();
-        // 计算时间差（以天为单位）
-        double leaveDays = (endMillis - startMillis) / (1000.0 * 60 * 60 * 24);
-        // 处理上午和下午的情况
+        // 将 Date 转换为 LocalDate
+        LocalDate startDate = startTime.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        LocalDate endDate = endTime.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+
+        // 计算日期差（忽略时间部分）
+        long dateDiff = ChronoUnit.DAYS.between(startDate, endDate);
+
+        // 初始假期天数（如果跨越两天，至少算1天）
+        double leaveDays = dateDiff + 1; // 默认情况算作 1 天或更多
+
+        // 处理开始时间和结束时间的上午下午情况
         if (startPeriod.equals("下午")) {
             leaveDays -= 0.5; // 如果是下午开始，减去0.5天
         }
         if (endPeriod.equals("上午")) {
             leaveDays -= 0.5; // 如果是上午结束，减去0.5天
         }
-        // 确保最低为0.5天
+
+        // 确保最小假期为 0.5 天
         return Math.max(leaveDays, 0.5);
     }
 }

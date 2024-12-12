@@ -51,10 +51,8 @@ public class ReimbursementServiceImpl implements ReimbursementService {
         if (startDate != null) {
             criteria.andEqualTo("startTime", startDate).andEqualTo("endTime", endDate);
         }
-        if (searchType == 0) {
-            if (!Arrays.asList("阮咏薇", "熊蓉蓉", "程鸿博").contains(user.getUserName())) {
-                criteria.andEqualTo("approver",user.getId());
-            }
+        if (searchType == 0&&!UserTokenHolder.isAdmin()) {
+            criteria.andEqualTo("approver",user.getId());
         } else{
             criteria.andEqualTo("submitUser", user.getId());
         }
@@ -149,7 +147,6 @@ public class ReimbursementServiceImpl implements ReimbursementService {
         List<ReimbursementItem> reimbursementTravel = reimbursementItemDao.selectByExample(exampleItem);
 
         reimbursement.setDetails(reimbursementTravel);
-//        reimbursement.setFileList(fileService.findByIds(Arrays.stream(reimbursement.getAttachmentId().split(",")).filter(Objects::nonNull).map(Long::valueOf).collect(Collectors.toList())));
         if (searchType != null && (
                 (searchType.equals("1") && !reimbursement.getSubmitUser().equals(user.getId()))
                         || (searchType.equals("0") && (!Arrays.asList("阮咏薇", "熊蓉蓉").contains(user.getUserName()) || (reimbursement.getApprover() != null && !reimbursement.getApprover().equals(user.getId()))))

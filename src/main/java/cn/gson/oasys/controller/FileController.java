@@ -143,7 +143,7 @@ public class FileController {
     @RequestMapping(value = "/delete", method = RequestMethod.POST)
     @ApiOperation(value = "彻底删除文件")
     public UtilResultSet delete(String fileId) {
-        if (fileService.delete(fileId)) {
+        if (fileService.drop(fileId)) {
             return UtilResultSet.success("文件彻底删除");
         } else {
             return UtilResultSet.bad_request("删除文件失败");

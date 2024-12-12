@@ -33,8 +33,6 @@ public class File {
     private model model;
     @Column(name = "type", columnDefinition = "文件类型（文件夹：folder ，文件：Doc、docx、xls、xlsx、ppt、pptx、pdf、txt、rtf、odt、ods、odp、jpg)")
     private String type;
-    @Column(name = "status", columnDefinition = "审核状态0：无需审核 1：待审核 2:审核通过 3:驳回")
-    private int status;
     @Column(name = "is_share", columnDefinition = "是否共享")
     private boolean isShare;
     @Column(name = "share_people", columnDefinition = "共享用户")

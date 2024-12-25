@@ -43,6 +43,7 @@ public class UserDeptRoleServiceImpl implements UserDeptRoleService {
         example.createCriteria().andEqualTo("userId", userId);
         for (UserDeptRole userDeptRole : userDeptRoleDao.selectByExample(example)) {
             Department department = departmentDao.selectByPrimaryKey(userDeptRole.getDepartmentId());
+            department.setRole(userDeptRole.getRole());
             result.add(department);
         }
         return result;

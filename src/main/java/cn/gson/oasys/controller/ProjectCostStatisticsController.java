@@ -7,6 +7,7 @@ import cn.gson.oasys.support.UtilResultSet;
 import cn.gson.oasys.vo.CostVo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -29,7 +30,7 @@ public class ProjectCostStatisticsController {
 
     @RequestMapping(value = "/group", method = RequestMethod.POST)
     @ApiOperation(value = "分类费用统计", notes = "group：项目(project)、职员(user)、部门(dept)")
-    public UtilResultSet countByProject(Date startDate, Date endDate, String project, Long userId, String group) {
+    public UtilResultSet countByProject(@DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date startDate, @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date endDate, String project, Long userId, String group) {
         switch (group) {
             case "project":
                 return UtilResultSet.success(projectCostStatisticsService.countByProject(startDate, endDate, project));
@@ -44,13 +45,13 @@ public class ProjectCostStatisticsController {
 
     @RequestMapping(value = "/download")
     @ApiOperation(value = "下载数据")
-    public void download(Date startDate, Date endDate, String project, String type, HttpServletResponse response) {
+    public void download(String startDate,String endDate, String project, String type, HttpServletResponse response) {
         List<CostVo> lists = projectCostStatisticsService.getCostVoList(startDate,endDate,project,type);
         String[] heads = new String[]{"项目","人员","费用明细","金额","天数","备注"};
         String[] fields = new String[]{"project","person","costDetail","cost","days","remark"};
         List<String[]> rows = ExcelUtil.getRows(fields, lists);
         try {
-            String fileName = "报销导出-" + (startDate==null?"":startDate)+ (endDate==null?"":endDate)+ ".xlsx";
+            String fileName = "报销导出-" + (startDate==null?"":startDate)+"-"+(endDate==null?"":endDate)+ ".xlsx";
             response.setHeader("Content-Disposition", "attachment;filename=" + new String(fileName.getBytes(StandardCharsets.UTF_8), Charset.forName("iso8859-1")));
             response.setContentType("application/octet-stream;charset=utf8");
             ExcelUtil.download(null, heads, rows, response.getOutputStream());

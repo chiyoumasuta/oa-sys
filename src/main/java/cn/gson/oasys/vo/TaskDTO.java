@@ -15,6 +15,7 @@ public class TaskDTO implements Serializable {
     private String processInstanceId;
     private Long businessKey;
     private Object businessData;
+    private Long index;
 
     // 构造函数
     public TaskDTO(String id, String name, String taskDefinitionKey, 

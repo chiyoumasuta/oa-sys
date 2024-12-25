@@ -22,7 +22,7 @@ public class ReimbursementController {
     private ReimbursementService reimbursementService;
 
     @RequestMapping(value = "/page",method = RequestMethod.POST)
-    @ApiOperation(value = "分页查询 seachType:0:查询自己发起的流程 ")
+    @ApiOperation(value = "分页查询 seachType:0:查询自己审核的流程 ")
     public UtilResultSet page(int pageSize, int pageNo, Date startDate, Date endDate, String project, int searchType){
         return UtilResultSet.success(reimbursementService.page(pageSize,pageNo,startDate,endDate,project,searchType));
     }

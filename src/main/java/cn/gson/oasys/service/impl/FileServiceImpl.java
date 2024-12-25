@@ -28,14 +28,8 @@ public class FileServiceImpl implements FileService {
     private String rootPath;
     @Resource
     private FileDao flDao;
-    @Resource
-    private DepartmentService departmentService;
-    @Resource
-    private UserService userService;
-    @Resource
-    private UserDeptRoleService userDeptRoleService;
     @Autowired
-    private UserDeptRoleDao userDeptRoleDao;
+    private FileDao fileDao;
 
 
     @Override
@@ -109,10 +103,13 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public FileListVo fileList(Long nowPath, String type) {
+    public FileListVo fileList(Long nowPath, String type,String tags) {
         Long userId = UserTokenHolder.getUser().getId();
         Long father = nowPath == null ? 0 : nowPath;
         Example example = new Example(File.class);
+        if (tags!=null){
+            example.createCriteria().andIn("tags", Arrays.asList(tags.split(",")));
+        }
         if ("回收站".equals(type) || "共享文件夹".equals(type)) {
             example.createCriteria().andLike("sharePeople", "%" + userId + "%").orEqualTo("userId", userId);
         } else {
@@ -171,11 +168,18 @@ public class FileServiceImpl implements FileService {
         if (nowPath != null) {
             result.setNowFile(flDao.selectByPrimaryKey(nowPath));
         }
-        List<File> sortedFiles = result.getFile().stream()
+        Set<String> tagSet = new HashSet<>();
+        List<File> sortedFiles = result.getFile().stream().map(it->{
+                    if(it.getTag()!=null&&!it.getTag().equals("")){
+                        Set<String> oldTags = new HashSet<>(Arrays.asList(it.getTag().split(",")));
+                        tagSet.addAll(oldTags);
+                    }
+                    return it;
+                })
                 .sorted(Comparator.comparing(file -> file.getType().equals("folder") ? 0 : 1))
                 .collect(Collectors.toList());
-
         result.setFile(sortedFiles);
+        result.setTags(tagSet);
         return result;
     }
 
@@ -183,6 +187,9 @@ public class FileServiceImpl implements FileService {
     public boolean drop(String fileIds) {
         for (Long fileId : Arrays.stream(fileIds.split(",")).filter(Objects::nonNull).map(Long::valueOf).collect(Collectors.toList())) {
             File file = flDao.selectByPrimaryKey(fileId);
+            if (!file.getUserId().equals(UserTokenHolder.getUser().getId())||!UserTokenHolder.isAdmin()) {
+                throw new ServiceException("非本人文件/管理员无法操作");
+            }
             if (file.isFileInTrash()){
                 return delete(String.valueOf(file.getFileId()));
             }else {
@@ -292,5 +299,39 @@ public class FileServiceImpl implements FileService {
         Example example = new Example(File.class);
         example.createCriteria().andIn("fileId", ids);
         return flDao.selectByExample(example);
+    }
+
+    @Override
+    public boolean addTag(String tags, String ids) {
+        if (ids==null){
+            throw new ServiceException("标签和文件不能为空");
+        }
+        List<File> byIds = findByIds(Arrays.stream(ids.split(",")).map(Long::valueOf).collect(Collectors.toList()));
+        Set<String> tagList = new HashSet<>(Arrays.asList(tags.split(",")));
+        for (File file : byIds) {
+            if (file.getTag()!=null){
+                Set<String> oldTags = new HashSet<>(Arrays.asList(file.getTag().split(",")));
+                tagList.addAll(oldTags);
+            }
+            file.setTag(String.join(",", tagList));
+            fileDao.updateByPrimaryKeySelective(file);
+        }
+        return true;
+    }
+
+    @Override
+    public boolean deleteTag(String tag,Long id) {
+        File file = fileDao.selectByPrimaryKey(id);
+        if (file==null){
+            throw new ServiceException("文件标签错误");
+        }
+        Set<String> oldTags = new HashSet<>(Arrays.asList(file.getTag().split(",")));
+        oldTags.remove(tag);
+        if (oldTags.size()==0){
+            file.setTag(null);
+        }else {
+            file.setTag(String.join(",", oldTags));
+        }
+        return fileDao.updateByPrimaryKey(file) > 0;
     }
 }

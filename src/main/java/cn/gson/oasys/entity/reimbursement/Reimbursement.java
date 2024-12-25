@@ -83,11 +83,13 @@ public class Reimbursement {
     private List<File> fileList;
 
     public enum Status {
-        MANAGER("部门负责人审核", 1),
-        ACCOUNTING("财务审核", 2),
-        GENERAL("总经理审核", 3),
-        APPROVED("批准", 4),
-        REJECTED("驳回", 5);
+        REVIEW_1("审核人1",1),//宋云潇
+        REVIEW_2("审核人2",2),//马涛
+//        MANAGER("部门负责人审核", 3),
+        ACCOUNTING("财务审核", 3),
+        GENERAL("总经理审核", 4),
+        APPROVED("批准", 5),
+        REJECTED("驳回", 6);
         private final String name;
         private final int leave;
 

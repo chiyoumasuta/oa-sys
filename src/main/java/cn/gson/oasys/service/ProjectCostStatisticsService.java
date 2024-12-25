@@ -31,6 +31,6 @@ public interface ProjectCostStatisticsService {
     /**
      * 导出
      */
-    List<CostVo> getCostVoList(Date startDate, Date endDate, String project,String type);
+    List<CostVo> getCostVoList(String startDate, String endDate, String project,String type);
 
 }

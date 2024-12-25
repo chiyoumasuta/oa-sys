@@ -48,6 +48,7 @@ public class ProjectCostStatisticsServiceImpl implements ProjectCostStatisticsSe
             reiExample.and(criteria);
         }
         List<Reimbursement> reimbursements = reimbursementDao.selectByExample(reiExample);
+        if (reimbursements.isEmpty())return new ArrayList<>();
         Map<Long,Reimbursement.ExpenseType> typeMap = reimbursements.stream().collect(Collectors.toMap(Reimbursement::getId,Reimbursement::getType));
         List<Long> ids = reimbursements.stream().map(Reimbursement::getId).collect(Collectors.toList());
         reiItemExample.createCriteria().andIn("reimbursementId", ids);
@@ -106,7 +107,7 @@ public class ProjectCostStatisticsServiceImpl implements ProjectCostStatisticsSe
                 Map<String, Double> statistics = new HashMap<>();
                 Map<String, Map<String, Double>> detailsByUser = new HashMap<>();
                 if (detail != null) {
-                    detail.stream().filter(it -> typeMap.get(it.getReimbursementId()).equals(Reimbursement.ExpenseType.DAILY_EXPENSES)&&it.getCost() != null).
+                    detail.stream().filter(it -> typeMap.get(it.getReimbursementId()).equals(Reimbursement.ExpenseType.TRAVEL_EXPENSES)&&it.getCost() != null).
                             forEach(it -> {
                                 statistics.put(it.getType(), statistics.getOrDefault(it.getType(), 0.0) + it.getCost());
                                 Map<String, Double> userDetail = detailsByUser.getOrDefault(it.getParticipantsName(), new HashMap<>());
@@ -243,20 +244,17 @@ public class ProjectCostStatisticsServiceImpl implements ProjectCostStatisticsSe
      * 导出
      */
     @Override
-    public List<CostVo> getCostVoList(Date startDate, Date endDate, String project, String type) {        //项目列表
+    public List<CostVo> getCostVoList(String startDate, String endDate, String project, String type) {        //项目列表
         List<Project> projectList = sysConfigService.getProjectList();
-        if (project != null) {
-            projectList = projectList.stream().filter(p -> p.getName().equals(project)).collect(Collectors.toList());
-        }
 
         //获取报销类型列表
 
         Example reiExample = new Example(Reimbursement.class);
         Example reiItemExample = new Example(ReimbursementItem.class);
         reiExample.createCriteria().andEqualTo("status", Reimbursement.Status.APPROVED);
-        if (startDate != null) {
+        if (startDate != null && !startDate.isEmpty() && endDate != null && !endDate.isEmpty()) {
             Example.Criteria criteria = reiExample.createCriteria();
-            criteria.andGreaterThan("startTime", startDate).andLessThan("endTime", startDate).andNotEqualTo("status", Reimbursement.Status.APPROVED);
+            criteria.andBetween("startTime", startDate,endDate);
             reiExample.and(criteria);
         }
         List<Reimbursement> reimbursements = reimbursementDao.selectByExample(reiExample);
@@ -273,11 +271,11 @@ public class ProjectCostStatisticsServiceImpl implements ProjectCostStatisticsSe
         projectList.stream().filter(p -> !p.getChildren().isEmpty()).forEach(p -> {
             ProjectCostStatisticsVo father = new ProjectCostStatisticsVo();
             List<Project> childrenList = p.getChildren();
-            childrenList.forEach(c -> {
+            childrenList.stream().filter(c->project==null|| project.isEmpty() ||c.getName().equals(project)).forEach(c -> {
                 List<ReimbursementItem> detail = reimbursementItems.get(c.getName());
                 if (detail != null) {
                     detail.stream().
-                            filter(d->type==null||Arrays.asList(type.split(",")).contains(typeMap.get(d.getReimbursementId()).name())).
+                            filter(d->type==null||type.isEmpty()||Arrays.asList(type.split(",")).contains(typeMap.get(d.getReimbursementId()).name())).
                             forEach(d->{
                                 CostVo costVo = new CostVo();
                                 costVo.setProject(d.getProject()); //项目

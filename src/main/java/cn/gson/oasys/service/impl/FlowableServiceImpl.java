@@ -77,7 +77,7 @@ public class FlowableServiceImpl implements FlowableService {
             throw new ServiceException("流程数据错误 审核人不存在");
         }
         if (!assignee.equals(user.getUserName())) {
-            return false;
+            throw new ServiceException("当前流程无权审核");
         }
         Map<String, Object> resultDataMap = new HashMap<>();
         if (result != null) {
@@ -173,9 +173,13 @@ public class FlowableServiceImpl implements FlowableService {
                             Reimbursement info = reimbursementService.getInfo(businessKey, searchType);
                             // 将业务数据封装到DTO中
                             taskDTO.setBusinessData(info);
+                            if (info != null) {
+                                taskDTO.setIndex(info.getId());
+                            }
                     }
                     return taskDTO;
-                }).filter(t -> t.getBusinessData() != null).collect(Collectors.toList());
+                }).filter(t -> t.getBusinessData() != null).sorted(Comparator.comparing(TaskDTO::getIndex)
+                ).collect(Collectors.toList());
     }
 
     @Override

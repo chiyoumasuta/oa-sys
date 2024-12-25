@@ -38,6 +38,8 @@ public class ReimbursementServiceImpl implements ReimbursementService {
     private FileService fileService;
     @Resource
     private SysConfigService sysConfigService;
+    @Resource
+    private UserDeptRoleService userDeptRoleService;
 
     @Override
     public Page<Reimbursement> page(int pageSize, int pageNo, Date startDate, Date endDate, String project, int searchType) {
@@ -58,11 +60,14 @@ public class ReimbursementServiceImpl implements ReimbursementService {
         }
         criteria.andIn("status", Arrays.asList(Reimbursement.Status.APPROVED, Reimbursement.Status.REJECTED));
         com.github.pagehelper.Page<Reimbursement> data = (com.github.pagehelper.Page<Reimbursement>) reimbursementDao.selectByExample(example);
-        List<Reimbursement> result = data.getResult().stream().peek(it -> {
-            Example example1 = new Example(ReimbursementItem.class);
-            example1.createCriteria().andEqualTo("reimbursementId", it.getId());
-            it.setDetails(reimbursementItemDao.selectByExample(example1));
-        }).collect(Collectors.toList());
+        List<Reimbursement> result = data.getResult().stream()
+                .peek(it -> {
+                    Example example1 = new Example(ReimbursementItem.class);
+                    example1.createCriteria().andEqualTo("reimbursementId", it.getId());
+                    it.setDetails(reimbursementItemDao.selectByExample(example1));
+                })
+                .sorted(Comparator.comparing(Reimbursement::getId))
+                .collect(Collectors.toList());
         return new Page<>(pageNo, pageSize, data.getTotal(), result);
     }
 
@@ -93,18 +98,28 @@ public class ReimbursementServiceImpl implements ReimbursementService {
         } else throw new ServiceException("未找到部门");
         reimbursement.setDepartmentName(department.getName());
 
-        User userApprover = sysConfigService.getApproveByDept(reimbursement.getDepartmentName());
+//        User userApprover = sysConfigService.getApproveByDept(reimbursement.getDepartmentName());
 
         //设置审核人
-        if (!userApprover.getUserName().equals(user.getUserName())) {
-            try {
-                reimbursement.setApprover(userApprover.getId());
-                reimbursement.setApproverName(userApprover.getUserName());
-                reimbursement.setStatus(Reimbursement.Status.MANAGER);
-            } catch (Exception e) {
-                throw new ServiceException("当前用户所在部门无负责人");
+//        if (!userApprover.getUserName().equals(user.getUserName())) {
+//            try {
+//                reimbursement.setApprover(userApprover.getId());
+//                reimbursement.setApproverName(userApprover.getUserName());
+//                reimbursement.setStatus(Reimbursement.Status.REVIEW_1);
+//            } catch (Exception e) {
+//                throw new ServiceException("当前用户所在部门无负责人");
+//            }
+//        } else reimbursement.setStatus(Reimbursement.Status.ACCOUNTING);
+        if (UserTokenHolder.getUser().getUserName().equals("阮咏薇")) {
+            reimbursement.setStatus(Reimbursement.Status.GENERAL);
+        }else if (userDeptRoleService.findByUserId(UserTokenHolder.getUser().getId()).stream().map(Department::getName).collect(Collectors.toList())
+                .contains("综合管理中心")){
+            if (UserTokenHolder.getUser().getUserName().equals("马涛")){
+                reimbursement.setStatus(Reimbursement.Status.ACCOUNTING);
+            }else {
+                reimbursement.setStatus(Reimbursement.Status.REVIEW_2);
             }
-        } else reimbursement.setStatus(Reimbursement.Status.ACCOUNTING);
+        }else reimbursement.setStatus(Reimbursement.Status.REVIEW_1);
 
         //将附件从回收站移除
 //        fileService.reDrop(reimbursement.getAttachmentId());
@@ -127,11 +142,12 @@ public class ReimbursementServiceImpl implements ReimbursementService {
         reimbursement.setReimbursementAmount(cost[0] == 0.0 ? reimbursement.getReimbursementAmount() : cost[0]);
         Map<String, Object> variables = new HashMap<>();
         //是否为主管（跳过主管审核流程）
-        if (!userApprover.getUserName().equals(user.getUserName())) {
-            variables.put("isManager", false);
-            //不是主管设置审核人
-            variables.put("manager", reimbursement.getApproverName());
-        } else variables.put("isManager", true);
+//        if (!userApprover.getUserName().equals(user.getUserName())) {
+//            variables.put("isManager", false);
+//            //不是主管设置审核人
+//            variables.put("manager", reimbursement.getApproverName());
+//        } else variables.put("isManager", true);
+        variables.put("type", reimbursement.getStatus().getLeave());
         reimbursementDao.updateByPrimaryKey(reimbursement);
         ProcessInstance processInstance = runtimeService.startProcessInstanceById(deployId, String.valueOf(dataKey), variables);
         processInstance.getProcessInstanceId();
@@ -163,10 +179,15 @@ public class ReimbursementServiceImpl implements ReimbursementService {
         Reimbursement reimbursement = reimbursementDao.selectByPrimaryKey(id);
         Reimbursement.Status status = reimbursement.getStatus();
         switch (reimbursement.getStatus()) {
-            case MANAGER:
-                status = Reimbursement.Status.getNextStatus(status);
+            case REVIEW_1:
                 reimbursement.setApproverTime(new Date());
+            case REVIEW_2:
+                status = Reimbursement.Status.getNextStatus(status);
                 break;
+//            case MANAGER:
+//                status = Reimbursement.Status.getNextStatus(status);
+//                reimbursement.setApproverTime(new Date());
+//                break;
             case ACCOUNTING:
                 status = Reimbursement.Status.getNextStatus(status);
                 if (!reimbursement.getType().equals(Reimbursement.ExpenseType.IMPLEMENTATION_FEE)) {

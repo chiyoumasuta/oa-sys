@@ -16,7 +16,7 @@ public interface FileService {
     /**
      * 获取当前文件夹文件列表
      */
-    FileListVo fileList(Long nowPath, String type);
+    FileListVo fileList(Long nowPath, String type,String tags);
 
     /**
      * 将文件放入回收站
@@ -59,5 +59,18 @@ public interface FileService {
      */
     java.io.File getFile(String filepath);
 
+    /**
+     * 通过id查询文件
+     */
     List<File> findByIds(List<Long> ids);
+
+    /**
+     * 添加文件标签
+     */
+    boolean addTag(String tags,String ids);
+
+    /**
+     * 删除文件标签
+     */
+    boolean deleteTag(String tag,Long id);
 }

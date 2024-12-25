@@ -51,9 +51,9 @@ public class FileController {
 
     @RequestMapping(value = "/list", method = RequestMethod.POST)
     @ApiOperation(value = "文件列表")
-    public UtilResultSet fileList(Long nowPath, String type) {
+    public UtilResultSet fileList(Long nowPath, String type,String tags) {
         try {
-            FileListVo result = fileService.fileList(nowPath, type);
+            FileListVo result = fileService.fileList(nowPath, type,tags);
             return UtilResultSet.success(result);
         } catch (Exception e) {
             return UtilResultSet.bad_request("文件列表加载失败: " + e.getMessage());

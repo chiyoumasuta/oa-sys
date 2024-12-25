@@ -41,6 +41,10 @@ public class File {
     private boolean fileInTrash;
     @Column(name = "user_id", columnDefinition = "所属用户")
     private Long userId;
+    @Column(name =  "user_name", columnDefinition = "所属用户名")
+    private String userName;
+    @Column(name = "tag",columnDefinition = "文件标签")
+    private String tag;
     @Transient
     private List<File> files;
 

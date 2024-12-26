@@ -57,7 +57,7 @@ public class SysConfigController {
         return UtilResultSet.success(sysConfigService.getProjectList());
     }
 
-    @RequestMapping(value = "/deletProject", method = RequestMethod.POST)
+    @RequestMapping(value = "/deleteProject", method = RequestMethod.POST)
     @ApiOperation(value = "删除项目")
     public UtilResultSet deleteProject(Long id) {
         if (sysConfigService.deleteProject(id)) {

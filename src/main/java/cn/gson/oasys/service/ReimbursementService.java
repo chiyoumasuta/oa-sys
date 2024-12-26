@@ -3,7 +3,9 @@ package cn.gson.oasys.service;
 import cn.gson.oasys.entity.reimbursement.Reimbursement;
 import cn.gson.oasys.entity.reimbursement.ReimbursementItem;
 import cn.gson.oasys.support.Page;
+import com.itextpdf.layout.Document;
 
+import java.io.IOException;
 import java.util.Date;
 
 
@@ -26,7 +28,7 @@ public interface ReimbursementService {
     /**
      * 审核接口
      */
-     boolean audit(Long id, String result);
+     boolean audit(Long id,boolean isPass, String result);
 
     /**
      * 修改数据
@@ -37,4 +39,8 @@ public interface ReimbursementService {
      * 修改明细表数据
      */
     void updateItem(ReimbursementItem reimbursementItem);
+
+    Reimbursement selectOneById(Long id);
+
+    Document getDoc(Document doc, Reimbursement data) throws IOException;
 }

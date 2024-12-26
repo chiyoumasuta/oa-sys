@@ -2,8 +2,8 @@ package cn.gson.oasys.service;
 
 import cn.gson.oasys.support.UtilResultSet;
 import cn.gson.oasys.vo.TaskDTO;
-import javafx.concurrent.Task;
 import org.flowable.engine.history.HistoricActivityInstance;
+import org.flowable.task.api.Task;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -18,7 +18,7 @@ public interface FlowableService {
      * @param result
      * @return
      */
-    boolean audit(String taskId, String result);
+    boolean audit(String taskId,boolean isPass, String result);
 
 
     /**
@@ -79,7 +79,7 @@ public interface FlowableService {
     /**
      * 中止流程
      */
-    void deleteProcess(String taskId);
+    void deleteProcess(Task task, String result);
 
     /**
      * 获取当前正在运行的流程实例的业务 ID 列表

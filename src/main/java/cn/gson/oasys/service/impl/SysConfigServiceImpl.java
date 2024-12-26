@@ -107,7 +107,9 @@ public class SysConfigServiceImpl implements SysConfigService {
 
     @Override
     public boolean deleteProject(Long id) {
-        return projectDao.deleteByPrimaryKey(id) > 0;
+        Example example = new Example(Project.class);
+        example.createCriteria().andEqualTo("id", id).orEqualTo("father", id);
+        return projectDao.deleteByExample(example) > 0;
     }
 
     @Override
@@ -156,7 +158,7 @@ public class SysConfigServiceImpl implements SysConfigService {
         if (type != null) {
             example.createCriteria().andEqualTo("type", type);
         }
-        return reiTypeDao.selectByExample(example);
+        return reiTypeDao.selectByExample(example).stream().sorted(Comparator.comparing(ReiType::getType)).collect(Collectors.toList());
     }
 
     @Override

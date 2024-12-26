@@ -4,14 +4,29 @@ import cn.gson.oasys.entity.reimbursement.Reimbursement;
 import cn.gson.oasys.entity.reimbursement.ReimbursementItem;
 import cn.gson.oasys.service.ReimbursementService;
 import cn.gson.oasys.support.UtilResultSet;
+import com.itextpdf.kernel.events.PdfDocumentEvent;
+import com.itextpdf.kernel.geom.PageSize;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.layout.Document;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.apache.commons.lang.StringUtils;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+
 import javax.annotation.Resource;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/reimbursement")
@@ -45,5 +60,31 @@ public class ReimbursementController {
     public UtilResultSet updateItem(ReimbursementItem reimbursementItem) {
         reimbursementService.updateItem(reimbursementItem);
         return UtilResultSet.success("更新成功");
+    }
+
+
+
+    @RequestMapping("/pdf")
+    public void pdf(Long id, HttpServletResponse resp) throws IOException {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
+        Reimbursement reimbursement = reimbursementService.selectOneById(id);
+//        String watermark = reimbursement.getSubmitUserName();
+//        if (StringUtils.isBlank(watermark)){
+//            watermark="admin";
+//        }
+
+        resp.setContentType("application/pdf");
+        // 编码nameById以处理中文字符
+        String fileName = URLEncoder.encode(reimbursement.getSubmitUserName()+"--"+reimbursement.getProject(), "UTF-8") + ".pdf";
+        resp.setHeader("Content-Disposition", "attachment;fileName=" + fileName);
+        ServletOutputStream os = resp.getOutputStream();
+        PdfDocument pdfDoc = new PdfDocument(new PdfWriter(os));
+
+        pdfDoc.setDefaultPageSize(PageSize.A2);
+//        pdfDoc.addEventHandler(PdfDocumentEvent.END_PAGE, new WatermarkEventHandler(watermark));
+        Document doc = new Document(pdfDoc);
+        Document doc1 = reimbursementService.getDoc(doc,reimbursement);
+        pdfDoc.close();
+        doc1.close();
     }
 }

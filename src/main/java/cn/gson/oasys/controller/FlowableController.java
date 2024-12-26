@@ -124,12 +124,12 @@ public class FlowableController {
         return UtilResultSet.success(actReprocdefService.getActReprocdef());
     }
 
-    @RequestMapping(value = "/deleteProcess", method = RequestMethod.POST)
-    @ApiOperation(value = "中止流程")
-    public UtilResultSet deleteProcess(String taskId) {
-        flowableService.deleteProcess(taskId);
-        return UtilResultSet.success("终止成功");
-    }
+//    @RequestMapping(value = "/deleteProcess", method = RequestMethod.POST)
+//    @ApiOperation(value = "中止流程")
+//    public UtilResultSet deleteProcess(String taskId,String result) {
+//        flowableService.deleteProcess(taskId,result);
+//        return UtilResultSet.success("终止成功");
+//    }
 
     @RequestMapping(value = "/getInstantiateList", method = RequestMethod.POST)
     @ApiOperation(value = "获取流程实例化列表")
@@ -154,9 +154,9 @@ public class FlowableController {
 
     @RequestMapping(value = "/audit", method = RequestMethod.POST)
     @ApiOperation(value = "流程审核接口")
-    public UtilResultSet audit(String taskId, String result) {
+    public UtilResultSet audit(String taskId,boolean isPass, String result) {
         try {
-            if (flowableService.audit(taskId, result)) {
+            if (flowableService.audit(taskId,isPass,result)) {
                 return UtilResultSet.success("审批成功");
             } else return UtilResultSet.bad_request("审批失败");
         } catch (Exception e) {

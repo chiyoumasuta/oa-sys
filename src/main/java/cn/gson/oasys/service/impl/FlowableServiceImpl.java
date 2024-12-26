@@ -69,15 +69,12 @@ public class FlowableServiceImpl implements FlowableService {
     private ReimbursementDao reimbursementDao;
 
     @Override
-    public boolean audit(String taskId, String result) {
+    public boolean audit(String taskId,boolean isPass, String result) {
         Task task = taskService.createTaskQuery().taskId(taskId).singleResult();
         String assignee = task.getAssignee();
         User user = UserTokenHolder.getUser();
         if (assignee==null){
             throw new ServiceException("流程数据错误 审核人不存在");
-        }
-        if (!assignee.equals(user.getUserName())) {
-            throw new ServiceException("当前流程无权审核");
         }
         Map<String, Object> resultDataMap = new HashMap<>();
         if (result != null) {
@@ -87,14 +84,23 @@ public class FlowableServiceImpl implements FlowableService {
                 .processInstanceId(task.getProcessInstanceId())
                 .singleResult();
         Long businessKey = Long.valueOf(processInstance.getBusinessKey());
-        taskService.complete(task.getId(), resultDataMap);
 
         // 业务键获取
         switch (task.getProcessDefinitionId().split(":")[0]) {
             case "leave":
                 return leaveApplicationService.audit(businessKey, result);
             case "reimbursement_process":
-                return reimbursementService.audit(businessKey, result);
+                result = UserTokenHolder.getUser().getUserName()+"@@"+result+"@@"+(isPass?"通过":"驳回");
+                if (isPass){
+                    if (!assignee.equals(user.getUserName())) {
+                        throw new ServiceException("当前流程无权审核");
+                    }
+                    taskService.complete(task.getId(), resultDataMap);
+                    return reimbursementService.audit(businessKey, true, result);
+                }else {
+                    deleteProcess(task,result);
+                    return true;
+                }
             default:
                 break;
         }
@@ -139,7 +145,8 @@ public class FlowableServiceImpl implements FlowableService {
                 .list();
 
         // 避免懒加载问题，将需要的字段包装到 DTO 中
-        return taskList.stream().filter(it -> it.getProcessDefinitionId().contains(type))
+        return taskList.stream().filter(it -> it.getProcessDefinitionId().contains(type)
+                        &&(it.getAssignee().equals(UserTokenHolder.getUser().getUserName())||searchType.equals("1")))
                 .map(task -> {
                     // 根据任务获取流程实例
                     ProcessInstance processInstance = runtimeService.createProcessInstanceQuery()
@@ -238,9 +245,8 @@ public class FlowableServiceImpl implements FlowableService {
     }
 
     @Override
-    public void deleteProcess(String taskId) {
+    public void deleteProcess(Task task,String result) {
         try {
-            Task task = taskService.createTaskQuery().taskId(taskId).singleResult();
             User user = UserTokenHolder.getUser();
             String assignee = task.getAssignee();
             ProcessInstance processInstance = runtimeService.createProcessInstanceQuery()
@@ -254,6 +260,7 @@ public class FlowableServiceImpl implements FlowableService {
                     Reimbursement info = reimbursementService.getInfo(Long.valueOf(businessKey), null);
                     if (user.getUserName().equals(assignee)||user.getUserName().equals(info.getSubmitUserName())) {
                         info.setStatus(Reimbursement.Status.REJECTED);
+                        info.setOpinions((info.getOpinions()==null?"":(info.getOpinions()+";"))+result);
                         reimbursementDao.updateByPrimaryKeySelective(info);
                     }else {
                         throw new ServiceException("当前用户不可驳回");

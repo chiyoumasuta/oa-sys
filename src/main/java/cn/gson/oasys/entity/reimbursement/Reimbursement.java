@@ -9,8 +9,7 @@ import javax.persistence.*;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * 报销流程业务数据表
@@ -26,7 +25,7 @@ public class Reimbursement {
     private Long id;
 
     @Column(name = "department", columnDefinition = "部门")
-    private Long department;
+    private String department;
     @Column(name = "department_name", columnDefinition = "部门名称")
     private String departmentName;
     @Column(name = "expense_type", columnDefinition = "费用类型")
@@ -73,6 +72,10 @@ public class Reimbursement {
     private String company;
     @Column(name = "business_travel", columnDefinition = "关联工单(出差申请)")
     private String businessTravel;
+    @Column(name = "opinions", columnDefinition = "审核意见")
+    private String opinions;
+    @Transient
+    private List<String> opinionsList;
     @Transient
     private String typeName;
     @Transient
@@ -83,8 +86,8 @@ public class Reimbursement {
     private List<File> fileList;
 
     public enum Status {
-        REVIEW_1("审核人1",1),//宋云潇
-        REVIEW_2("审核人2",2),//马涛
+        REVIEW_1("宋云潇审核",1),//宋云潇
+        REVIEW_2("马涛审核",2),//马涛
 //        MANAGER("部门负责人审核", 3),
         ACCOUNTING("财务审核", 3),
         GENERAL("总经理审核", 4),
@@ -178,6 +181,14 @@ public class Reimbursement {
 
         // 确保最小假期为 0.5 天
         return Math.max(leaveDays, 0.5);
+    }
+
+    public List<String> getOpinionsList() {
+        return this.opinions==null?null:Arrays.asList(this.opinions.split(";"));
+    }
+
+    public void setOpinionsList(List<String> opinionsList) {
+        this.opinionsList = this.opinions==null?null:Arrays.asList(this.opinions.split(";"));
     }
 }
 

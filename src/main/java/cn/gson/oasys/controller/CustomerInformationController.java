@@ -1,6 +1,7 @@
 package cn.gson.oasys.controller;
 
 import cn.gson.oasys.entity.CustomerInformation;
+import cn.gson.oasys.entity.CustomerInformationItem;
 import cn.gson.oasys.service.CustomerInformationService;
 import cn.gson.oasys.support.UtilResultSet;
 import io.swagger.annotations.Api;
@@ -25,7 +26,7 @@ public class CustomerInformationController {
     }
 
     @RequestMapping(value = "/saveOrUpdate", method = RequestMethod.POST)
-    @ApiOperation("新增/修改客户数据")
+    @ApiOperation("新增/修改公司")
     public UtilResultSet saveOrUpdate(CustomerInformation customerInformation){
         if (customerInformationService.saveOrUpdateCustomerInformation(customerInformation)){
             return UtilResultSet.success("新增/修改成功");
@@ -34,10 +35,21 @@ public class CustomerInformationController {
         }
     }
 
+
+    @RequestMapping(value = "/saveOrUpdateItem", method = RequestMethod.POST)
+    @ApiOperation("新增/修改公司")
+    public UtilResultSet saveOrUpdate(CustomerInformationItem item){
+        if (customerInformationService.saveOrUpdateItem(item)){
+            return UtilResultSet.success("新增/修改成功");
+        }else {
+            return UtilResultSet.bad_request("新增/修改失败");
+        }
+    }
+
     @RequestMapping(value = "/deleteById",method = RequestMethod.POST)
-    @ApiOperation("删除")
-    public UtilResultSet deleteById(Long id){
-        if (customerInformationService.deleteById(id)){
+    @ApiOperation(value = "删除",notes = "传入0为删除公司，1为删除联系方式")
+    public UtilResultSet deleteById(Long id,int type){
+        if (customerInformationService.deleteById(id,type)){
             return UtilResultSet.success("删除成功");
         }else return UtilResultSet.bad_request("删除失败");
     }

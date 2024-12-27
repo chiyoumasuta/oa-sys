@@ -1,6 +1,8 @@
 package cn.gson.oasys.support;
 
+import cn.gson.oasys.entity.Department;
 import cn.gson.oasys.entity.User;
+import cn.gson.oasys.service.UserDeptRoleService;
 import cn.gson.oasys.support.exception.UnknownAccountException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -8,6 +10,7 @@ import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.lang.reflect.Method;

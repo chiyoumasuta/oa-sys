@@ -33,6 +33,8 @@ public class LoginController {
 
     @Autowired
     private UserService userService;
+    @Resource
+    private UserDeptRoleService userDeptRoleService;
 
     @Value("${user.password}")
     private String resetPassword;

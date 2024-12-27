@@ -5,6 +5,7 @@ import lombok.Data;
 
 import javax.persistence.*;
 import java.util.Date;
+import java.util.List;
 
 @Entity
 @Table(name = "user")
@@ -40,4 +41,8 @@ public class User {
     private boolean isManager = false;
     @Transient
     private String role;
+    @Transient
+    private List<String> roleList;
+    @Transient
+    private List<Permissions> permissionsList;
 }

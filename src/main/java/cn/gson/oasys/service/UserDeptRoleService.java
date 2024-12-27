@@ -1,8 +1,6 @@
 package cn.gson.oasys.service;
 
-import cn.gson.oasys.entity.Department;
-import cn.gson.oasys.entity.User;
-import cn.gson.oasys.entity.UserDeptRole;
+import cn.gson.oasys.entity.*;
 
 import java.util.List;
 
@@ -26,7 +24,7 @@ public interface UserDeptRoleService {
      * @param userId
      * @return
      */
-    List<UserDeptRole> findItByUserId(Long userId);
+    List<UserDeptRole> findRoleByUserId(Long userId);
 
     /**
      * 更新用户职位信息
@@ -36,4 +34,24 @@ public interface UserDeptRoleService {
      * @return
      */
     boolean updateUserRole(Long deptId, Long userId, String role);
+
+    /**
+     * 获取用户所有权限
+     */
+    User findUserRole(User user);
+
+    /**
+     * 获取所有权限
+     */
+    List<Permissions> findAllPermissions();
+
+    /**
+     * 获取角色列表
+     */
+    List<Role> findAllRoles();
+
+    /**
+     * 增加/修改角色
+     */
+    boolean saveOrUpdateRole(Role role);
 }

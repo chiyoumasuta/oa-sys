@@ -1,9 +1,9 @@
 package cn.gson.oasys.dao;
 
-import cn.gson.oasys.entity.config.SysConfig;
+import cn.gson.oasys.entity.Role;
 import org.springframework.stereotype.Repository;
 import tk.mybatis.mapper.common.Mapper;
 
 @Repository
-public interface SysConfigDao extends Mapper<SysConfig> {
+public interface RoleDao extends Mapper<Role> {
 }

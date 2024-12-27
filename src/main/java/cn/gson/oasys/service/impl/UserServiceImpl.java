@@ -14,10 +14,6 @@ import cn.gson.oasys.support.Page;
 import cn.gson.oasys.support.exception.UnknownAccountException;
 import com.github.pagehelper.PageHelper;
 import org.apache.commons.lang.StringUtils;
-import org.flowable.engine.IdentityService;
-import org.flowable.engine.ProcessEngine;
-import org.flowable.engine.ProcessEngines;
-import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -60,7 +56,7 @@ public class UserServiceImpl implements UserService {
         List<User> lists = pageInfo.getResult().stream().peek(it -> {
             String deptName = "";
             AtomicBoolean isMannger = new AtomicBoolean(false);
-            List<UserDeptRole> itByUserId = userDeptRoleService.findItByUserId(it.getId());
+            List<UserDeptRole> itByUserId = userDeptRoleService.findRoleByUserId(it.getId());
             if (itByUserId.isEmpty()) {
                 deptName = "";
             }else {
@@ -249,7 +245,7 @@ public class UserServiceImpl implements UserService {
         }
         String deptName;
         AtomicBoolean isMannger = new AtomicBoolean(false);
-        List<UserDeptRole> itByUserId = userDeptRoleService.findItByUserId(user.getId());
+        List<UserDeptRole> itByUserId = userDeptRoleService.findRoleByUserId(user.getId());
         if (itByUserId.isEmpty()) {
             deptName = "";
         }else {
@@ -262,6 +258,11 @@ public class UserServiceImpl implements UserService {
         }
         user.setDeptName(deptName);
         user.setManager(isMannger.get());
+        user = userDeptRoleService.findUserRole(user);
+        List<Department> byUserId = userDeptRoleService.findByUserId(user.getId());
+        if (byUserId != null || !byUserId.isEmpty()) {
+            user.setRoleList(byUserId.stream().map(Department::getRole).collect(Collectors.toList()));
+        }
         return user;
     }
 

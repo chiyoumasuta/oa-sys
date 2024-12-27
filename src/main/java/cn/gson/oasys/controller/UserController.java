@@ -1,6 +1,9 @@
 package cn.gson.oasys.controller;
 
+import cn.gson.oasys.entity.Permissions;
+import cn.gson.oasys.entity.Role;
 import cn.gson.oasys.entity.User;
+import cn.gson.oasys.service.UserDeptRoleService;
 import cn.gson.oasys.service.UserService;
 import cn.gson.oasys.support.Page;
 import cn.gson.oasys.support.UtilResultSet;
@@ -19,6 +22,8 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+    @Autowired
+    private UserDeptRoleService userDeptRoleService;
 
     @RequestMapping(value = "/page", method = RequestMethod.POST)
     @ApiOperation(value = "分页获取用户列表")
@@ -132,5 +137,23 @@ public class UserController {
     @ApiOperation(value = "通过id查询用户信息，id用','隔开")
     public UtilResultSet findByIds(String ids) {
         return UtilResultSet.success(userService.findByIds(ids));
+    }
+
+    @RequestMapping(value = "findAllPermissions", method = RequestMethod.POST)
+    @ApiOperation(value = "获取权限树")
+    public UtilResultSet findAllPermissions(String ids) {
+        return UtilResultSet.success(userDeptRoleService.findAllPermissions());
+    }
+
+    @RequestMapping(value = "saveOrUpdateRole", method = RequestMethod.POST)
+    @ApiOperation(value = "添加/修改")
+    public UtilResultSet saveOrUpdateRole(Role role) {
+        return UtilResultSet.success(userDeptRoleService.saveOrUpdateRole(role));
+    }
+
+    @RequestMapping(value = "findAllRoles", method = RequestMethod.POST)
+    @ApiOperation(value = "获取角色列表")
+    public UtilResultSet findAllRoles(String ids) {
+        return UtilResultSet.success(userDeptRoleService.findAllRoles());
     }
 }

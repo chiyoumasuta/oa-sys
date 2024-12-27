@@ -1,5 +1,6 @@
 package cn.gson.oasys.controller;
 
+import cn.gson.oasys.dao.UserDao;
 import cn.gson.oasys.entity.Department;
 import cn.gson.oasys.entity.User;
 import cn.gson.oasys.entity.UserDeptRole;
@@ -40,6 +41,8 @@ public class LoginController {
     private String resetPassword;
 
     private final Pattern pattern = Pattern.compile("^(?![A-Z]*$)(?![a-z]*$)(?![0-9]*$)(?![^a-zA-Z0-9]*$)\\S{12,20}$");
+    @Autowired
+    private UserDao userDao;
 
     @RequestMapping(value = "/check")
     @ApiOperation(value = "检查用户是否登录")
@@ -60,7 +63,10 @@ public class LoginController {
         User currentUser = userService.verifyAndGetUser(phone, password);
         if (currentUser != null) {
             UserTokenHolder.setUser(currentUser);
+            currentUser.setToken(null);
             String token = JwtUtil.createToken(currentUser);
+            currentUser.setToken(token);
+            userDao.updateByPrimaryKeySelective(currentUser);
             return UtilResultSet.success(token);
         }
         return UtilResultSet.bad_request("账号或密码不正确");
@@ -115,7 +121,7 @@ public class LoginController {
     @ApiOperation(value = "获取登录用户信息")
     public Object userInfo() {
         User user = UserTokenHolder.getUser();
-        if (user == null) {
+        if (user == null||!UserTokenHolder.getRequest().getHeader("token").equals(user.getToken())) {
             throw new UnknownAccountException();
         }
         return UtilResultSet.success(userService.findById(user.getId()));

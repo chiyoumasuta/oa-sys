@@ -146,7 +146,7 @@ public class UserController {
     }
 
     @RequestMapping(value = "saveOrUpdateRole", method = RequestMethod.POST)
-    @ApiOperation(value = "添加/修改")
+    @ApiOperation(value = "添加/修改角色")
     public UtilResultSet saveOrUpdateRole(Role role) {
         return UtilResultSet.success(userDeptRoleService.saveOrUpdateRole(role));
     }

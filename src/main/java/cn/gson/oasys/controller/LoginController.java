@@ -121,7 +121,7 @@ public class LoginController {
     @ApiOperation(value = "获取登录用户信息")
     public Object userInfo() {
         User user = UserTokenHolder.getUser();
-        if (user == null||!UserTokenHolder.getRequest().getHeader("token").equals(user.getToken())) {
+        if (user == null) {
             throw new UnknownAccountException();
         }
         return UtilResultSet.success(userService.findById(user.getId()));

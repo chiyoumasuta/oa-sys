@@ -39,6 +39,9 @@ public class JwtUtil {
         Map<String, Object> map = new HashMap<>();
         map.put("alg", "HS256");
         map.put("typ", "JWT");
+        user.setToken(null);
+        user.setPassword(null);
+        user.setPhone(null);
 
         String parse = JacksonUtil.parse(user);
 

@@ -73,7 +73,7 @@ public class CustomerInformationServiceImpl implements CustomerInformationServic
             item.setUpdatePersonName(user.getUserName());
             return customerInformationItemDao.insert(item)>0;
         }else {
-            if (customerInformationDao.selectByPrimaryKey(item.getId())==null) {
+            if (customerInformationItemDao.selectByPrimaryKey(item.getId())==null) {
                 throw new ServiceException("参数错误");
             }
             item.setUpdatePerson(user.getId());

@@ -22,7 +22,7 @@ public class CustomerInformationController {
     @RequestMapping(value = "/page", method = RequestMethod.POST)
     @ApiOperation("分页查询客户数据")
     public UtilResultSet page(int pageSize,int pageNo,String contactPerson){
-        return UtilResultSet.success(customerInformationService.page(pageSize,pageNo,contactPerson));
+        return UtilResultSet.success(customerInformationService.page(pageNo,pageSize,contactPerson));
     }
 
     @RequestMapping(value = "/saveOrUpdate", method = RequestMethod.POST)

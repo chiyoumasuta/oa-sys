@@ -187,11 +187,11 @@ public class FileServiceImpl implements FileService {
     public boolean drop(String fileIds) {
         for (Long fileId : Arrays.stream(fileIds.split(",")).filter(Objects::nonNull).map(Long::valueOf).collect(Collectors.toList())) {
             File file = flDao.selectByPrimaryKey(fileId);
-            if (!file.getUserId().equals(UserTokenHolder.getUser().getId())||!UserTokenHolder.isAdmin()) {
+            if (!file.getUserId().equals(UserTokenHolder.getUser().getId())&&!UserTokenHolder.isAdmin()) {
                 throw new ServiceException("非本人文件/管理员无法操作");
             }
             if (file.isFileInTrash()){
-                return delete(String.valueOf(file.getFileId()));
+                delete(String.valueOf(file.getFileId()));
             }else {
                 file.setFileInTrash(true);
             }

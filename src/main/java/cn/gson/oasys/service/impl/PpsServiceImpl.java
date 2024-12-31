@@ -84,7 +84,13 @@ public class PpsServiceImpl implements PpsService {
             pps.setDeptName(departmentService.findDepartmentById(String.valueOf(pps.getDeptId())).get(0).getName());
             pps.setInvalid(false);
             return ppsDao.insert(pps) > 0;
-        } else return ppsDao.updateByPrimaryKeySelective(pps) > 0;
+        } else {
+            Pps ppsOld = ppsDao.selectByPrimaryKey(pps.getId());
+            if (!ppsOld.getCreateUser().equals(user.getId())) {
+                throw new ServiceException("非创建人不能修改");
+            }
+            return ppsDao.updateByPrimaryKeySelective(pps) > 0;
+        }
     }
 
     /**

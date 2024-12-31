@@ -266,13 +266,6 @@ public class UserServiceImpl implements UserService {
         return user;
     }
 
-    @Override
-    public List<User> findAllByDeptId(Long deptId) {
-        Example example = new Example(User.class);
-        example.createCriteria().andLike("deptId", "%" + deptId + "%");
-        return userDao.selectByExample(example);
-    }
-
     /**
      * 通过Id查询用户
      *

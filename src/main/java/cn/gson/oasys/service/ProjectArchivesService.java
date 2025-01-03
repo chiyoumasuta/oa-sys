@@ -2,6 +2,7 @@ package cn.gson.oasys.service;
 
 import cn.gson.oasys.entity.ProjectArchives;
 import cn.gson.oasys.support.Page;
+import cn.gson.oasys.vo.ProjectArchivesVo;
 
 public interface ProjectArchivesService {
     /**
@@ -27,5 +28,5 @@ public interface ProjectArchivesService {
     /**
      * 分页查询数据
      */
-    Page<ProjectArchives> page(Integer pageNo,Integer pageSize,String project);
+    Page<ProjectArchivesVo> page(Integer pageNo, Integer pageSize, String project);
 }

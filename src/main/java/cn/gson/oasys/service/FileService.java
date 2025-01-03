@@ -62,7 +62,7 @@ public interface FileService {
     /**
      * 通过id查询文件
      */
-    List<File> findByIds(List<Long> ids);
+    List<File> findByIds(String ids);
 
     /**
      * 添加文件标签

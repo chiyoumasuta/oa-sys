@@ -22,17 +22,17 @@ public class ProjectArchivesVo {
     private String project;//项目名称
     private String createUser;//创建人
     private Date createTime;//创建时间
-    private File extendedRecordSheet;//拓展记录表
+    private List<File> extendedRecordSheet;//拓展记录表
     private List<User> extendedRecordSheetPerson;
-    private File scheme;//方案
+    private List<File> scheme;//方案
     private List<User> schemePerson;
-    private File meetingMinutes;//立项会议纪要
+    private List<File> meetingMinutes;//立项会议纪要
     private List<User> meetingMinutesPerson;
     private List<File> biddingDocuments;//招投标文件（多个）
     private List<User> biddingDocumentsPerson;
-    private File contract;//合同
+    private List<File> contract;//合同
     private List<User> contractPerson;
-    private File constructionMaterials;//项目施工资料
+    private List<File> constructionMaterials;//项目施工资料
     private List<User> constructionMaterialsPerson;
     private List<File> afterSalesInformation;//售后资料
     private List<User> afterSalesInformationPerson;

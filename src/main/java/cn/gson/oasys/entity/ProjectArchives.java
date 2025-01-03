@@ -19,7 +19,7 @@ public class ProjectArchives {
     @Column(name = "project",columnDefinition = "项目名称")
     private String project;
     @Column(name = "create_user",columnDefinition = "创建人")
-    private String createUser;
+    private Long createUser;
     @Column(name = "create_time",columnDefinition = "创建时间")
     private Date createTime;
     @Column(name = "extended_record_sheet",columnDefinition = "拓展记录表")

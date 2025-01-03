@@ -143,10 +143,10 @@ public class PpsServiceImpl implements PpsService {
         if (!ppsItems.isEmpty()) {
             return ppsItems.stream().map(it->{
                 if (it.getScheme()!=null){
-                    it.setSchemeFile(fileService.findByIds(Collections.singletonList(it.getScheme())).get(0));
+                    it.setSchemeFile(fileService.findByIds(String.valueOf(it.getScheme())).get(0));
                 }
                 if(it.getReport()!=null){
-                    it.setReportFile(fileService.findByIds(Collections.singletonList(it.getReport())).get(0));
+                    it.setReportFile(fileService.findByIds(String.valueOf(it.getReport())).get(0));
                 }
                 return it;
             }).collect(Collectors.toList());

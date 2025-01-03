@@ -273,8 +273,12 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public List<User> findByIds(String ids) {
-        Example example = new Example(User.class);
-        example.createCriteria().andIn("id", Arrays.asList(ids.split(",")));
-        return userDao.selectByExample(example);
+        if (StringUtils.isEmpty(ids)) {
+            return new ArrayList<>();
+        } else {
+            Example example = new Example(User.class);
+            example.createCriteria().andIn("id", Arrays.asList(ids.split(",")));
+            return userDao.selectByExample(example);
+        }
     }
 }

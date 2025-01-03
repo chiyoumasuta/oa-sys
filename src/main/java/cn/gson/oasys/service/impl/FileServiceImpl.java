@@ -9,6 +9,7 @@ import cn.gson.oasys.support.exception.ServiceException;
 import cn.gson.oasys.support.UserTokenHolder;
 import cn.gson.oasys.vo.FileListVo;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -68,6 +69,7 @@ public class FileServiceImpl implements FileService {
         fileDb.setUploadTime(new Date());
         fileDb.setContentType(file.getContentType());
         fileDb.setUserId(user.getId());
+        fileDb.setUserName(user.getUserName());
         flDao.insert(fileDb);
 
         return fileDb.getFileId();
@@ -295,10 +297,15 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public List<File> findByIds(List<Long> ids) {
-        Example example = new Example(File.class);
-        example.createCriteria().andIn("fileId", ids);
-        return flDao.selectByExample(example);
+    public List<File> findByIds(String ids) {
+        if (StringUtils.isBlank(ids)) {
+            return new ArrayList<>();
+        }else {
+            List<Long> collect = Arrays.stream(ids.split(",")).map(Long::valueOf).collect(Collectors.toList());
+            Example example = new Example(File.class);
+            example.createCriteria().andIn("fileId", collect);
+            return flDao.selectByExample(example);
+        }
     }
 
     @Override
@@ -306,7 +313,7 @@ public class FileServiceImpl implements FileService {
         if (ids==null){
             throw new ServiceException("标签和文件不能为空");
         }
-        List<File> byIds = findByIds(Arrays.stream(ids.split(",")).map(Long::valueOf).collect(Collectors.toList()));
+        List<File> byIds = findByIds(ids);
         Set<String> tagList = new HashSet<>(Arrays.asList(tags.split(",")));
         for (File file : byIds) {
             if (file.getTag()!=null){

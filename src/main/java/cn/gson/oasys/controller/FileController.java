@@ -203,4 +203,28 @@ public class FileController {
                 .contentType(MediaType.parseMediaType("application/octet-stream"))
                 .body(new InputStreamResource(file.getInputStream()));
     }
+
+    // 分享文件
+    @RequestMapping(value = "/addTag", method = RequestMethod.POST)
+    @ApiOperation(value = "添加标签,批量用,隔开")
+    public UtilResultSet addTag(String tag, String ids) {
+        try {
+            fileService.addTag(tag, ids);
+            return UtilResultSet.success("添加标签成功");
+        } catch (Exception e) {
+            return UtilResultSet.bad_request("添加标签失败:" + e.getMessage());
+        }
+    }
+
+    // 分享文件
+    @RequestMapping(value = "/deleteTag", method = RequestMethod.POST)
+    @ApiOperation(value = "删除标签")
+    public UtilResultSet deleteTag(String tag,Long id) {
+        try {
+            fileService.deleteTag(tag,id);
+            return UtilResultSet.success("删除标签成功");
+        } catch (Exception e) {
+            return UtilResultSet.bad_request("删除标签失败:" + e.getMessage());
+        }
+    }
 }

@@ -109,18 +109,17 @@ public class FileServiceImpl implements FileService {
         Long userId = UserTokenHolder.getUser().getId();
         Long father = nowPath == null ? 0 : nowPath;
         Example example = new Example(File.class);
-        if (tags!=null){
-            example.createCriteria().andIn("tags", Arrays.asList(tags.split(",")));
-        }
         if ("回收站".equals(type) || "共享文件夹".equals(type)) {
             example.createCriteria().andLike("sharePeople", "%" + userId + "%").orEqualTo("userId", userId);
         } else {
             example.createCriteria().andEqualTo("father", father);
             Example.Criteria criteria = example.createCriteria();
-            criteria.andLike("sharePeople", "%" + userId + "%").orEqualTo("userId", userId);
+            criteria.andEqualTo("userId", userId);
             example.and(criteria);
         }
-        List<File> byUserIdAndFather = flDao.selectByExample(example);
+        List<File> byUserIdAndFather = flDao.selectByExample(example).stream()
+                .filter(it->tags==null||(it.getTag()!=null&&new HashSet<>(Arrays.asList(it.getTag().split(","))).containsAll(Arrays.asList(tags.split(",")))))
+                .collect(Collectors.toList());
         FileListVo result = new FileListVo();
         type = type == null ? "所有文件" : type;
         switch (type) {

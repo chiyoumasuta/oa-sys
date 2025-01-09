@@ -56,4 +56,6 @@ public class ProjectArchives {
     private Date auditTime;
     @Column(name = "audit",columnDefinition = "是否审核")
     private boolean audit;
+    @Column(name = "delete",columnDefinition = "是否删除")
+    private boolean delete;
 }

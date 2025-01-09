@@ -18,6 +18,7 @@ import tk.mybatis.mapper.entity.Example;
 
 import javax.annotation.Resource;
 import java.lang.reflect.Field;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,6 +34,8 @@ public class ProjectArchivesServiceImpl implements ProjectArchivesService {
 
     @Override
     public boolean add(ProjectArchives projectArchives) {
+        projectArchives.setCreateUser(UserTokenHolder.getUser().getId());
+        projectArchives.setCreateTime(new Date());
         return projectArchivesDao.insert(projectArchives) > 0;
     }
 
@@ -46,26 +49,31 @@ public class ProjectArchivesServiceImpl implements ProjectArchivesService {
         } catch (NoSuchFieldException | IllegalAccessException e) {
             System.out.println(e.getMessage());
         }
-        return false;
+        return projectArchivesDao.updateByPrimaryKeySelective(archives) > 0;
     }
 
     @Override
     public boolean delete(Long id) {
         ProjectArchives projectArchives = projectArchivesDao.selectByPrimaryKey(id);
-        if (!projectArchives.getAuditUser().equals(UserTokenHolder.getUser().getId())) {
+        if (!projectArchives.getCreateUser().equals(UserTokenHolder.getUser().getId())) {
             throw new ServiceException("只有创建人能修改");
         }
-        return projectArchivesDao.deleteByPrimaryKey(id) > 0;
+        projectArchives.setDelete(true);
+        return projectArchivesDao.updateByPrimaryKeySelective(projectArchives) > 0;
     }
 
     @Override
-    public Page<ProjectArchivesVo> page(Integer pageNo, Integer pageSize, String project) {
+    public Page<ProjectArchivesVo> page(Integer pageNo, Integer pageSize, String project, Long id) {
         PageHelper.startPage(pageNo, pageSize);
         Example example = new Example(ProjectArchives.class);
         Example.Criteria criteria = example.createCriteria();
         if (StringUtils.isNotBlank(project)) {
             criteria.andEqualTo("project", project);
         }
+        if (id!=null){
+            criteria.andEqualTo("id", id);
+        }
+        criteria.andEqualTo("delete",false);
         com.github.pagehelper.Page<ProjectArchives> page = (com.github.pagehelper.Page<ProjectArchives>) projectArchivesDao.selectByExample(example);
         List<ProjectArchivesVo> result = page.getResult().stream().map(it->{
             ProjectArchivesVo vo = new ProjectArchivesVo();
@@ -93,5 +101,18 @@ public class ProjectArchivesServiceImpl implements ProjectArchivesService {
             return vo;
         }).collect(Collectors.toList());
         return new Page<>(pageNo, pageSize, page.getTotal(), result);
+    }
+
+    /**
+     * @param id
+     * @return
+     */
+    @Override
+    public boolean audit(Long id) {
+        ProjectArchives projectArchives = projectArchivesDao.selectByPrimaryKey(id);
+        projectArchives.setAudit(true);
+        projectArchives.setAuditUser(UserTokenHolder.getUser().getId());
+        projectArchives.setAuditTime(new Date());
+        return projectArchivesDao.updateByPrimaryKeySelective(projectArchives)>0;
     }
 }

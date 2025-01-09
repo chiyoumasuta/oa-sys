@@ -19,7 +19,7 @@ public class ProjectArchivesController {
     @Resource
     private ProjectArchivesService projectArchivesService;
 
-    @RequestMapping(value = "",method = RequestMethod.POST)
+    @RequestMapping(value = "add",method = RequestMethod.POST)
     @ApiOperation(value = "新增项目")
     public UtilResultSet add(ProjectArchives projectArchives){
         if (projectArchivesService.add(projectArchives)){
@@ -27,7 +27,7 @@ public class ProjectArchivesController {
         }return UtilResultSet.bad_request("新增失败");
     }
 
-    @RequestMapping(value = "",method = RequestMethod.POST)
+    @RequestMapping(value = "update",method = RequestMethod.POST)
     @ApiOperation(value = "修改")
     public UtilResultSet update(Long id,String key,String value,boolean type){
         if (projectArchivesService.update(id, key, value, type)) {
@@ -35,7 +35,7 @@ public class ProjectArchivesController {
         }else return UtilResultSet.bad_request("修改失败");
     }
 
-    @RequestMapping(value = "",method = RequestMethod.POST)
+    @RequestMapping(value = "delete",method = RequestMethod.POST)
     @ApiOperation(value = "删除，仅限创建人删除")
     public UtilResultSet delete(Long id){
         if (projectArchivesService.delete(id)){
@@ -43,9 +43,17 @@ public class ProjectArchivesController {
         }else return UtilResultSet.bad_request( "删除失败");
     }
 
-    @RequestMapping(value = "",method = RequestMethod.POST)
+    @RequestMapping(value = "page",method = RequestMethod.POST)
     @ApiOperation(value = "分页查询")
-    public UtilResultSet page(Integer pageNo, Integer pageSize, String project){
-        return UtilResultSet.success(projectArchivesService.page(pageNo,pageSize,project));
+    public UtilResultSet page(Integer pageNo, Integer pageSize, String project, Long id){
+        return UtilResultSet.success(projectArchivesService.page(pageNo,pageSize,project,id));
+    }
+
+    @RequestMapping(value = "audit",method = RequestMethod.POST)
+    @ApiOperation(value = "分页查询")
+    public UtilResultSet audit(Long id){
+        if (projectArchivesService.audit(id)){
+            return UtilResultSet.success("审核通过");
+        }else return UtilResultSet.bad_request( "审核不通过");
     }
 }

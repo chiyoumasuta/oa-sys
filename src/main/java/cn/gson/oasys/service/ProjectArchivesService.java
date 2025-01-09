@@ -28,5 +28,7 @@ public interface ProjectArchivesService {
     /**
      * 分页查询数据
      */
-    Page<ProjectArchivesVo> page(Integer pageNo, Integer pageSize, String project);
+    Page<ProjectArchivesVo> page(Integer pageNo, Integer pageSize, String project, Long id);
+
+    boolean audit(Long id);
 }

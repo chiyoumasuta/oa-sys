@@ -241,7 +241,7 @@ public class UserServiceImpl implements UserService {
     public User findById(Long userId) {
         User user = userDao.selectByPrimaryKey(userId);
         if (user == null) {
-            throw new UnknownAccountException();
+            return new User();
         }
         String deptName;
         AtomicBoolean isMannger = new AtomicBoolean(false);

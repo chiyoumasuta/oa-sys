@@ -133,17 +133,11 @@ public class FileServiceImpl implements FileService {
                         .filter(it -> it.isFileInTrash() && Objects.equals(it.getUserId(), userId) && it.getModel().equals(File.model.CLOUD))
                         .collect(Collectors.toList()));
                 break;
-            case "报销附件":
-                result.setFile(byUserIdAndFather.stream()
-                        .filter(it -> it.getModel().equals(File.model.REIMBURSEMENT) && it.getUserId().equals(userId))
-                        .collect(Collectors.toList()));
-                break;
             case "共享文件夹":
                 result.setFile(byUserIdAndFather.stream().filter(File::isShare).collect(Collectors.toList()));
                 break;
             case "所有文件夹":
                 List<File> collect = byUserIdAndFather.stream().filter(it ->"folder".equals(it.getType()) && !it.isFileInTrash()&&it.getUserId().equals(UserTokenHolder.getUser().getId())).collect(Collectors.toList());
-
 //                Map<Long, File> fileMap = new HashMap<>();
 //                List<File> roots = new ArrayList<>();
 //
@@ -300,10 +294,12 @@ public class FileServiceImpl implements FileService {
         if (StringUtils.isBlank(ids)) {
             return new ArrayList<>();
         }else {
-            List<Long> collect = Arrays.stream(ids.split(",")).map(Long::valueOf).collect(Collectors.toList());
+            List<Long> collect = Arrays.stream(ids.split(",")).filter(it->!it.isEmpty()).map(Long::valueOf).collect(Collectors.toList());
             Example example = new Example(File.class);
             example.createCriteria().andIn("fileId", collect);
-            return flDao.selectByExample(example);
+            if (collect.isEmpty()){
+                return new ArrayList<>();
+            }else return flDao.selectByExample(example);
         }
     }
 

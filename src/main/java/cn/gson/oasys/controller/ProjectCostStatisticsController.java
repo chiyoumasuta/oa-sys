@@ -50,8 +50,9 @@ public class ProjectCostStatisticsController {
         String[] heads = new String[]{"项目","人员","费用明细","金额","天数","备注"};
         String[] fields = new String[]{"project","person","costDetail","cost","days","remark"};
         List<String[]> rows = ExcelUtil.getRows(fields, lists);
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         try {
-            String fileName = "报销导出-" + (startDate==null?"":startDate)+"-"+(endDate==null?"":endDate)+ ".xlsx";
+            String fileName = "报销导出-" + (startDate==null?"":sdf.format(startDate))+"-"+(endDate==null?"":sdf.format(endDate))+ ".xlsx";
             response.setHeader("Content-Disposition", "attachment;filename=" + new String(fileName.getBytes(StandardCharsets.UTF_8), Charset.forName("iso8859-1")));
             response.setContentType("application/octet-stream;charset=utf8");
             ExcelUtil.download(null, heads, rows, response.getOutputStream());

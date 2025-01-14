@@ -74,6 +74,10 @@ public class Reimbursement {
     private String businessTravel;
     @Column(name = "opinions", columnDefinition = "审核意见")
     private String opinions;
+    @Column(name = "deploy_id",columnDefinition = "流程id")
+    private String deployId;
+    @Column(name = "deploy_type",columnDefinition = "流程类型")
+    private String deployType;
     @Transient
     private List<String> opinionsList;
     @Transient
@@ -92,7 +96,8 @@ public class Reimbursement {
         ACCOUNTING("财务审核", 3),
         GENERAL("总经理审核", 4),
         APPROVED("批准", 5),
-        REJECTED("驳回", 6);
+        REJECTED("驳回", 6),
+        REJECTED_SELF("退回",7);
         private final String name;
         private final int leave;
 

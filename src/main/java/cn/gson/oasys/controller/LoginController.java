@@ -84,7 +84,7 @@ public class LoginController {
     @ApiOperation(value = "修改密码")
     public UtilResultSet changePwd(String oldpwd, String newpwd, HttpServletRequest req) {
         try {
-            User user = UserTokenHolder.getUser();
+            User user = userDao.selectByPrimaryKey(UserTokenHolder.getUser().getId());
             if (newpwd.length() < 12) {
                 return UtilResultSet.bad_request("密码长度最少12位");
             }
@@ -107,7 +107,7 @@ public class LoginController {
     @ApiOperation(value = "重置密码")
     public UtilResultSet resetInitPwd(HttpServletRequest req) {
         try {
-            String phone = UserTokenHolder.getCurrentUser();
+            String phone = userDao.selectByPrimaryKey(UserTokenHolder.getUser().getId()).getPhone();
             if (userService.changePwd(phone, resetPassword)) {
                 return UtilResultSet.success("密码设置成功");
             }

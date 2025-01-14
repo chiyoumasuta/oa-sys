@@ -43,4 +43,9 @@ public interface ReimbursementService {
     Reimbursement selectOneById(Long id);
 
     Document getDoc(Document doc, Reimbursement data) throws IOException;
+
+    /**
+     * 重新推送
+     */
+    boolean reStart(String deployId, String dateJson, String type,Long oldId);
 }

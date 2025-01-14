@@ -56,6 +56,8 @@ public class ReimbursementServiceImpl implements ReimbursementService {
     private SysConfigService sysConfigService;
     @Resource
     private UserDeptRoleService userDeptRoleService;
+    @Resource
+    private FlowableService flowableService;
 
     @Override
     public Page<Reimbursement> page(int pageSize, int pageNo, Date startDate, Date endDate, String project, int searchType) {
@@ -74,7 +76,7 @@ public class ReimbursementServiceImpl implements ReimbursementService {
         } else{
             criteria.andEqualTo("submitUser", user.getId());
         }
-        criteria.andIn("status", Arrays.asList(Reimbursement.Status.APPROVED, Reimbursement.Status.REJECTED));
+        criteria.andIn("status", Arrays.asList(Reimbursement.Status.APPROVED, Reimbursement.Status.REJECTED,Reimbursement.Status.REJECTED_SELF));
         com.github.pagehelper.Page<Reimbursement> data = (com.github.pagehelper.Page<Reimbursement>) reimbursementDao.selectByExample(example);
         List<Reimbursement> result = data.getResult().stream()
                 .peek(it -> {
@@ -244,11 +246,13 @@ public class ReimbursementServiceImpl implements ReimbursementService {
 
     @Override
     public void updateItem(ReimbursementItem reimbursementItem) {
-        User user = UserTokenHolder.getUser();
-        if (!user.getUserName().equals("阮咏薇")) throw new ServiceException("只允许财务修改数据");
-        ReimbursementItem oldData = reimbursementItemDao.selectByPrimaryKey(reimbursementItem.getId());
-        if (oldData == null) {
-            throw new ServiceException("未找到数据");
+        if (reimbursementItem.getParticipants() != null&& !reimbursementItem.getParticipants().isEmpty()) {
+            User byId = userService.findById(Long.valueOf(reimbursementItem.getParticipants()));
+            if (byId==null) throw new ServiceException("参与人错误");
+            reimbursementItem.setParticipantsName(byId.getUserName());
+        }
+        if (reimbursementItem.getId() == null) {
+            reimbursementItemDao.insert(reimbursementItem);
         }
         reimbursementItemDao.updateByPrimaryKeySelective(reimbursementItem);
     }
@@ -282,48 +286,53 @@ public class ReimbursementServiceImpl implements ReimbursementService {
         tableLog.addCell(head0);
         Cell h9 = new Cell(2, 1).add(new Paragraph("发起人").addStyle(centeredStyle)).setFont(font).setBackgroundColor(new DeviceRgb(220, 220, 220));
         Cell v9 = new Cell(2, 1).add(new Paragraph(data.getSubmitUserName())).setFont(font);
-        Cell h10 = new Cell(2, 1).add(new Paragraph("发起时间").addStyle(centeredStyle)).setFont(font).setBackgroundColor(new DeviceRgb(220, 220, 220));
-        Cell v10 = new Cell(2, 1).add(new Paragraph(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(data.getSubmitDate()))).setFont(font);
-        Cell h0 = new Cell(2, 1).add(new Paragraph("费用类型").addStyle(centeredStyle)).setFont(font).setBackgroundColor(new DeviceRgb(220, 220, 220));
-        Cell v0 = new Cell(2, 1).add(new Paragraph(data.getType().getName())).setFont(font);
-        Cell h1 = new Cell(2, 1).add(new Paragraph("报销金额").addStyle(centeredStyle)).setFont(font).setBackgroundColor(new DeviceRgb(220, 220, 220));
-        Cell v1 = new Cell(2, 1).add(new Paragraph(String.valueOf(data.getReimbursementAmount()))).setFont(font);
-        Cell h2 = new Cell(2, 1).add(new Paragraph("地点").addStyle(centeredStyle)).setFont(font).setBackgroundColor(new DeviceRgb(220, 220, 220));
-        Cell v2 = new Cell(2, 1).add(new Paragraph(data.getPlace())).setFont(font);
-        Cell h3 = new Cell(2, 1).add(new Paragraph("所属项目").addStyle(centeredStyle)).setFont(font).setBackgroundColor(new DeviceRgb(220, 220, 220));
-        Cell v3 = new Cell(2, 1).add(new Paragraph(data.getProject())).setFont(font);
-        Cell h4 = new Cell(2, 1).add(new Paragraph("拜访单位").addStyle(centeredStyle)).setFont(font).setBackgroundColor(new DeviceRgb(220, 220, 220));
-        Cell v4 = new Cell(2, 1).add(new Paragraph(data.getCompany())).setFont(font);
-        Cell h5 = new Cell(2, 1).add(new Paragraph("关联工单").addStyle(centeredStyle)).setFont(font).setBackgroundColor(new DeviceRgb(220, 220, 220));
-        Cell v5 = new Cell(2, 1).add(new Paragraph("无")).setFont(font);
-        Cell h6 = new Cell(2, 1).add(new Paragraph("开始时间").addStyle(centeredStyle)).setFont(font).setBackgroundColor(new DeviceRgb(220, 220, 220));
-        Cell v6 = new Cell(2, 1).add(new Paragraph(sdf.format(data.getStartTime())+data.getStartPeriod())).setFont(font);
-        Cell h7 = new Cell(2, 1).add(new Paragraph("结束时间").addStyle(centeredStyle)).setFont(font).setBackgroundColor(new DeviceRgb(220, 220, 220));
-        Cell v7 = new Cell(2, 1).add(new Paragraph(sdf.format(data.getEndTime())+data.getEndPeriod())).setFont(font);
-        Cell h8 = new Cell(2, 1).add(new Paragraph("部门").addStyle(centeredStyle)).setFont(font).setBackgroundColor(new DeviceRgb(220, 220, 220));
-        Cell v8 = new Cell(2, 1).add(new Paragraph(data.getDepartmentName())).setFont(font);
         tableLog.addCell(h9);
         tableLog.addCell(v9);
+        Cell h10 = new Cell(2, 1).add(new Paragraph("发起时间").addStyle(centeredStyle)).setFont(font).setBackgroundColor(new DeviceRgb(220, 220, 220));
+        Cell v10 = new Cell(2, 1).add(new Paragraph(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(data.getSubmitDate()))).setFont(font);
         tableLog.addCell(h10);
         tableLog.addCell(v10);
+        Cell h0 = new Cell(2, 1).add(new Paragraph("费用类型").addStyle(centeredStyle)).setFont(font).setBackgroundColor(new DeviceRgb(220, 220, 220));
+        Cell v0 = new Cell(2, 1).add(new Paragraph(data.getType().getName())).setFont(font);
         tableLog.addCell(h0);
         tableLog.addCell(v0);
+        Cell h1 = new Cell(2, 1).add(new Paragraph("报销金额").addStyle(centeredStyle)).setFont(font).setBackgroundColor(new DeviceRgb(220, 220, 220));
+        Cell v1 = new Cell(2, 1).add(new Paragraph(String.valueOf(data.getReimbursementAmount()))).setFont(font);
         tableLog.addCell(h1);
         tableLog.addCell(v1);
+        Cell h2 = new Cell(2, 1).add(new Paragraph("地点").addStyle(centeredStyle)).setFont(font).setBackgroundColor(new DeviceRgb(220, 220, 220));
+        Cell v2 = new Cell(2, 1).add(new Paragraph(data.getPlace())).setFont(font);
         tableLog.addCell(h2);
         tableLog.addCell(v2);
-        tableLog.addCell(h3);
-        tableLog.addCell(v3);
-        tableLog.addCell(h4);
-        tableLog.addCell(v4);
+        if (data.getProject() !=null && !data.getProject().isEmpty()){
+            Cell h3 = new Cell(2, 1).add(new Paragraph("所属项目").addStyle(centeredStyle)).setFont(font).setBackgroundColor(new DeviceRgb(220, 220, 220));
+            Cell v3 = new Cell(2, 1).add(new Paragraph(data.getProject())).setFont(font);
+            tableLog.addCell(h3);
+            tableLog.addCell(v3);
+        }
+        if (data.getCompany() !=null && !data.getCompany().isEmpty()){
+            Cell h4 = new Cell(2, 1).add(new Paragraph("拜访单位").addStyle(centeredStyle)).setFont(font).setBackgroundColor(new DeviceRgb(220, 220, 220));
+            Cell v4 = new Cell(2, 1).add(new Paragraph(data.getCompany())).setFont(font);
+            tableLog.addCell(h4);
+            tableLog.addCell(v4);
+        }
+        Cell h5 = new Cell(2, 1).add(new Paragraph("关联工单").addStyle(centeredStyle)).setFont(font).setBackgroundColor(new DeviceRgb(220, 220, 220));
+        Cell v5 = new Cell(2, 1).add(new Paragraph("无")).setFont(font);
         tableLog.addCell(h5);
         tableLog.addCell(v5);
+        Cell h6 = new Cell(2, 1).add(new Paragraph("开始时间").addStyle(centeredStyle)).setFont(font).setBackgroundColor(new DeviceRgb(220, 220, 220));
+        Cell v6 = new Cell(2, 1).add(new Paragraph(sdf.format(data.getStartTime())+data.getStartPeriod())).setFont(font);
         tableLog.addCell(h6);
         tableLog.addCell(v6);
+        Cell h7 = new Cell(2, 1).add(new Paragraph("结束时间").addStyle(centeredStyle)).setFont(font).setBackgroundColor(new DeviceRgb(220, 220, 220));
+        Cell v7 = new Cell(2, 1).add(new Paragraph(sdf.format(data.getEndTime())+data.getEndPeriod())).setFont(font);
         tableLog.addCell(h7);
         tableLog.addCell(v7);
+        Cell h8 = new Cell(2, 1).add(new Paragraph("部门").addStyle(centeredStyle)).setFont(font).setBackgroundColor(new DeviceRgb(220, 220, 220));
+        Cell v8 = new Cell(2, 1).add(new Paragraph(data.getDepartmentName())).setFont(font);
         tableLog.addCell(h8);
         tableLog.addCell(v8);
+
         doc.add(tableLog);
 
         float[] columnBoxWidths= {200f,100f,200f,200f,200f,300f};
@@ -348,12 +357,12 @@ public class ReimbursementServiceImpl implements ReimbursementService {
             details.addCell(headE);
         } else {
             for (ReimbursementItem r : data.getDetails()) {
-                Cell cell1 = new Cell().add(new Paragraph(r.getParticipantsName())).setFont(font);
-                Cell cell2 = new Cell().add(new Paragraph(String.valueOf(r.getDays()))).setFont(font);
-                Cell cell3 = new Cell().add(new Paragraph(r.getDept())).setFont(font);
-                Cell cell4 = new Cell().add(new Paragraph(String.valueOf(r.getCost()))).setFont(font);
-                Cell cell5 = new Cell().add(new Paragraph(r.getType())).setFont(font);
-                Cell cell6 = new Cell().add(new Paragraph(r.getRemark())).setFont(font);
+                Cell cell1 = new Cell().add(new Paragraph(r.getParticipantsName()==null?"":r.getParticipantsName())).setFont(font);
+                Cell cell2 = new Cell().add(new Paragraph(String.valueOf(r.getDays()==null?"":r.getDays()))).setFont(font);
+                Cell cell3 = new Cell().add(new Paragraph(r.getDept()==null?"":r.getDept())).setFont(font);
+                Cell cell4 = new Cell().add(new Paragraph(String.valueOf(r.getCost()==null?"":r.getCost()))).setFont(font);
+                Cell cell5 = new Cell().add(new Paragraph(r.getType()==null?"":r.getType())).setFont(font);
+                Cell cell6 = new Cell().add(new Paragraph(r.getRemark()==null?"":r.getType())).setFont(font);
                 details.addCell(cell1);
                 details.addCell(cell2);
                 details.addCell(cell3);
@@ -391,5 +400,31 @@ public class ReimbursementServiceImpl implements ReimbursementService {
         doc.add(details2);
         doc.close();
         return doc;
+    }
+
+    /**
+     * 重新推送
+     *
+     * @param deployId
+     * @param dateJson
+     * @param type
+     * @param oldId
+     */
+    @Override
+    public boolean reStart(String deployId, String dateJson, String type, Long oldId) {
+        Reimbursement reimbursement = reimbursementDao.selectByPrimaryKey(oldId);
+        if (!reimbursement.getSubmitUser().equals(UserTokenHolder.getUser().getId())){
+            System.out.println("非发起用户不可重新发起");
+        }
+        if (flowableService.start(deployId, dateJson, type)){
+            if (reimbursement.getStatus().equals(Reimbursement.Status.REJECTED_SELF)) {
+                Example example = new Example(ReimbursementItem.class);
+                example.createCriteria().andEqualTo("reimbursementId",oldId);
+                reimbursementItemDao.deleteByExample(example);
+                return reimbursementDao.deleteByPrimaryKey(oldId)>0;
+            }
+            return true;
+        }
+        return false;
     }
 }

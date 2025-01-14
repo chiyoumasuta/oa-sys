@@ -258,8 +258,12 @@ public class FlowableServiceImpl implements FlowableService {
                     break;
                 case "reimbursement_process":
                     Reimbursement info = reimbursementService.getInfo(Long.valueOf(businessKey), null);
-                    if (user.getUserName().equals(assignee)||user.getUserName().equals(info.getSubmitUserName())) {
+                    if (user.getUserName().equals(assignee)) {
                         info.setStatus(Reimbursement.Status.REJECTED);
+                        info.setOpinions((info.getOpinions()==null?"":(info.getOpinions()+";"))+result);
+                        reimbursementDao.updateByPrimaryKeySelective(info);
+                    }else if(user.getUserName().equals(info.getSubmitUserName())){
+                        info.setStatus(Reimbursement.Status.REJECTED_SELF);
                         info.setOpinions((info.getOpinions()==null?"":(info.getOpinions()+";"))+result);
                         reimbursementDao.updateByPrimaryKeySelective(info);
                     }else {

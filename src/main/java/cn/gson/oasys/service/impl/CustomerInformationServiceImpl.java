@@ -91,7 +91,7 @@ public class CustomerInformationServiceImpl implements CustomerInformationServic
                 return false;
             }else {
                 customerInformation.setDelete(true);
-                return customerInformationDao.deleteByPrimaryKey(id)>0;
+                return customerInformationDao.updateByPrimaryKeySelective(customerInformation)>0;
             }
         }else {
             CustomerInformationItem customerInformationItem = customerInformationItemDao.selectByPrimaryKey(id);

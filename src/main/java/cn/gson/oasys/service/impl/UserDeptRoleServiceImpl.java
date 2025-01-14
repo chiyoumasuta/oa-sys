@@ -69,6 +69,7 @@ public class UserDeptRoleServiceImpl implements UserDeptRoleService {
     public User findUserRole(User user){
         List<UserDeptRole> userDeptRoles = findRoleByUserId(user.getId());
         List<Long> perId = new ArrayList<>();
+        List<String> roles = new ArrayList<>();
         userDeptRoles.forEach(it -> {
             if (it.getRoleId()!=null){
                 Role role = roleDao.selectByPrimaryKey(it.getRoleId());
@@ -78,12 +79,16 @@ public class UserDeptRoleServiceImpl implements UserDeptRoleService {
                     perId.addAll(collect1);
                 }
             }
+            roles.add(it.getRole());
         });
         if (!perId.isEmpty()){
             Example examplePer = new Example(Permissions.class);
             examplePer.createCriteria().andIn( "id", perId).andEqualTo("isDelete",false);
-             user.setPermissionsList(buildTree(permissionsDao.selectByExample(examplePer)));
+            user.setPermissionsList(buildTree(permissionsDao.selectByExample(examplePer)));
         }
+        user.setToken(null);
+        user.setPassword(null);
+        user.setRoleList(roles);
         return user;
     }
 

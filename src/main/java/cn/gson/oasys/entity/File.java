@@ -1,5 +1,6 @@
 package cn.gson.oasys.entity;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -45,12 +46,12 @@ public class File {
     private String userName;
     @Column(name = "tag",columnDefinition = "文件标签")
     private String tag;
+    @Column(name = "delete_time",columnDefinition = "存入回收站时间")
+    private Date deleteTime;
+    @Column(name = "source_files",columnDefinition = "源文件id")
+    private Long sourceFiles;
     @Transient
-    private List<File> files;
-
-    //临时数据
-    @Transient
-    private User user;
+    private List<File> files = new ArrayList<>();
 
     //文件类型
     public enum model {

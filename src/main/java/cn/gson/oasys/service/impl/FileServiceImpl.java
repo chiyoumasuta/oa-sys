@@ -12,12 +12,16 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import tk.mybatis.mapper.entity.Example;
 
 import javax.annotation.Resource;
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.rmi.ServerException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -109,13 +113,16 @@ public class FileServiceImpl implements FileService {
         Long userId = UserTokenHolder.getUser().getId();
         Long father = nowPath == null ? 0 : nowPath;
         Example example = new Example(File.class);
-        if ("回收站".equals(type) || "共享文件夹".equals(type)) {
+        if ("共享文件夹".equals(type)) {
             example.createCriteria().andLike("sharePeople", "%" + userId + "%").orEqualTo("userId", userId);
-        } else {
-            example.createCriteria().andEqualTo("father", father);
-            Example.Criteria criteria = example.createCriteria();
-            criteria.andEqualTo("userId", userId);
-            example.and(criteria);
+        } else if("所有文件夹".equals(type)){
+            example.createCriteria()
+                    .andEqualTo("type","folder")
+                    .andIsNull("sharePeople")
+                    .andEqualTo("userId",userId)
+                    .andEqualTo("fileInTrash",false);
+        }else {
+            example.createCriteria().andEqualTo("father", father).andEqualTo("userId", userId);
         }
         List<File> byUserIdAndFather = flDao.selectByExample(example).stream()
                 .filter(it->tags==null||(it.getTag()!=null&&new HashSet<>(Arrays.asList(it.getTag().split(","))).containsAll(Arrays.asList(tags.split(",")))))
@@ -125,7 +132,7 @@ public class FileServiceImpl implements FileService {
         switch (type) {
             case "所有文件":
                 result.setFile(byUserIdAndFather.stream()
-                        .filter(it -> !it.isFileInTrash() && it.getUserId().equals(userId) && it.getModel().equals(File.model.CLOUD))
+                        .filter(it -> !it.isFileInTrash() && it.getUserId().equals(userId) && it.getModel().equals(File.model.CLOUD)&&it.getSharePeople()==null)
                         .collect(Collectors.toList()));
                 break;
             case "回收站":
@@ -134,30 +141,29 @@ public class FileServiceImpl implements FileService {
                         .collect(Collectors.toList()));
                 break;
             case "共享文件夹":
-                result.setFile(byUserIdAndFather.stream().filter(File::isShare).collect(Collectors.toList()));
+                result.setFile(byUserIdAndFather.stream().filter(it->it.isShare()&&!it.isFileInTrash()).collect(Collectors.toList()));
                 break;
             case "所有文件夹":
-                List<File> collect = byUserIdAndFather.stream().filter(it ->"folder".equals(it.getType()) && !it.isFileInTrash()&&it.getUserId().equals(UserTokenHolder.getUser().getId())).collect(Collectors.toList());
-//                Map<Long, File> fileMap = new HashMap<>();
-//                List<File> roots = new ArrayList<>();
-//
-//                // Populate the map
-//                for (File file : collect) {
-//                    fileMap.put(file.getFileId(), file);
-//                }
-//
-//                // Build the tree
-//                for (File file : collect) {
-//                    Long parentId = file.getFather();
-//                    if (parentId == null || !fileMap.containsKey(parentId)) {
-//                        roots.add(file); // No parent, so it's a root
-//                    } else {
-//                        File parent = fileMap.get(parentId);
-//                        parent.getFiles().add(file);
-//                    }
-//                }
-//                result.setFile(roots);
-                result.setFile(collect);
+                List<File> collect = byUserIdAndFather.stream().filter(it ->"folder".equals(it.getType()) && it.getSharePeople()==null && !it.isFileInTrash()&&it.getUserId().equals(UserTokenHolder.getUser().getId())).collect(Collectors.toList());
+                Map<Long, File> fileMap = new HashMap<>();
+                List<File> roots = new ArrayList<>();
+
+                // Populate the map
+                 for (File file : collect) {
+                    fileMap.put(file.getFileId(), file);
+                }
+
+                // Build the tree
+                for (File file : collect) {
+                    Long parentId = file.getFather();
+                    if (parentId == null || !fileMap.containsKey(parentId)) {
+                        roots.add(file); // No parent, so it's a root
+                    } else {
+                        File parent = fileMap.get(parentId);
+                        parent.getFiles().add(file);
+                    }
+                }
+                result.setFile(roots);
                 break;
         }
         if (nowPath != null) {
@@ -189,9 +195,9 @@ public class FileServiceImpl implements FileService {
                 delete(String.valueOf(file.getFileId()));
             }else {
                 file.setFileInTrash(true);
+                file.setDeleteTime(new Date());
+                flDao.updateByPrimaryKeySelective(file);
             }
-            file.setShare(false);
-            flDao.updateByPrimaryKeySelective(file);
             if ("folder".equals(file.getType())) {
                 Example example = new Example(File.class);
                 example.createCriteria().andEqualTo("father", file.getFileId());
@@ -221,7 +227,6 @@ public class FileServiceImpl implements FileService {
             File fileList = flDao.selectByPrimaryKey(fileId);
             java.io.File file = new java.io.File(this.rootPath, fileList.getFilePath());
             if (file.exists() && file.isFile()) {
-                flDao.delete(fileList);
                 file.delete();
             }
             flDao.delete(fileList);
@@ -272,15 +277,42 @@ public class FileServiceImpl implements FileService {
     public boolean shareFile(String fileId, String sharePerson) {
         Example example = new Example(File.class);
         example.createCriteria().andIn("fileId", Arrays.asList(fileId.split(",")));
-        example.createCriteria().andIn("fileId", Arrays.asList(fileId.split(",")));
-        flDao.selectByExample(example).forEach(it -> {
-            File file = flDao.selectByPrimaryKey(fileId);
-            if (sharePerson == null) {
-                throw new ServiceException("请选择分享人");
+        if (sharePerson == null) {
+            throw new ServiceException("请选择分享人");
+        }
+        List<File> filesList = flDao.selectByExample(example);
+        if (filesList.isEmpty()) {
+            throw new ServiceException("共享文件不存在");
+        }
+        example.clear();
+        filesList.forEach(it -> {
+            example.createCriteria().andEqualTo("sourceFiles", it.getFileId()).andEqualTo("fileInTrash",false);
+            List<File> files = fileDao.selectByExample(example);
+            if (files.isEmpty()) {
+                it.setSourceFiles(it.getFileId());
+                it.setFileId(null);
+                it.setShare(true);
+                it.setSharePeople(sharePerson);
+                if (it.getFilePath()!=null&&!it.getFilePath().isEmpty()) {
+                    String sourceFilePath = rootPath+it.getFilePath();
+                    String newFileName = UUID.randomUUID() + "." +it.getType();
+                    String destinationFilePath = "/"+UserTokenHolder.getUser().getUserName()+"/" + newFileName;
+                    try {
+                        // 调用复制方法
+                        copyFile(sourceFilePath, rootPath+"/"+destinationFilePath);
+                        it.setFilePath(destinationFilePath);
+                    } catch (IOException e) {
+                        System.err.println("文件复制失败: " + e.getMessage());
+                    }
+                }
+                it.setUploadTime(new Date());
+                fileDao.insert(it);
+            }else {
+                File file = files.get(0);
+                file.setSharePeople((file.getSharePeople() == null ? "" : file.getSharePeople() + ",") + sharePerson);
+                flDao.updateByPrimaryKeySelective(file);
             }
-            file.setShare(true);
-            file.setSharePeople((file.getSharePeople() == null ? "" : file.getSharePeople() + ",") + sharePerson);
-            flDao.updateByPrimaryKeySelective(file);
+
         });
         return true;
     }
@@ -329,11 +361,46 @@ public class FileServiceImpl implements FileService {
         }
         Set<String> oldTags = new HashSet<>(Arrays.asList(file.getTag().split(",")));
         oldTags.remove(tag);
-        if (oldTags.size()==0){
+        if (oldTags.isEmpty()){
             file.setTag(null);
         }else {
             file.setTag(String.join(",", oldTags));
         }
         return fileDao.updateByPrimaryKey(file) > 0;
+    }
+
+    /**
+     * 复制文件
+     */
+    private static void copyFile(String sourceFilePath, String destinationFilePath) throws IOException {
+        Path sourcePath = Paths.get(sourceFilePath);
+        Path destinationPath = Paths.get(destinationFilePath);
+
+        // 确保目标目录存在
+        java.io.File destinationDir = destinationPath.getParent().toFile();
+        if (!destinationDir.exists()) {
+            boolean dirCreated = destinationDir.mkdirs();
+            if (!dirCreated) {
+                throw new IOException("无法创建目标目录: " + destinationDir.getAbsolutePath());
+            }
+        }
+
+        // 复制文件
+        Files.copy(sourcePath, destinationPath);
+    }
+    @Scheduled(cron = "0 30 2 * * ?")
+    public void deleteFileOver30 (){
+        // 创建当前时间
+        Date currentDate = new Date();
+        Example example = new Example(File.class);
+        example.createCriteria().andEqualTo("fileInTrash",true);
+        List<File> files = fileDao.selectByExample(example);
+        files.stream().filter(it->{
+            long timeDiff = it.getDeleteTime().getTime() - currentDate.getTime();
+            long daysDiff = timeDiff / (1000 * 60 * 60 * 24); // 将毫秒转换为天
+            return daysDiff > 30;
+        }).forEach(it -> {
+            delete(String.valueOf(it.getFileId()));
+        });
     }
 }

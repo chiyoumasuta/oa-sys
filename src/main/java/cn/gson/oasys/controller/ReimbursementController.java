@@ -62,16 +62,24 @@ public class ReimbursementController {
         return UtilResultSet.success("更新成功");
     }
 
+    /**
+     * 重新推送
+     */
+    @RequestMapping(value = "/reStart", method = RequestMethod.POST)
+    @ApiOperation(value = "重新推送工单")
+    public UtilResultSet reStart(String deployId, String dateJson, String type,Long oldId) {
+        if (reimbursementService.reStart(deployId, dateJson, type,oldId)) {
+            return UtilResultSet.success("重新发起成功");
+        }
+        return UtilResultSet.bad_request("重新发起失败");
+    }
+
 
 
     @RequestMapping("/pdf")
     public void pdf(Long id, HttpServletResponse resp) throws IOException {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
         Reimbursement reimbursement = reimbursementService.selectOneById(id);
-//        String watermark = reimbursement.getSubmitUserName();
-//        if (StringUtils.isBlank(watermark)){
-//            watermark="admin";
-//        }
 
         resp.setContentType("application/pdf");
         // 编码nameById以处理中文字符
@@ -81,7 +89,6 @@ public class ReimbursementController {
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(os));
 
         pdfDoc.setDefaultPageSize(PageSize.A2);
-//        pdfDoc.addEventHandler(PdfDocumentEvent.END_PAGE, new WatermarkEventHandler(watermark));
         Document doc = new Document(pdfDoc);
         Document doc1 = reimbursementService.getDoc(doc,reimbursement);
         pdfDoc.close();

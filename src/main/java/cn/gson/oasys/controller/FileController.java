@@ -194,7 +194,7 @@ public class FileController {
 
         // 设置响应头
         HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Disposition", String.format("attachment; filename=\"%s\"", file.getFilename()));
+        headers.add("Content-Disposition", String.format("inline; filename=\"%s\"", file.getFilename()));
 
         return ResponseEntity
                 .ok()
@@ -204,7 +204,6 @@ public class FileController {
                 .body(new InputStreamResource(file.getInputStream()));
     }
 
-    // 分享文件
     @RequestMapping(value = "/addTag", method = RequestMethod.POST)
     @ApiOperation(value = "添加标签,批量用,隔开")
     public UtilResultSet addTag(String tag, String ids) {
@@ -216,7 +215,6 @@ public class FileController {
         }
     }
 
-    // 分享文件
     @RequestMapping(value = "/deleteTag", method = RequestMethod.POST)
     @ApiOperation(value = "删除标签")
     public UtilResultSet deleteTag(String tag,Long id) {

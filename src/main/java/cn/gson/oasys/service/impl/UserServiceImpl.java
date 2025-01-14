@@ -68,6 +68,8 @@ public class UserServiceImpl implements UserService {
 
                 it.setDeptId(itByUserId.stream().map(UserDeptRole::getDepartmentId).map(Object::toString).collect(Collectors.joining(",")));
             }
+            it.setPassword(null);
+            it.setToken(null);
             it.setDeptName(deptName);
             it.setManager(isMannger.get());
         }).collect(Collectors.toList());
@@ -171,12 +173,6 @@ public class UserServiceImpl implements UserService {
         if (oldUser == null) {
             throw new ServiceException("当前操作用户不存在");
         }
-        if (oldUser.getId() == 1L) {
-            throw new ServiceException("超级管理员拥有所有权限，不允许操作");
-        }
-        if (!oldUser.getPassword().equals(oldpwd)) {
-            return false;
-        }
         if (oldUser.getPassword().equals(newpwd)) {
             throw new ServiceException("新密码不能和旧密码一样");
         }
@@ -190,12 +186,6 @@ public class UserServiceImpl implements UserService {
         User oldUser = findByPhone(phone);
         if (oldUser == null) {
             throw new ServiceException("当前操作用户不存在");
-        }
-        if (oldUser.getId() == 1L) {
-            throw new ServiceException("超级管理员拥有所有权限，不允许操作");
-        }
-        if (oldUser.getPassword().equals(newPwd)) {
-            throw new ServiceException("旧密码和新密码不能相同");
         }
         oldUser.setPassword(newPwd);
         userDao.updateByPrimaryKeySelective(oldUser);

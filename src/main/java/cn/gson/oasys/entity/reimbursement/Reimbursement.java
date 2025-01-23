@@ -92,7 +92,6 @@ public class Reimbursement {
     public enum Status {
         REVIEW_1("宋云潇审核",1),//宋云潇
         REVIEW_2("马涛审核",2),//马涛
-//        MANAGER("部门负责人审核", 3),
         ACCOUNTING("财务审核", 3),
         GENERAL("总经理审核", 4),
         APPROVED("批准", 5),

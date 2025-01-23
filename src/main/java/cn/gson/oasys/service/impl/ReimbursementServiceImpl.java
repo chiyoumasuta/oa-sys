@@ -31,7 +31,6 @@ import org.springframework.util.ResourceUtils;
 import tk.mybatis.mapper.entity.Example;
 
 import javax.annotation.Resource;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -51,16 +50,12 @@ public class ReimbursementServiceImpl implements ReimbursementService {
     @Resource
     private DepartmentService departmentService;
     @Resource
-    private FileService fileService;
-    @Resource
-    private SysConfigService sysConfigService;
-    @Resource
     private UserDeptRoleService userDeptRoleService;
     @Resource
     private FlowableService flowableService;
 
     @Override
-    public Page<Reimbursement> page(int pageSize, int pageNo, Date startDate, Date endDate, String project, int searchType) {
+    public Page<Reimbursement> page(int pageSize, int pageNo, Date startDate, Date endDate, String project, int searchType,Reimbursement.Status status,Long person) {
         User user = UserTokenHolder.getUser();
         PageHelper.startPage(pageNo, pageSize);
         Example example = new Example(Reimbursement.class);
@@ -68,15 +63,23 @@ public class ReimbursementServiceImpl implements ReimbursementService {
         if (project != null) {
             criteria.andEqualTo("project", project);
         }
+        if (person != null) {
+            criteria.andEqualTo("submitUser", person);
+        }
+        if (status != null) {
+            criteria.andEqualTo("status", status);
+        }
         if (startDate != null) {
             criteria.andEqualTo("startTime", startDate).andEqualTo("endTime", endDate);
-        }
+        } 
         if (searchType == 0) {
-            criteria.andLike("opinions","%"+user.getUserName()+"%");
+            if (!UserTokenHolder.getUser().isAdmin()){
+                criteria.andLike("opinions","%"+user.getUserName()+"%");
+            }
         } else{
             criteria.andEqualTo("submitUser", user.getId());
         }
-        criteria.andIn("status", Arrays.asList(Reimbursement.Status.APPROVED, Reimbursement.Status.REJECTED,Reimbursement.Status.REJECTED_SELF));
+        example.setOrderByClause("id desc");
         com.github.pagehelper.Page<Reimbursement> data = (com.github.pagehelper.Page<Reimbursement>) reimbursementDao.selectByExample(example);
         List<Reimbursement> result = data.getResult().stream()
                 .peek(it -> {
@@ -84,7 +87,7 @@ public class ReimbursementServiceImpl implements ReimbursementService {
                     example1.createCriteria().andEqualTo("reimbursementId", it.getId());
                     it.setDetails(reimbursementItemDao.selectByExample(example1));
                 })
-                .sorted(Comparator.comparing(Reimbursement::getId))
+                .sorted(Comparator.comparing(Reimbursement::getId).reversed())
                 .collect(Collectors.toList());
         return new Page<>(pageNo, pageSize, data.getTotal(), result);
     }
@@ -117,28 +120,13 @@ public class ReimbursementServiceImpl implements ReimbursementService {
             department = departmentById.get(0);
         } else throw new ServiceException("未找到部门");
         reimbursement.setDepartmentName(department.getName());
-
-//        User userApprover = sysConfigService.getApproveByDept(reimbursement.getDepartmentName());
-
-        //设置审核人
-//        if (!userApprover.getUserName().equals(user.getUserName())) {
-//            try {
-//                reimbursement.setApprover(userApprover.getId());
-//                reimbursement.setApproverName(userApprover.getUserName());
-//                reimbursement.setStatus(Reimbursement.Status.REVIEW_1);
-//            } catch (Exception e) {
-//                throw new ServiceException("当前用户所在部门无负责人");
-//            }
-//        } else reimbursement.setStatus(Reimbursement.Status.ACCOUNTING);
         if (UserTokenHolder.getUser().getUserName().equals("阮咏薇")) {
             reimbursement.setStatus(Reimbursement.Status.GENERAL);
         }else if (userDeptRoleService.findByUserId(UserTokenHolder.getUser().getId()).stream().map(Department::getName).collect(Collectors.toList())
-                .contains("综合管理中心")){
-            if (UserTokenHolder.getUser().getUserName().equals("马涛")){
-                reimbursement.setStatus(Reimbursement.Status.ACCOUNTING);
-            }else {
+                .contains("综合管理中心") && !UserTokenHolder.getUser().getUserName().equals("马涛")){
                 reimbursement.setStatus(Reimbursement.Status.REVIEW_2);
-            }
+        }else if(Arrays.asList("熊蓉蓉","马涛").contains(UserTokenHolder.getUser().getUserName())){
+            reimbursement.setStatus(Reimbursement.Status.ACCOUNTING);
         }else reimbursement.setStatus(Reimbursement.Status.REVIEW_1);
 
         //将附件从回收站移除
@@ -163,12 +151,6 @@ public class ReimbursementServiceImpl implements ReimbursementService {
         });
         reimbursement.setReimbursementAmount(cost[0] == 0.0 ? reimbursement.getReimbursementAmount() : cost[0]);
         Map<String, Object> variables = new HashMap<>();
-        //是否为主管（跳过主管审核流程）
-//        if (!userApprover.getUserName().equals(user.getUserName())) {
-//            variables.put("isManager", false);
-//            //不是主管设置审核人
-//            variables.put("manager", reimbursement.getApproverName());
-//        } else variables.put("isManager", true);
         variables.put("type", reimbursement.getStatus().getLeave());
         reimbursementDao.updateByPrimaryKey(reimbursement);
         ProcessInstance processInstance = runtimeService.startProcessInstanceById(deployId, String.valueOf(dataKey), variables);
@@ -204,10 +186,6 @@ public class ReimbursementServiceImpl implements ReimbursementService {
             case REVIEW_2:
                 status = Reimbursement.Status.getNextStatus(status);
                 break;
-//            case MANAGER:
-//                status = Reimbursement.Status.getNextStatus(status);
-//                reimbursement.setApproverTime(new Date());
-//                break;
             case ACCOUNTING:
                 status = Reimbursement.Status.getNextStatus(status);
                 if (!reimbursement.getType().equals(Reimbursement.ExpenseType.IMPLEMENTATION_FEE)) {
@@ -257,13 +235,8 @@ public class ReimbursementServiceImpl implements ReimbursementService {
         reimbursementItemDao.updateByPrimaryKeySelective(reimbursementItem);
     }
 
-    /**
-     * @param id
-     * @return
-     */
     @Override
     public Reimbursement selectOneById(Long id) {
-        User user = UserTokenHolder.getUser();
         Reimbursement data = reimbursementDao.selectByPrimaryKey(id);
         Example example1 = new Example(ReimbursementItem.class);
         example1.createCriteria().andEqualTo("reimbursementId", data.getId());
@@ -280,8 +253,6 @@ public class ReimbursementServiceImpl implements ReimbursementService {
 
         float[] columnWidthsHeader = {100f, 300f, 100f, 700f};
         Table tableLog = new Table(columnWidthsHeader);
-        //tableLog.setWidth(UnitValue.createPercentValue(100));
-        //String[] titles= {"预勘名称","网络分类","预勘距离","经度","产品实例","归属分类","机房类型","纬度"};
         Cell head0 = new Cell(3, columnWidthsHeader.length).add(new Paragraph("报销单").addStyle(centeredStyle)).setFont(font).setBackgroundColor(new DeviceRgb(220, 220, 220));
         tableLog.addCell(head0);
         Cell h9 = new Cell(2, 1).add(new Paragraph("发起人").addStyle(centeredStyle)).setFont(font).setBackgroundColor(new DeviceRgb(220, 220, 220));
@@ -335,17 +306,19 @@ public class ReimbursementServiceImpl implements ReimbursementService {
 
         doc.add(tableLog);
 
-        float[] columnBoxWidths= {200f,100f,200f,200f,200f,300f};
+        float[] columnBoxWidths= {200f,100f,100f,200f,200f,200f,200f};
         Table details = new Table(columnBoxWidths);
         details.setWidth(UnitValue.createPercentValue(100));
         Cell headB = new Cell(3, columnBoxWidths.length).add(new Paragraph("费用明细").addStyle(centeredStyle)).setFont(font).setBackgroundColor(new DeviceRgb(220, 220, 220));
         details.addHeaderCell(headB);
+        Cell headerB0 = new Cell(2, 1).add(new Paragraph("所属项目").addStyle(centeredStyle)).setFont(font).setBackgroundColor(new DeviceRgb(220, 220, 220));
         Cell headerB1 = new Cell(2, 1).add(new Paragraph("参与人").addStyle(centeredStyle)).setFont(font).setBackgroundColor(new DeviceRgb(220, 220, 220));
         Cell headerB2 = new Cell(2, 1).add(new Paragraph("参与天数").addStyle(centeredStyle)).setFont(font).setBackgroundColor(new DeviceRgb(220, 220, 220));
         Cell headerB3 = new Cell(2, 1).add(new Paragraph("部门").addStyle(centeredStyle)).setFont(font).setBackgroundColor(new DeviceRgb(220, 220, 220));
         Cell headerB4 = new Cell(2, 1).add(new Paragraph("费用").addStyle(centeredStyle)).setFont(font).setBackgroundColor(new DeviceRgb(220, 220, 220));
         Cell headerB5 = new Cell(2, 1).add(new Paragraph("类型").addStyle(centeredStyle)).setFont(font).setBackgroundColor(new DeviceRgb(220, 220, 220));
         Cell headerB6 = new Cell(2, 1).add(new Paragraph("备注").addStyle(centeredStyle)).setFont(font).setBackgroundColor(new DeviceRgb(220, 220, 220));
+        details.addHeaderCell(headerB0);
         details.addHeaderCell(headerB1);
         details.addHeaderCell(headerB2);
         details.addHeaderCell(headerB3);
@@ -357,12 +330,14 @@ public class ReimbursementServiceImpl implements ReimbursementService {
             details.addCell(headE);
         } else {
             for (ReimbursementItem r : data.getDetails()) {
+                Cell cell0 = new Cell().add(new Paragraph(r.getProject()==null|| r.getProject().isEmpty() ?data.getProject():r.getProject())).setFont(font);
                 Cell cell1 = new Cell().add(new Paragraph(r.getParticipantsName()==null?"":r.getParticipantsName())).setFont(font);
                 Cell cell2 = new Cell().add(new Paragraph(String.valueOf(r.getDays()==null?"":r.getDays()))).setFont(font);
                 Cell cell3 = new Cell().add(new Paragraph(r.getDept()==null?"":r.getDept())).setFont(font);
                 Cell cell4 = new Cell().add(new Paragraph(String.valueOf(r.getCost()==null?"":r.getCost()))).setFont(font);
                 Cell cell5 = new Cell().add(new Paragraph(r.getType()==null?"":r.getType())).setFont(font);
                 Cell cell6 = new Cell().add(new Paragraph(r.getRemark()==null?"":r.getType())).setFont(font);
+                details.addCell(cell0);
                 details.addCell(cell1);
                 details.addCell(cell2);
                 details.addCell(cell3);
@@ -402,14 +377,6 @@ public class ReimbursementServiceImpl implements ReimbursementService {
         return doc;
     }
 
-    /**
-     * 重新推送
-     *
-     * @param deployId
-     * @param dateJson
-     * @param type
-     * @param oldId
-     */
     @Override
     public boolean reStart(String deployId, String dateJson, String type, Long oldId) {
         Reimbursement reimbursement = reimbursementDao.selectByPrimaryKey(oldId);

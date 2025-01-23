@@ -56,11 +56,15 @@ public class ProjectCostStatisticsServiceImpl implements ProjectCostStatisticsSe
 
         List<ProjectCostStatisticsVo> result = new ArrayList<>();
         //子项目明细
-        projectList.stream().filter(p -> !p.getChildren().isEmpty()).forEach(p -> {
+        projectList.stream().forEach(p -> {
             ProjectCostStatisticsVo father = new ProjectCostStatisticsVo();
-            List<Project> childrenList = p.getChildren();
+            List<Project> pList = new ArrayList<>();
+            if (p.getChildren() != null) {
+                 pList = p.getChildren();
+            }
+            pList.add(p);
             List<ProjectCostStatisticsVo> childrenVoList = new ArrayList<>();
-            childrenList.stream().filter(c->project==null||c.getName().equals(project)).forEach(c -> {
+            pList.stream().filter(c->project==null||c.getName().equals(project)).forEach(c -> {
                 ProjectCostStatisticsVo vo = new ProjectCostStatisticsVo();
                 vo.setProjectName(c.getName());
                 List<ReimbursementItem> detail = reimbursementItems.get(c.getName());
@@ -73,7 +77,7 @@ public class ProjectCostStatisticsServiceImpl implements ProjectCostStatisticsSe
                         .filter(it -> it.getType().equals(Reimbursement.ExpenseType.AMORTIZATION) && it.getProject().equals(c.getName()))
                         .mapToDouble(Reimbursement::getReimbursementAmount).sum();
                 final double[] implementationDays = {0.0};
-                vo.setTotalCost(sum+amortization);
+                vo.setTotalCost(Math.round((sum+amortization) * 100.0) / 100.0);
                 //项目实施费用统计
                 double implementation = reimbursements.stream()
                         .filter(it -> it.getType().equals(Reimbursement.ExpenseType.IMPLEMENTATION_FEE) && it.getProject().equals(c.getName()))
@@ -81,11 +85,11 @@ public class ProjectCostStatisticsServiceImpl implements ProjectCostStatisticsSe
                             implementationDays[0] = implementationDays[0] + it.getDuration();
                             return it.getReimbursementAmount();
                         }).sum();
-                vo.setImplementation(implementation);
+                vo.setImplementation(Math.round((implementation) * 100.0) / 100.0);
                 //项目实施总天数
                 vo.setImplementationDay(implementationDays[0]);
                 //摊销费用
-                father.setAmortization(amortization);
+                father.setAmortization(Math.round((amortization) * 100.0) / 100.0);
                 //项目参与人和天数明细
                 Map<String, Double> implementationDayDetail = new HashMap<>();
                 if (detail != null) {
@@ -99,7 +103,7 @@ public class ProjectCostStatisticsServiceImpl implements ProjectCostStatisticsSe
                 if (detail != null) {
                     detail.stream().filter(it -> typeMap.get(it.getReimbursementId()).equals(Reimbursement.ExpenseType.IMPLEMENTATION_FEE)&&it.getCost() != null).
                             forEach(it -> {
-                                implementationDetail.put(it.getType(), implementationDetail.getOrDefault(it.getType(), 0.0) + it.getCost());
+                                implementationDetail.put(it.getType(), Math.round((implementationDetail.getOrDefault(it.getType(), 0.0) + it.getCost()) * 100.0) / 100.0);
                     });
                 }
                 vo.setImplementationDetail(implementationDetail);
@@ -111,7 +115,7 @@ public class ProjectCostStatisticsServiceImpl implements ProjectCostStatisticsSe
                             forEach(it -> {
                                 statistics.put(it.getType(), statistics.getOrDefault(it.getType(), 0.0) + it.getCost());
                                 Map<String, Double> userDetail = detailsByUser.getOrDefault(it.getParticipantsName(), new HashMap<>());
-                                userDetail.put(it.getType(), userDetail.getOrDefault(it.getType(), 0.0) + it.getCost());
+                                userDetail.put(it.getType(), Math.round((userDetail.getOrDefault(it.getType(), 0.0) + it.getCost()) * 100.0) / 100.0);
                                 detailsByUser.put(it.getParticipantsName(), userDetail);
                     });
                 }
@@ -187,7 +191,7 @@ public class ProjectCostStatisticsServiceImpl implements ProjectCostStatisticsSe
         List<Reimbursement> reimbursements = reimbursementDao.selectByExample(reiExample);
         List<Long> ids = reimbursements.stream().map(Reimbursement::getId).collect(Collectors.toList());
         reiItemExample.createCriteria().andIn("reimbursementId", ids);
-        Map<String, List<ReimbursementItem>> reimbursementItems = reimbursementItemDao.selectByExample(reiItemExample).stream().collect(Collectors.groupingBy(ReimbursementItem::getParticipants));
+        Map<String, List<ReimbursementItem>> reimbursementItems = reimbursementItemDao.selectByExample(reiItemExample).stream().filter(it->it.getParticipants()!=null).collect(Collectors.groupingBy(ReimbursementItem::getParticipants));
 
         list.forEach(it -> {
             List<ReimbursementItem> reimbursementItemsList = reimbursementItems.get(String.valueOf(it.getId()));
@@ -195,8 +199,8 @@ public class ProjectCostStatisticsServiceImpl implements ProjectCostStatisticsSe
             if (reimbursementItemsList != null) {
                 reimbursementItemsList = reimbursementItemsList.stream().filter(r -> r.getCost() != null).collect(Collectors.toList());
                 if (!reimbursementItemsList.isEmpty()) {
-                    reimbursementItemsList.forEach(t -> detail.put(t.getType(), detail.getOrDefault(t.getType(), 0.0) + t.getCost()));
-                    double totalCost = detail.values().stream().mapToDouble(Double::doubleValue).sum();
+                    reimbursementItemsList.forEach(t -> detail.put(t.getType(), Math.round((detail.getOrDefault(t.getType(), 0.0) + t.getCost()) * 100.0) / 100.0));
+                    double totalCost = Math.round((detail.values().stream().mapToDouble(Double::doubleValue).sum()) * 100.0) / 100.0;
                     detail.put("总费用", totalCost);
                     result.put(it.getUserName(), detail);
                 }
@@ -210,14 +214,13 @@ public class ProjectCostStatisticsServiceImpl implements ProjectCostStatisticsSe
     public Map<String, Map<String, Double>> countByDept(Date startDate, Date endDate, String project) {
         Example reimbursementExample = new Example(Reimbursement.class);
         Example.Criteria criteria = reimbursementExample.createCriteria();
-        reimbursementExample.createCriteria().andEqualTo("status", Reimbursement.Status.APPROVED).andNotEqualTo("type", Reimbursement.ExpenseType.IMPLEMENTATION_FEE);
+        criteria.andEqualTo("status", Reimbursement.Status.APPROVED).andNotEqualTo("type", Reimbursement.ExpenseType.IMPLEMENTATION_FEE);
         if (StringUtils.isNotBlank(project)) {
             criteria.andEqualTo("project", project);
         }
         if (startDate != null) {
             criteria.andGreaterThan("startTime", startDate).andLessThan("entTime", endDate);
         }
-        reimbursementExample.and(criteria);
         List<Reimbursement> reimbursements = reimbursementDao.selectByExample(reimbursementExample);
         List<Long> collect = reimbursements.stream().map(Reimbursement::getId).collect(Collectors.toList());
         Example reimbursementItemExample = new Example(ReimbursementItem.class);
@@ -231,8 +234,9 @@ public class ProjectCostStatisticsServiceImpl implements ProjectCostStatisticsSe
                 .filter(it -> it.getCost() != null && it.getDept() != null)
                 .forEach(it -> {
                     Map<String, Double> detail = resultMap.computeIfAbsent(it.getDept(), k -> new HashMap<>());
-                    detail.put(it.getType(), detail.getOrDefault(it.getType(), 0.0) + it.getCost());
-                    totalCostMap.put(it.getDept(), totalCostMap.getOrDefault(it.getDept(), 0.0) + it.getCost());
+                    detail.put(it.getType(), Math.round((detail.getOrDefault(it.getType(), 0.0) + it.getCost()) * 100.0) / 100.0);
+                    resultMap.put(it.getDept(), detail);
+                    totalCostMap.put(it.getDept(), Math.round((totalCostMap.getOrDefault(it.getDept(), 0.0) + it.getCost()) * 100.0) / 100.0);
                 });
 
         resultMap.forEach((key, value) -> value.put("总费用", totalCostMap.get(key)));

@@ -38,8 +38,8 @@ public class ReimbursementController {
 
     @RequestMapping(value = "/page",method = RequestMethod.POST)
     @ApiOperation(value = "分页查询 seachType:0:查询自己审核的流程 ")
-    public UtilResultSet page(int pageSize, int pageNo, Date startDate, Date endDate, String project, int searchType){
-        return UtilResultSet.success(reimbursementService.page(pageSize,pageNo,startDate,endDate,project,searchType));
+    public UtilResultSet page(int pageSize, int pageNo, Date startDate, Date endDate, String project, int searchType,Reimbursement.Status status,Long person){
+        return UtilResultSet.success(reimbursementService.page(pageSize,pageNo,startDate,endDate,project,searchType,status,person));
     }
 
     /**

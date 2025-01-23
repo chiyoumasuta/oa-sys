@@ -20,7 +20,6 @@ import cn.gson.oasys.vo.FileListVo;
 
 import javax.annotation.Resource;
 import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -38,10 +37,9 @@ public class FileController {
     @Resource
     private FileDao fileDao;
 
-    // 保存文件
     @RequestMapping(value = "/save", method = RequestMethod.POST)
     @ApiOperation(value = "上传文件")
-    public UtilResultSet saveFile(MultipartFile file, Long nowPath, File.model model, HttpServletRequest request) throws ServiceException {
+    public UtilResultSet saveFile(MultipartFile file, Long nowPath, File.model model) throws ServiceException {
         try {
             return UtilResultSet.success(fileService.saveFile(file, nowPath, model));
         } catch (Exception e) {
@@ -70,11 +68,6 @@ public class FileController {
         }
     }
 
-    /**
-     * 下载文件
-     *
-     * @param response
-     */
     @RequestMapping(value = "download", method = RequestMethod.GET)
     @ApiOperation(value = "下载文件")
     public void downFile(HttpServletResponse response, Long fileId) {
@@ -84,16 +77,16 @@ public class FileController {
             response.setContentLength(filelist.getSize().intValue());
             response.setContentType(filelist.getContentType());
             response.setHeader("Content-Disposition", "attachment;filename=" + new String(filelist.getFileName().getBytes(StandardCharsets.UTF_8), "ISO8859-1"));
-            writefile(response, file);
+            writeFile(response, file);
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
     }
 
     /**
      * 写文件 方法
      */
-    public void writefile(HttpServletResponse response, java.io.File file) {
+    public void writeFile(HttpServletResponse response, java.io.File file) {
         ServletOutputStream sos = null;
         FileInputStream aa = null;
         try {

@@ -13,6 +13,8 @@ public class Permissions {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
+    @Column(name="order",columnDefinition = "顺序")
+    private int order;
     @Column(name = "parent_id", columnDefinition = "父权限id")
     private Long parentId;
     @Column(name = "label", columnDefinition = "权限解释")
@@ -22,7 +24,7 @@ public class Permissions {
     @Column(name = "icon", columnDefinition = "图标")
     private String icon;
     @Column(name = "type", columnDefinition = "类型")
-    private String type;
+    private int type;
     @Column(name = "route",columnDefinition = "权限路径")
     private String route;
     @Column(name = "component", columnDefinition = "引用资源路径")

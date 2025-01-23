@@ -146,7 +146,7 @@ public class FlowableServiceImpl implements FlowableService {
 
         // 避免懒加载问题，将需要的字段包装到 DTO 中
         return taskList.stream().filter(it -> it.getProcessDefinitionId().contains(type)
-                        &&(it.getAssignee().equals(UserTokenHolder.getUser().getUserName())||searchType.equals("1")))
+                        &&(it.getAssignee().equals(UserTokenHolder.getUser().getUserName())||"1".equals(searchType)))
                 .map(task -> {
                     // 根据任务获取流程实例
                     ProcessInstance processInstance = runtimeService.createProcessInstanceQuery()

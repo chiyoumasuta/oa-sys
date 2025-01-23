@@ -13,7 +13,7 @@ public interface ReimbursementService {
     /**
      * 获取报销数据列表
      */
-    Page<Reimbursement> page(int pageSize, int pageNo, Date startDate, Date endDate, String project,int searchType);
+    Page<Reimbursement> page(int pageSize, int pageNo, Date startDate, Date endDate, String project,int searchType,Reimbursement.Status status,Long person);
 
     /**
      * 实例化项目

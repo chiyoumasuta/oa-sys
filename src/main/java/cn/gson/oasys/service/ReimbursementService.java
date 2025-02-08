@@ -48,4 +48,6 @@ public interface ReimbursementService {
      * 重新推送
      */
     boolean reStart(String deployId, String dateJson, String type,Long oldId);
+
+    Reimbursement setNo(Long id);
 }

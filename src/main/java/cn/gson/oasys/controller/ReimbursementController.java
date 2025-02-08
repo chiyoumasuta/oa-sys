@@ -78,12 +78,12 @@ public class ReimbursementController {
 
     @RequestMapping("/pdf")
     public void pdf(Long id, HttpServletResponse resp) throws IOException {
+        Reimbursement reimbursement = reimbursementService.setNo(id);
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
-        Reimbursement reimbursement = reimbursementService.selectOneById(id);
 
         resp.setContentType("application/pdf");
         // 编码nameById以处理中文字符
-        String fileName = URLEncoder.encode(reimbursement.getSubmitUserName()+"--"+reimbursement.getProject(), "UTF-8") + ".pdf";
+        String fileName = URLEncoder.encode(reimbursement.getSubmitUserName()+"--"+reimbursement.getProject()+"---"+sdf.format(reimbursement.getSubmitDate()), "UTF-8") + ".pdf";
         resp.setHeader("Content-Disposition", "attachment;fileName=" + fileName);
         ServletOutputStream os = resp.getOutputStream();
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(os));

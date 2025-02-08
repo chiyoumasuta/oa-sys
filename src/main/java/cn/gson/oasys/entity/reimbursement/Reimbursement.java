@@ -78,6 +78,8 @@ public class Reimbursement {
     private String deployId;
     @Column(name = "deploy_type",columnDefinition = "流程类型")
     private String deployType;
+    @Column(name = "no",columnDefinition = "唯一编号")
+    private String no;
     @Transient
     private List<String> opinionsList;
     @Transient

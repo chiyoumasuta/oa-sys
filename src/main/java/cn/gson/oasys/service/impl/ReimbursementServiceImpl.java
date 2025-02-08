@@ -15,6 +15,8 @@ import com.itextpdf.io.font.PdfEncodings;
 import com.itextpdf.kernel.colors.DeviceRgb;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.itextpdf.layout.Document;
 import com.itextpdf.layout.Style;
 import com.itextpdf.layout.element.Cell;
@@ -208,6 +210,7 @@ public class ReimbursementServiceImpl implements ReimbursementService {
                 break;
         }
         reimbursement.setStatus(status);
+        if (reimbursement.getStatus().equals(Reimbursement.Status.APPROVED)) setNo(reimbursement.getId());
         return reimbursementDao.updateByPrimaryKeySelective(reimbursement) > 0;
     }
 
@@ -325,7 +328,7 @@ public class ReimbursementServiceImpl implements ReimbursementService {
         details.addHeaderCell(headerB4);
         details.addHeaderCell(headerB5);
         details.addHeaderCell(headerB6);
-        if (data.getDetails().isEmpty()) {
+        if (data.getDetails()==null||data.getDetails().isEmpty()) {
             Cell headE = new Cell(3, columnBoxWidths.length).add(new Paragraph("无详细数据").addStyle(centeredStyle)).setFont(font);
             details.addCell(headE);
         } else {
@@ -373,6 +376,13 @@ public class ReimbursementServiceImpl implements ReimbursementService {
             }
         }
         doc.add(details2);
+        PdfDocument pdfDocument = doc.getPdfDocument();
+        PdfCanvas canvas = new PdfCanvas(pdfDocument.getPage(1));  // 获取第一页（如果有且只有一页，保持此代码）
+        canvas.setFontAndSize(font, 12);
+        canvas.beginText();
+        canvas.moveText(45, pdfDocument.getPage(1).getPageSize().getTop() - 30);  // 设置位置 (45, 30)
+        canvas.showText("NO:"+data.getNo());
+        canvas.endText();
         doc.close();
         return doc;
     }
@@ -393,5 +403,29 @@ public class ReimbursementServiceImpl implements ReimbursementService {
             return true;
         }
         return false;
+    }
+
+    /**
+     * @param id
+     * @return
+     */
+    @Override
+    public Reimbursement setNo(Long id) {
+        Reimbursement reimbursement = reimbursementDao.selectByPrimaryKey(id);
+        if (reimbursement.getNo()==null){
+            String prefix = "XB";
+            int totalLength = 8;
+            String numberStr = String.valueOf(reimbursement.getId());
+            int zerosToAdd = totalLength - prefix.length() - numberStr.length();
+            StringBuilder sb = new StringBuilder();
+            sb.append(prefix);
+            for (int i = 0; i < zerosToAdd; i++) {
+                sb.append("0");
+            }
+            sb.append(numberStr);
+            reimbursement.setNo(sb.toString());
+            reimbursementDao.updateByPrimaryKeySelective(reimbursement);
+            return reimbursement;
+        }else return reimbursement;
     }
 }

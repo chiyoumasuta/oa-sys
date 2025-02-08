@@ -56,7 +56,7 @@ public class ProjectCostStatisticsServiceImpl implements ProjectCostStatisticsSe
 
         List<ProjectCostStatisticsVo> result = new ArrayList<>();
         //子项目明细
-        projectList.stream().forEach(p -> {
+        projectList.forEach(p -> {
             ProjectCostStatisticsVo father = new ProjectCostStatisticsVo();
             List<Project> pList = new ArrayList<>();
             if (p.getChildren() != null) {

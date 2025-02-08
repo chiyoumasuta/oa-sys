@@ -33,7 +33,7 @@ public class UserDeptRoleServiceImpl implements UserDeptRoleService {
             user=findUserRole(user);
             result.add(user);
         }
-        return result;
+        return result.stream().distinct().collect(Collectors.toList());
     }
 
     @Override
